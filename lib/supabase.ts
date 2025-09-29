@@ -10,7 +10,21 @@ declare global {
   var __supabaseAdmin: ReturnType<typeof createClient> | undefined
 }
 
-export const supabase = globalThis.__supabase ?? (globalThis.__supabase = createClient(supabaseUrl, supabaseAnonKey, {
+// Función para crear el cliente con configuración optimizada
+function createSupabaseClient(url: string, key: string, options: any) {
+  return createClient(url, key, {
+    ...options,
+    auth: {
+      ...options.auth,
+      // Configuración adicional para evitar múltiples instancias
+      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+      storageKey: 'supabase.auth.token',
+      flowType: 'pkce'
+    }
+  })
+}
+
+export const supabase = globalThis.__supabase ?? (globalThis.__supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: true,
     autoRefreshToken: true,
@@ -18,7 +32,7 @@ export const supabase = globalThis.__supabase ?? (globalThis.__supabase = create
   }
 }))
 
-export const supabaseAdmin = globalThis.__supabaseAdmin ?? (globalThis.__supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
+export const supabaseAdmin = globalThis.__supabaseAdmin ?? (globalThis.__supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     persistSession: false,
     autoRefreshToken: false

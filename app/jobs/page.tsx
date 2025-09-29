@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { Plus, Edit, Trash2, Wrench, Eye, Calendar, User, MapPin } from 'lucide-react'
+import { Plus, Edit, Trash2, Wrench, Eye, Calendar, User, MapPin, Mail } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -36,6 +36,9 @@ interface Job {
   notes: string
   created_at: string
   updated_at: string
+  client_id: string
+  technician_id: string
+  insurance_company_id: string
   clients: {
     first_name: string
     last_name: string
@@ -64,6 +67,8 @@ export default function JobsPage() {
   const [insuranceCompanies, setInsuranceCompanies] = useState<any[]>([])
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [jobToDelete, setJobToDelete] = useState<Job | null>(null)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [viewingJob, setViewingJob] = useState<Job | null>(null)
   const [filters, setFilters] = useState({
     search: '',
     status: '',
@@ -316,16 +321,29 @@ export default function JobsPage() {
 
   const handleEdit = (job: Job) => {
     setEditingJob(job)
+    
+    // Formatear la fecha para datetime-local (yyyy-MM-ddThh:mm)
+    let formattedDate = ''
+    if (job.scheduled_date) {
+      const date = new Date(job.scheduled_date)
+      const year = date.getFullYear()
+      const month = String(date.getMonth() + 1).padStart(2, '0')
+      const day = String(date.getDate()).padStart(2, '0')
+      const hours = String(date.getHours()).padStart(2, '0')
+      const minutes = String(date.getMinutes()).padStart(2, '0')
+      formattedDate = `${year}-${month}-${day}T${hours}:${minutes}`
+    }
+    
     setFormData({
       title: job.title,
       description: job.description,
       job_type: job.job_type,
       priority: job.priority,
       category: job.category,
-      client_id: 'client_id', // Necesitaríamos el ID del cliente
-      technician_id: 'technician_id', // Necesitaríamos el ID del técnico
-      insurance_company_id: 'insurance_company_id', // Necesitaríamos el ID de la aseguradora
-      scheduled_date: job.scheduled_date ? job.scheduled_date.split('T')[0] : '',
+      client_id: job.client_id || '',
+      technician_id: job.technician_id || '',
+      insurance_company_id: job.insurance_company_id || '',
+      scheduled_date: formattedDate,
       estimated_hours: job.estimated_hours,
       notes: job.notes,
     })
@@ -335,6 +353,11 @@ export default function JobsPage() {
   const handleDelete = (job: Job) => {
     setJobToDelete(job)
     setShowDeleteModal(true)
+  }
+
+  const handleView = (job: Job) => {
+    setViewingJob(job)
+    setShowViewModal(true)
   }
 
   const confirmDelete = async () => {
@@ -694,7 +717,16 @@ export default function JobsPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => handleView(job)}
+                            title="Ver trabajo"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleEdit(job)}
+                            title="Editar trabajo"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -702,6 +734,7 @@ export default function JobsPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(job)}
+                            title="Eliminar trabajo"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -916,6 +949,224 @@ export default function JobsPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* View Job Modal */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        title="Detalles del Trabajo"
+        size="lg"
+      >
+        {viewingJob && (
+          <div className="space-y-6">
+            {/* Header con número y estado */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Wrench className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {viewingJob.job_number}
+                  </h2>
+                  <div className="flex items-center space-x-2 mt-1">
+                    {getStatusBadge(viewingJob.status)}
+                    {getPriorityBadge(viewingJob.priority)}
+                    {getJobTypeBadge(viewingJob.job_type)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Información del trabajo */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Información del Trabajo</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500">Título</p>
+                    <p className="font-medium text-gray-900">{viewingJob.title}</p>
+                  </div>
+                  {viewingJob.description && (
+                    <div>
+                      <p className="text-sm text-gray-500">Descripción</p>
+                      <p className="font-medium text-gray-900">{viewingJob.description}</p>
+                    </div>
+                  )}
+                  {viewingJob.category && (
+                    <div>
+                      <p className="text-sm text-gray-500">Categoría</p>
+                      <p className="font-medium text-gray-900">{viewingJob.category}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Cliente</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Cliente</p>
+                      <p className="font-medium text-gray-900">
+                        {viewingJob.clients.first_name} {viewingJob.clients.last_name}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <Mail className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <a href={`mailto:${viewingJob.clients.email}`} className="font-medium text-blue-600 hover:text-blue-700">
+                        {viewingJob.clients.email}
+                      </a>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start space-x-3">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <MapPin className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Dirección</p>
+                      <p className="font-medium text-gray-900">{viewingJob.clients.address}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Técnico asignado */}
+            {viewingJob.technicians && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Técnico Asignado</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <User className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Técnico</p>
+                    <p className="font-medium text-gray-900">
+                      {viewingJob.technicians.first_name} {viewingJob.technicians.last_name}
+                    </p>
+                    {viewingJob.technicians.phone && (
+                      <a href={`tel:${viewingJob.technicians.phone}`} className="text-sm text-blue-600 hover:text-blue-700">
+                        {viewingJob.technicians.phone}
+                      </a>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Fechas y horarios */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Fechas y Horarios</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {viewingJob.scheduled_date && (
+                  <div>
+                    <p className="text-sm text-gray-500">Fecha Programada</p>
+                    <p className="font-medium text-gray-900">
+                      {format(new Date(viewingJob.scheduled_date), 'dd/MM/yyyy HH:mm', { locale: es })}
+                    </p>
+                  </div>
+                )}
+                {viewingJob.start_date && (
+                  <div>
+                    <p className="text-sm text-gray-500">Fecha de Inicio</p>
+                    <p className="font-medium text-gray-900">
+                      {format(new Date(viewingJob.start_date), 'dd/MM/yyyy HH:mm', { locale: es })}
+                    </p>
+                  </div>
+                )}
+                {viewingJob.completion_date && (
+                  <div>
+                    <p className="text-sm text-gray-500">Fecha de Finalización</p>
+                    <p className="font-medium text-gray-900">
+                      {format(new Date(viewingJob.completion_date), 'dd/MM/yyyy HH:mm', { locale: es })}
+                    </p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Costos y horas */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Costos y Horas</h3>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                {viewingJob.estimated_hours && (
+                  <div>
+                    <p className="text-sm text-gray-500">Horas Estimadas</p>
+                    <p className="font-medium text-gray-900">{viewingJob.estimated_hours}h</p>
+                  </div>
+                )}
+                {viewingJob.actual_hours && (
+                  <div>
+                    <p className="text-sm text-gray-500">Horas Reales</p>
+                    <p className="font-medium text-gray-900">{viewingJob.actual_hours}h</p>
+                  </div>
+                )}
+                {viewingJob.labor_cost && (
+                  <div>
+                    <p className="text-sm text-gray-500">Costo de Mano de Obra</p>
+                    <p className="font-medium text-gray-900">€{viewingJob.labor_cost.toFixed(2)}</p>
+                  </div>
+                )}
+                {viewingJob.total_cost && (
+                  <div>
+                    <p className="text-sm text-gray-500">Costo Total</p>
+                    <p className="font-semibold text-gray-900">€{viewingJob.total_cost.toFixed(2)}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Notas */}
+            {viewingJob.notes && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Notas</h3>
+                <p className="text-gray-900">{viewingJob.notes}</p>
+              </div>
+            )}
+
+            {/* Fechas de registro */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+              <div>
+                <span className="font-medium">Creado:</span> {format(new Date(viewingJob.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+              </div>
+              <div>
+                <span className="font-medium">Actualizado:</span> {format(new Date(viewingJob.updated_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowViewModal(false)}
+              >
+                Cerrar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowViewModal(false)
+                  handleEdit(viewingJob)
+                }}
+              >
+                Editar Trabajo
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Delete Job Modal */}

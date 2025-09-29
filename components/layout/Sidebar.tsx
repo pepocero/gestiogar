@@ -58,11 +58,11 @@ export function Sidebar() {
             <img
               src={company.logo_url}
               alt={company.name}
-              className="w-8 h-8 rounded-lg object-cover"
+              className="w-12 h-12 rounded-lg object-cover shadow-sm"
             />
           ) : (
-            <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
-              <span className="text-white font-bold text-sm">
+            <div className="w-12 h-12 bg-primary-600 rounded-lg flex items-center justify-center shadow-sm">
+              <span className="text-white font-bold text-lg">
                 {company?.name?.charAt(0) || 'G'}
               </span>
             </div>

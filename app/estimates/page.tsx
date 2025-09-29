@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { Plus, Edit, Trash2, FileText, Eye, Send, Check, X } from 'lucide-react'
+import { Plus, Edit, Trash2, FileText, Eye, Send, Check, X, User, Mail, Wrench } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -29,6 +29,8 @@ interface Estimate {
   notes: string
   created_at: string
   updated_at: string
+  client_id: string
+  job_id: string
   clients: {
     first_name: string
     last_name: string
@@ -58,6 +60,8 @@ export default function EstimatesPage() {
   const [showModal, setShowModal] = useState(false)
   const [showItemsModal, setShowItemsModal] = useState(false)
   const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [viewingEstimate, setViewingEstimate] = useState<Estimate | null>(null)
   const [estimateItems, setEstimateItems] = useState<EstimateItem[]>([])
   const [clients, setClients] = useState<any[]>([])
   const [jobs, setJobs] = useState<any[]>([])
@@ -301,6 +305,38 @@ export default function EstimatesPage() {
           throw error
         }
 
+        // Actualizar items del presupuesto
+        if (estimateItems.length > 0) {
+          // Primero eliminar todos los items existentes
+          const { error: deleteError } = await supabase
+            .from('estimate_items')
+            .delete()
+            .eq('estimate_id', editingEstimate.id)
+
+          if (deleteError) {
+            throw deleteError
+          }
+
+          // Luego insertar los nuevos items
+          const itemsToInsert = estimateItems.map(item => ({
+            description: item.description,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price,
+            is_labor: item.is_labor,
+            material_id: item.material_id && item.material_id.trim() !== '' ? item.material_id : null,
+            estimate_id: editingEstimate.id
+          }))
+
+          const { error: itemsError } = await supabase
+            .from('estimate_items')
+            .insert(itemsToInsert)
+
+          if (itemsError) {
+            throw itemsError
+          }
+        }
+
         toast.success('Presupuesto actualizado correctamente')
       } else {
         // Crear nuevo presupuesto
@@ -356,17 +392,19 @@ export default function EstimatesPage() {
     }
   }
 
-  const handleEdit = (estimate: Estimate) => {
+  const handleEdit = async (estimate: Estimate) => {
     setEditingEstimate(estimate)
     setFormData({
       title: estimate.title,
       description: estimate.description,
-      client_id: estimate.clients ? 'client_id' : '',
-      job_id: estimate.jobs ? 'job_id' : '',
+      client_id: estimate.client_id || '',
+      job_id: estimate.job_id || '',
       valid_until: estimate.valid_until ? estimate.valid_until.split('T')[0] : '',
       notes: estimate.notes,
     })
-    loadEstimateItems(estimate.id)
+    
+    // Cargar los ítems del presupuesto antes de abrir el modal
+    await loadEstimateItems(estimate.id)
     setShowModal(true)
   }
 
@@ -390,6 +428,28 @@ export default function EstimatesPage() {
     } catch (error) {
       console.error('Error deleting estimate:', error)
       toast.error('Error al eliminar el presupuesto')
+    }
+  }
+
+  const handleView = async (estimate: Estimate) => {
+    setViewingEstimate(estimate)
+    setShowViewModal(true)
+    
+    // Cargar los ítems del presupuesto
+    try {
+      const { data, error } = await supabase
+        .from('estimate_items')
+        .select('*')
+        .eq('estimate_id', estimate.id)
+        .order('created_at')
+
+      if (error) {
+        console.error('Error loading estimate items:', error)
+      } else {
+        setEstimateItems(data || [])
+      }
+    } catch (error) {
+      console.error('Error loading estimate items:', error)
     }
   }
 
@@ -667,7 +727,16 @@ export default function EstimatesPage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => handleView(estimate)}
+                            title="Ver presupuesto"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleEdit(estimate)}
+                            title="Editar presupuesto"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
@@ -675,6 +744,7 @@ export default function EstimatesPage() {
                             variant="outline"
                             size="sm"
                             onClick={() => handleDelete(estimate.id)}
+                            title="Eliminar presupuesto"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -876,6 +946,196 @@ export default function EstimatesPage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* View Estimate Modal */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        title="Detalles del Presupuesto"
+        size="lg"
+      >
+        {viewingEstimate && (
+          <div className="space-y-6">
+            {/* Header con número y estado */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <FileText className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">
+                    {viewingEstimate.estimate_number}
+                  </h2>
+                  <div className="flex items-center space-x-2 mt-1">
+                    {getStatusBadge(viewingEstimate.status)}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Información del presupuesto */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Información del Presupuesto</h3>
+                <div className="space-y-3">
+                  <div>
+                    <p className="text-sm text-gray-500">Título</p>
+                    <p className="font-medium text-gray-900">{viewingEstimate.title}</p>
+                  </div>
+                  {viewingEstimate.description && (
+                    <div>
+                      <p className="text-sm text-gray-500">Descripción</p>
+                      <p className="font-medium text-gray-900">{viewingEstimate.description}</p>
+                    </div>
+                  )}
+                  {viewingEstimate.valid_until && (
+                    <div>
+                      <p className="text-sm text-gray-500">Válido hasta</p>
+                      <p className="font-medium text-gray-900">
+                        {format(new Date(viewingEstimate.valid_until), 'dd/MM/yyyy', { locale: es })}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Cliente</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                      <User className="h-4 w-4 text-purple-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Cliente</p>
+                      <p className="font-medium text-gray-900">
+                        {viewingEstimate.clients.first_name} {viewingEstimate.clients.last_name}
+                      </p>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                      <Mail className="h-4 w-4 text-green-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Email</p>
+                      <a href={`mailto:${viewingEstimate.clients.email}`} className="font-medium text-blue-600 hover:text-blue-700">
+                        {viewingEstimate.clients.email}
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Trabajo relacionado */}
+            {viewingEstimate.jobs && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Trabajo Relacionado</h3>
+                <div className="flex items-center space-x-3">
+                  <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                    <Wrench className="h-4 w-4 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Trabajo</p>
+                    <p className="font-medium text-gray-900">
+                      {viewingEstimate.jobs.job_number} - {viewingEstimate.jobs.title}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Detalles financieros */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Detalles Financieros</h3>
+              
+              {/* Ítems del presupuesto */}
+              {estimateItems.length > 0 && (
+                <div className="mb-4">
+                  <h4 className="text-sm font-medium text-gray-700 mb-2">Ítems del Presupuesto</h4>
+                  <div className="space-y-2">
+                    {estimateItems.map((item) => (
+                      <div key={item.id} className="flex justify-between items-center bg-white rounded p-2 border">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium text-gray-900">{item.description}</p>
+                          <p className="text-xs text-gray-500">
+                            {item.quantity} x €{item.unit_price.toFixed(2)} = €{item.total_price.toFixed(2)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                            item.is_labor 
+                              ? 'bg-blue-100 text-blue-800' 
+                              : 'bg-green-100 text-green-800'
+                          }`}>
+                            {item.is_labor ? 'Mano de Obra' : 'Material'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              
+              {/* Resumen financiero */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <p className="text-sm text-gray-500">Mano de Obra</p>
+                  <p className="font-medium text-gray-900">€{viewingEstimate.labor_amount.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Materiales</p>
+                  <p className="font-medium text-gray-900">€{viewingEstimate.materials_amount.toFixed(2)}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Total</p>
+                  <p className="font-semibold text-lg text-gray-900">€{viewingEstimate.total_amount.toFixed(2)}</p>
+                </div>
+              </div>
+            </div>
+
+            {/* Notas */}
+            {viewingEstimate.notes && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Notas</h3>
+                <p className="text-gray-900">{viewingEstimate.notes}</p>
+              </div>
+            )}
+
+            {/* Fechas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+              <div>
+                <span className="font-medium">Creado:</span> {format(new Date(viewingEstimate.created_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+              </div>
+              <div>
+                <span className="font-medium">Actualizado:</span> {format(new Date(viewingEstimate.updated_at), 'dd/MM/yyyy HH:mm', { locale: es })}
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowViewModal(false)}
+              >
+                Cerrar
+              </Button>
+              <Button
+                type="button"
+                onClick={async () => {
+                  setShowViewModal(false)
+                  await handleEdit(viewingEstimate)
+                }}
+              >
+                Editar Presupuesto
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
 
       {/* Modal para agregar items */}

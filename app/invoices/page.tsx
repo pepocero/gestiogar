@@ -10,7 +10,7 @@ import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseAdmin } from '@/lib/supabase'
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, X, Printer, FileText } from 'lucide-react'
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, X, Printer, FileText, Calendar, Clock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 
 export default function InvoicesPage() {
@@ -381,6 +381,19 @@ export default function InvoicesPage() {
     
     printWindow.document.close()
     printWindow.focus()
+    
+    // Agregar listener para cerrar la ventana después de imprimir o cancelar
+    printWindow.addEventListener('afterprint', () => {
+      printWindow.close()
+    })
+    
+    // Fallback: cerrar la ventana después de 5 segundos si no se imprime
+    setTimeout(() => {
+      if (!printWindow.closed) {
+        printWindow.close()
+      }
+    }, 5000)
+    
     printWindow.print()
   }
 
@@ -1011,51 +1024,124 @@ export default function InvoicesPage() {
           <Modal
             isOpen={showViewModal}
             onClose={() => setShowViewModal(false)}
-            title="Ver Factura"
+            title="Detalles de la Factura"
+            size="lg"
           >
             {selectedInvoice && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Número de Factura</label>
-                    <p className="text-gray-900 font-medium">{selectedInvoice.invoice_number}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Estado</label>
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(selectedInvoice.status)}`}>
-                      {getStatusText(selectedInvoice.status)}
-                    </span>
-                  </div>
-                  <div>
-                    <label className="form-label">Cliente</label>
-                    <p className="text-gray-900">
-                      {selectedInvoice.client ? 
-                        `${selectedInvoice.client.first_name} ${selectedInvoice.client.last_name}` : 
-                        'Cliente no encontrado'
-                      }
-                    </p>
-                  </div>
-                  <div>
-                    <label className="form-label">Fecha de Factura</label>
-                    <p className="text-gray-900">{new Date(selectedInvoice.issue_date).toLocaleDateString('es-ES')}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Fecha de Vencimiento</label>
-                    <p className="text-gray-900">{new Date(selectedInvoice.due_date).toLocaleDateString('es-ES')}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Total</label>
-                    <p className="text-gray-900 font-semibold">€{selectedInvoice.total_amount.toFixed(2)}</p>
+              <div className="space-y-6">
+                {/* Header con número y estado */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <FileText className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {selectedInvoice.invoice_number}
+                      </h2>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusBadgeColor(selectedInvoice.status)}`}>
+                          {getStatusText(selectedInvoice.status)}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Información de la factura */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Información de la Factura</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Calendar className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Fecha de Emisión</p>
+                          <p className="font-medium text-gray-900">{new Date(selectedInvoice.issue_date).toLocaleDateString('es-ES')}</p>
+                        </div>
+                      </div>
+                      
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                          <Clock className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Fecha de Vencimiento</p>
+                          <p className="font-medium text-gray-900">{new Date(selectedInvoice.due_date).toLocaleDateString('es-ES')}</p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Cliente</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Cliente</p>
+                          <p className="font-medium text-gray-900">
+                            {selectedInvoice.client ? 
+                              `${selectedInvoice.client.first_name} ${selectedInvoice.client.last_name}` : 
+                              'Cliente no encontrado'
+                            }
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Detalles financieros */}
+                <div className="bg-gray-50 rounded-lg p-4">
+                  <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Detalles Financieros</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <p className="text-sm text-gray-500">Subtotal</p>
+                      <p className="font-medium text-gray-900">€{selectedInvoice.net_amount.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">IVA</p>
+                      <p className="font-medium text-gray-900">€{selectedInvoice.tax_amount.toFixed(2)}</p>
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Total</p>
+                      <p className="font-semibold text-lg text-gray-900">€{selectedInvoice.total_amount.toFixed(2)}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Notas */}
                 {selectedInvoice.notes && (
-                  <div>
-                    <label className="form-label">Notas</label>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Descripción</h3>
                     <p className="text-gray-900">{selectedInvoice.notes}</p>
                   </div>
                 )}
-                
+
+                {/* Fechas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+                  <div>
+                    <span className="font-medium">Creada:</span> {new Date(selectedInvoice.created_at).toLocaleDateString('es-ES')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Actualizada:</span> {new Date(selectedInvoice.updated_at).toLocaleDateString('es-ES')}
+                  </div>
+                </div>
+
+                {/* Botones de acción */}
                 <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowViewModal(false)}
+                  >
+                    Cerrar
+                  </Button>
                   <Button
                     variant="secondary"
                     onClick={() => handlePrintInvoice(selectedInvoice)}
@@ -1071,6 +1157,15 @@ export default function InvoicesPage() {
                   >
                     <FileText className="h-4 w-4" />
                     <span>Generar PDF</span>
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={() => {
+                      setShowViewModal(false)
+                      handleEditInvoice(selectedInvoice)
+                    }}
+                  >
+                    Editar Factura
                   </Button>
                 </div>
               </div>

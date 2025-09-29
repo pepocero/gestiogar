@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'GestioGar - Gestión de Reparaciones del Hogar',
   description: 'Sistema multitenant para empresas de reparaciones del hogar que trabajan con aseguradoras',
+  icons: {
+    icon: '/favicon.ico',
+  },
 }
 
 export default function RootLayout({

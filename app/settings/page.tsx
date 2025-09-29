@@ -11,7 +11,7 @@ import { Modal } from '@/components/ui/Modal'
 import { updateCompany, updateUserProfile } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { Upload, Save, User, Building2, Shield, Bell } from 'lucide-react'
+import { Upload, Save, User, Building2, Shield, Bell, Camera, X } from 'lucide-react'
 
 export default function SettingsPage() {
   const { company, profile, updateProfile } = useAuth()
@@ -19,6 +19,7 @@ export default function SettingsPage() {
   const [showLogoModal, setShowLogoModal] = useState(false)
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   // Formulario de empresa
   const [companyForm, setCompanyForm] = useState({
@@ -106,41 +107,112 @@ export default function SettingsPage() {
     }
   }
 
+  // Función para subir logo a Supabase Storage
+  const uploadCompanyLogo = async (): Promise<string | null> => {
+    if (!logoFile || !company?.id) return null
+
+    try {
+      setUploadingLogo(true)
+      
+      // Crear nombre con formato: NombreEmpresa_logo.[extension]
+      const fileExt = logoFile.name.split('.').pop()
+      const companyName = company.name?.replace(/[^a-zA-Z0-9]/g, '') || 'Empresa'
+      const fileName = `${companyName}_logo.${fileExt}`
+      const filePath = `logo/${company.id}/${fileName}`
+
+      // Subir archivo a Supabase Storage (upsert: true para sobrescribir si existe)
+      const { data, error } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, logoFile, {
+          cacheControl: '3600',
+          upsert: true // Sobrescribe el archivo si ya existe
+        })
+
+      if (error) {
+        console.error('Error uploading logo:', error)
+        toast.error('Error al subir el logo')
+        return null
+      }
+
+      // Obtener URL firmada (con token) que expira en 1 año
+      const { data: { signedUrl } } = await supabase.storage
+        .from('profile-photos')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365) // 1 año
+
+      console.log('URL firmada del logo generada:', signedUrl)
+      return signedUrl
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      toast.error('Error al subir el logo')
+      return null
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  // Función para eliminar logo del storage
+  const deleteLogoFromStorage = async (logoUrl: string) => {
+    try {
+      console.log('Iniciando eliminación de logo:', logoUrl)
+      
+      // Extraer el path del archivo de la URL
+      const urlParts = logoUrl.split('/storage/v1/object/public/profile-photos/')
+      console.log('URL parts:', urlParts)
+      
+      if (urlParts.length > 1) {
+        const filePath = urlParts[1].split('?')[0] // Remover query parameters
+        console.log('Path del archivo a eliminar:', filePath)
+        
+        const { error } = await supabase.storage
+          .from('profile-photos')
+          .remove([filePath])
+        
+        if (error) {
+          console.error('Error eliminando logo anterior:', error)
+          toast.error('Error al eliminar el logo anterior')
+        } else {
+          console.log('Logo anterior eliminado correctamente del storage')
+        }
+      } else {
+        console.error('No se pudo extraer el path del archivo de la URL')
+      }
+    } catch (error) {
+      console.error('Error eliminando logo anterior:', error)
+      toast.error('Error al eliminar el logo anterior')
+    }
+  }
+
   const handleLogoUpload = async () => {
     if (!logoFile || !company) return
 
     setLoading(true)
     try {
-      // Subir archivo a Supabase Storage
-      const fileExt = logoFile.name.split('.').pop()
-      const fileName = `${company.id}/logo.${fileExt}`
-      
-      const { data, error } = await supabase.storage
-        .from('company-assets')
-        .upload(fileName, logoFile, {
-          cacheControl: '3600',
-          upsert: true
-        })
-
-      if (error) {
-        throw error
+      // Eliminar el logo anterior si existe
+      if (company.logo_url) {
+        console.log('Eliminando logo anterior:', company.logo_url)
+        await deleteLogoFromStorage(company.logo_url)
+      } else {
+        console.log('No hay logo anterior para eliminar')
       }
 
-      // Obtener URL pública
-      const { data: { publicUrl } } = supabase.storage
-        .from('company-assets')
-        .getPublicUrl(fileName)
+      // Subir nuevo logo
+      console.log('Subiendo nuevo logo...')
+      const logoUrl = await uploadCompanyLogo()
+      
+      if (logoUrl) {
+        console.log('Logo subido exitosamente, actualizando empresa...')
+        // Actualizar empresa con nueva URL del logo
+        const updatedCompany = await updateCompany(company.id, {
+          logo_url: logoUrl
+        })
 
-      // Actualizar empresa con nueva URL del logo
-      const updatedCompany = await updateCompany(company.id, {
-        logo_url: publicUrl
-      })
-
-      if (updatedCompany) {
-        toast.success('Logo actualizado correctamente')
-        setShowLogoModal(false)
-        setLogoFile(null)
-        setLogoPreview(null)
+        if (updatedCompany) {
+          console.log('Empresa actualizada con nuevo logo')
+          toast.success('Logo actualizado correctamente')
+          setShowLogoModal(false)
+          setLogoFile(null)
+          setLogoPreview(null)
+        }
       }
     } catch (error) {
       console.error('Error uploading logo:', error)
@@ -153,13 +225,39 @@ export default function SettingsPage() {
   const handleLogoFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor selecciona un archivo de imagen válido')
+        return
+      }
+      
+      // Validar tamaño (máximo 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('La imagen debe ser menor a 2MB')
+        return
+      }
+      
       setLogoFile(file)
+      
+      // Crear preview
       const reader = new FileReader()
       reader.onload = (e) => {
         setLogoPreview(e.target?.result as string)
       }
       reader.readAsDataURL(file)
     }
+  }
+
+  // Función para eliminar logo seleccionado
+  const removeLogo = () => {
+    setLogoFile(null)
+    setLogoPreview(null)
+  }
+
+  // Función para limpiar el estado al cerrar modal
+  const handleCloseLogoModal = () => {
+    setShowLogoModal(false)
+    removeLogo()
   }
 
   return (
@@ -269,17 +367,22 @@ export default function SettingsPage() {
             </div>
           </CardHeader>
           <CardBody>
-            <div className="flex items-center space-x-6">
+            <div className="flex items-center space-x-8">
               <div className="flex-shrink-0">
                 {company?.logo_url ? (
                   <img
                     src={company.logo_url}
                     alt="Logo de la empresa"
-                    className="w-20 h-20 rounded-lg object-cover border border-gray-200"
+                    className="w-32 h-32 rounded-lg object-cover border border-gray-200 shadow-sm"
+                    onError={(e) => {
+                      console.error('Error cargando logo:', company.logo_url)
+                      e.currentTarget.style.display = 'none'
+                    }}
+                    onLoad={() => console.log('Logo cargado correctamente:', company.logo_url)}
                   />
                 ) : (
-                  <div className="w-20 h-20 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200">
-                    <Building2 className="h-8 w-8 text-gray-400" />
+                  <div className="w-32 h-32 bg-gray-100 rounded-lg flex items-center justify-center border border-gray-200 shadow-sm">
+                    <Building2 className="h-12 w-12 text-gray-400" />
                   </div>
                 )}
               </div>
@@ -416,41 +519,91 @@ export default function SettingsPage() {
       {/* Modal para subir logo */}
       <Modal
         isOpen={showLogoModal}
-        onClose={() => setShowLogoModal(false)}
+        onClose={handleCloseLogoModal}
         title="Subir Logo de la Empresa"
         size="md"
       >
         <div className="space-y-4">
-          <div>
-            <label className="form-label">Seleccionar Archivo</label>
-            <input
-              type="file"
-              accept="image/*"
-              onChange={handleLogoFileChange}
-              className="form-input"
-            />
-            <p className="text-sm text-gray-500 mt-1">
-              Formatos soportados: JPG, PNG, GIF. Tamaño máximo: 5MB
-            </p>
-          </div>
-
-          {logoPreview && (
+          {/* Preview del logo actual */}
+          {company?.logo_url && (
             <div>
-              <label className="form-label">Vista Previa</label>
-              <div className="mt-1">
-                <img
-                  src={logoPreview}
-                  alt="Vista previa del logo"
-                  className="w-32 h-32 object-cover rounded-lg border border-gray-200"
-                />
+              <label className="form-label">Logo Actual</label>
+              <div className="mt-1 flex items-center space-x-4">
+                <div className="w-16 h-16 rounded-lg overflow-hidden border-2 border-gray-200">
+                  <img 
+                    src={company.logo_url} 
+                    alt="Logo actual" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div className="text-sm text-gray-500">
+                  Este será reemplazado por el nuevo logo
+                </div>
               </div>
             </div>
           )}
 
+          {/* Preview de la nueva imagen */}
+          {logoPreview && (
+            <div>
+              <label className="form-label">Vista Previa del Nuevo Logo</label>
+              <div className="mt-1 flex items-center space-x-4">
+                <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200">
+                  <img 
+                    src={logoPreview} 
+                    alt="Preview" 
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={removeLogo}
+                  className="text-red-600 hover:text-red-700"
+                >
+                  <X className="h-4 w-4 mr-1" />
+                  Eliminar
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {/* Input para seleccionar archivo */}
+          <div>
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleLogoFileChange}
+              className="hidden"
+              id="logo-input"
+            />
+            <label
+              htmlFor="logo-input"
+              className="flex items-center space-x-2 px-4 py-2 border border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
+            >
+              <Camera className="h-4 w-4 text-gray-500" />
+              <span className="text-sm text-gray-700">
+                {logoFile ? 'Cambiar logo' : 'Seleccionar logo'}
+              </span>
+            </label>
+            {uploadingLogo && (
+              <div className="flex items-center space-x-2 text-sm text-gray-500 mt-2">
+                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                <span>Subiendo...</span>
+              </div>
+            )}
+          </div>
+          
+          <p className="text-xs text-gray-500">
+            Formatos permitidos: JPG, PNG, GIF. Tamaño máximo: 2MB
+          </p>
+
           <div className="flex justify-end space-x-3">
             <Button
               variant="outline"
-              onClick={() => setShowLogoModal(false)}
+              onClick={handleCloseLogoModal}
+              disabled={loading}
             >
               Cancelar
             </Button>
@@ -459,7 +612,7 @@ export default function SettingsPage() {
               loading={loading}
               disabled={!logoFile}
             >
-              Subir Logo
+              {loading ? 'Subiendo...' : 'Subir Logo'}
             </Button>
           </div>
         </div>

@@ -103,10 +103,12 @@ npm install
 Crear un archivo `.env.local` con las siguientes variables:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=https://liqxrhrwiasewfvasems.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpcXhyaHJ3aWFzZXdmdmFzZW1zIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTgxOTY5NjksImV4cCI6MjA3Mzc3Mjk2OX0.iAP60WkDkxftBLNIAcTWwFmNOsrsZDY2gH9sAGxe6Ss
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxpcXhyaHJ3aWFzZXdmdmFzZW1zIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1ODE5Njk2OSwiZXhwIjoyMDczNzcyOTY5fQ.jMa4iEvjjmN2VDhT-j7vWQhLMVn1aJ0CEiRzXDVJPGs
+NEXT_PUBLIC_SUPABASE_URL=tu_supabase_url_aqui
+NEXT_PUBLIC_SUPABASE_ANON_KEY=tu_supabase_anon_key_aqui
+SUPABASE_SERVICE_ROLE_KEY=tu_supabase_service_role_key_aqui
 ```
+
+**Nota**: Obtén estas credenciales desde tu proyecto de Supabase en la sección "Settings" > "API".
 
 ### 4. Configurar la base de datos
 Ejecutar el script SQL en Supabase para crear las tablas y políticas RLS:

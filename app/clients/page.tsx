@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/Badge'
 
 import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail } from 'lucide-react'
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, User, MapPin, CheckCircle, XCircle, Building2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseAdmin } from '@/lib/supabase'
 import toast from 'react-hot-toast'
@@ -26,6 +26,10 @@ export default function ClientsPage() {
   const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+  const [editFormData, setEditFormData] = useState({
+    client_type: 'direct',
+    insurance_company_id: ''
+  })
 
   console.log('ClientsPage render - User:', user, 'Company:', company, 'Loading:', loading)
 
@@ -165,9 +169,33 @@ export default function ClientsPage() {
     setShowViewModal(true)
   }
 
-  const handleEditClient = (client: any) => {
+  const handleEditClient = async (client: any) => {
     setSelectedClient(client)
+    setEditFormData({
+      client_type: client.client_type || 'direct',
+      insurance_company_id: client.insurance_company_id || ''
+    })
     setShowEditModal(true)
+    
+    // Cargar aseguradoras al abrir el modal de edición
+    if (company?.id) {
+      await fetchInsuranceCompanies()
+    }
+  }
+
+  const handleEditFormChange = (field: string, value: string) => {
+    setEditFormData(prev => {
+      const newData = { ...prev, [field]: value }
+      
+      // Sincronizar campos
+      if (field === 'insurance_company_id' && value) {
+        newData.client_type = 'insurance'
+      } else if (field === 'client_type' && value === 'direct') {
+        newData.insurance_company_id = ''
+      }
+      
+      return newData
+    })
   }
 
   const handleUpdateClient = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -181,7 +209,7 @@ export default function ClientsPage() {
       const formData = new FormData(e.currentTarget)
       
       const clientData = {
-        insurance_company_id: (formData.get('insurance_company_id') as string)?.trim() || null,
+        insurance_company_id: editFormData.insurance_company_id?.trim() || null,
         first_name: formData.get('first_name') as string,
         last_name: formData.get('last_name') as string,
         email: formData.get('email') as string || null,
@@ -189,7 +217,7 @@ export default function ClientsPage() {
         address: (formData.get('address') as string)?.trim() || '',
         city: formData.get('city') as string || null,
         postal_code: formData.get('postal_code') as string || null,
-        client_type: formData.get('client_type') as string || 'direct',
+        client_type: editFormData.client_type,
         policy_number: formData.get('policy_number') as string || null,
         claim_number: formData.get('claim_number') as string || null,
         notes: formData.get('notes') as string || null,
@@ -402,21 +430,23 @@ export default function ClientsPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">Email</label>
+                  <label className="form-label">Email *</label>
                   <input 
                     type="email" 
                     name="email"
                     className="form-input" 
                     placeholder="cliente@email.com" 
+                    required
                   />
                 </div>
                 <div>
-                  <label className="form-label">Teléfono</label>
+                  <label className="form-label">Teléfono *</label>
                   <input 
                     type="tel" 
                     name="phone"
                     className="form-input" 
                     placeholder="+34 600 000 000" 
+                    required
                   />
                 </div>
                 <div>
@@ -461,12 +491,13 @@ export default function ClientsPage() {
               </div>
 
               <div>
-                <label className="form-label">Dirección</label>
+                <label className="form-label">Dirección *</label>
                 <textarea 
                   name="address"
                   className="form-input" 
                   rows={3}
                   placeholder="Dirección completa del cliente..."
+                  required
                 ></textarea>
               </div>
 
@@ -525,56 +556,156 @@ export default function ClientsPage() {
           <Modal
             isOpen={showViewModal}
             onClose={() => setShowViewModal(false)}
-            title="Ver Cliente"
+            title="Detalles del Cliente"
+            size="lg"
           >
             {selectedClient && (
-              <div className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Nombre</label>
-                    <p className="text-gray-900">{selectedClient.first_name} {selectedClient.last_name}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Email</label>
-                    <p className="text-gray-900">{selectedClient.email || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Teléfono</label>
-                    <p className="text-gray-900">{selectedClient.phone || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Tipo de Cliente</label>
-                    <p className="text-gray-900">
-                      {selectedClient.client_type === 'direct' ? 'Directo' : 'Aseguradora'}
-                    </p>
-                  </div>
-                  <div>
-                    <label className="form-label">Dirección</label>
-                    <p className="text-gray-900">{selectedClient.address || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Ciudad</label>
-                    <p className="text-gray-900">{selectedClient.city || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Código Postal</label>
-                    <p className="text-gray-900">{selectedClient.postal_code || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Número de Póliza</label>
-                    <p className="text-gray-900">{selectedClient.policy_number || '-'}</p>
-                  </div>
-                  <div>
-                    <label className="form-label">Número de Siniestro</label>
-                    <p className="text-gray-900">{selectedClient.claim_number || '-'}</p>
+              <div className="space-y-6">
+                {/* Header con nombre y tipo */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                      <User className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {selectedClient.first_name} {selectedClient.last_name}
+                      </h2>
+                      <div className="flex items-center space-x-2 mt-1">
+                        <Badge variant={selectedClient.client_type === 'direct' ? 'blue' : 'green'}>
+                          {selectedClient.client_type === 'direct' ? 'Cliente Directo' : 'Cliente de Aseguradora'}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
                 </div>
+
+                {/* Información de contacto */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Información de Contacto</h3>
+                    <div className="space-y-3">
+                      {selectedClient.email && (
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                            <Mail className="h-4 w-4 text-green-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Email</p>
+                            <a href={`mailto:${selectedClient.email}`} className="font-medium text-blue-600 hover:text-blue-700">
+                              {selectedClient.email}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {selectedClient.phone && (
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                            <Phone className="h-4 w-4 text-purple-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Teléfono</p>
+                            <a href={`tel:${selectedClient.phone}`} className="font-medium text-gray-900">
+                              {selectedClient.phone}
+                            </a>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Información de Dirección</h3>
+                    <div className="space-y-3">
+                      {selectedClient.address && (
+                        <div className="flex items-start space-x-3">
+                          <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                            <MapPin className="h-4 w-4 text-orange-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Dirección</p>
+                            <p className="font-medium text-gray-900">{selectedClient.address}</p>
+                          </div>
+                        </div>
+                      )}
+                      
+                      {(selectedClient.city || selectedClient.postal_code) && (
+                        <div className="flex items-center space-x-3">
+                          <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                            <Building2 className="h-4 w-4 text-indigo-600" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-gray-500">Ciudad</p>
+                            <p className="font-medium text-gray-900">
+                              {selectedClient.city || '-'}
+                              {selectedClient.postal_code && ` (${selectedClient.postal_code})`}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Información de seguros */}
+                {(selectedClient.policy_number || selectedClient.claim_number) && (
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Información de Seguros</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {selectedClient.policy_number && (
+                        <div>
+                          <p className="text-sm text-gray-500">Número de Póliza</p>
+                          <p className="font-medium text-gray-900">{selectedClient.policy_number}</p>
+                        </div>
+                      )}
+                      {selectedClient.claim_number && (
+                        <div>
+                          <p className="text-sm text-gray-500">Número de Siniestro</p>
+                          <p className="font-medium text-gray-900">{selectedClient.claim_number}</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Notas */}
                 {selectedClient.notes && (
-                  <div>
-                    <label className="form-label">Notas</label>
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Notas</h3>
                     <p className="text-gray-900">{selectedClient.notes}</p>
                   </div>
                 )}
+
+                {/* Fechas */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+                  <div>
+                    <span className="font-medium">Registrado:</span> {new Date(selectedClient.created_at).toLocaleDateString('es-ES')}
+                  </div>
+                  <div>
+                    <span className="font-medium">Actualizado:</span> {new Date(selectedClient.updated_at).toLocaleDateString('es-ES')}
+                  </div>
+                </div>
+
+                {/* Botones de acción */}
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowViewModal(false)}
+                  >
+                    Cerrar
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={async () => {
+                      setShowViewModal(false)
+                      await handleEditClient(selectedClient)
+                    }}
+                  >
+                    Editar Cliente
+                  </Button>
+                </div>
               </div>
             )}
           </Modal>
@@ -640,7 +771,8 @@ export default function ClientsPage() {
                   <select 
                     name="insurance_company_id"
                     className="form-input"
-                    defaultValue={selectedClient.insurance_company_id || ''}
+                    value={editFormData.insurance_company_id}
+                    onChange={(e) => handleEditFormChange('insurance_company_id', e.target.value)}
                   >
                     <option value="">Seleccionar aseguradora</option>
                     {insuranceCompanies.map((company) => (
@@ -691,7 +823,8 @@ export default function ClientsPage() {
                     <select 
                       name="client_type"
                       className="form-input"
-                      defaultValue={selectedClient.client_type || 'direct'}
+                      value={editFormData.client_type}
+                      onChange={(e) => handleEditFormChange('client_type', e.target.value)}
                     >
                       <option value="direct">Directo</option>
                       <option value="insurance">Aseguradora</option>

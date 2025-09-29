@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { Plus, Edit, Trash2, Building2, Phone, Mail, Globe } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, Building2, Phone, Mail, Globe, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react'
 
 interface InsuranceCompany {
   id: string
@@ -34,7 +34,11 @@ export default function InsurancePage() {
   const [insuranceCompanies, setInsuranceCompanies] = useState<InsuranceCompany[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [showViewModal, setShowViewModal] = useState(false)
   const [editingCompany, setEditingCompany] = useState<InsuranceCompany | null>(null)
+  const [deletingCompany, setDeletingCompany] = useState<InsuranceCompany | null>(null)
+  const [viewingCompany, setViewingCompany] = useState<InsuranceCompany | null>(null)
   const [formData, setFormData] = useState({
     name: '',
     contact_person: '',
@@ -127,6 +131,11 @@ export default function InsurancePage() {
     }
   }
 
+  const handleView = (company: InsuranceCompany) => {
+    setViewingCompany(company)
+    setShowViewModal(true)
+  }
+
   const handleEdit = (company: InsuranceCompany) => {
     setEditingCompany(company)
     setFormData({
@@ -143,22 +152,27 @@ export default function InsurancePage() {
     setShowModal(true)
   }
 
-  const handleDelete = async (id: string) => {
-    if (!confirm('¿Estás seguro de que quieres eliminar esta aseguradora?')) {
-      return
-    }
+  const handleDelete = (company: InsuranceCompany) => {
+    setDeletingCompany(company)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDelete = async () => {
+    if (!deletingCompany) return
 
     try {
       const { error } = await supabase
         .from('insurance_companies')
         .delete()
-        .eq('id', id)
+        .eq('id', deletingCompany.id)
 
       if (error) {
         throw error
       }
 
       toast.success('Aseguradora eliminada correctamente')
+      setShowDeleteModal(false)
+      setDeletingCompany(null)
       loadInsuranceCompanies()
     } catch (error) {
       console.error('Error deleting insurance company:', error)
@@ -226,17 +240,6 @@ export default function InsurancePage() {
           <CardBody>
             {insuranceCompanies.length > 0 ? (
               <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Nombre</TableHead>
-                    <TableHead>Contacto</TableHead>
-                    <TableHead>Email</TableHead>
-                    <TableHead>Teléfono</TableHead>
-                    <TableHead>Términos de Pago</TableHead>
-                    <TableHead>Estado</TableHead>
-                    <TableHead>Acciones</TableHead>
-                  </TableRow>
-                </TableHeader>
                 <TableBody>
                   {insuranceCompanies.map((company) => (
                     <TableRow key={company.id}>
@@ -291,14 +294,24 @@ export default function InsurancePage() {
                           <Button
                             variant="outline"
                             size="sm"
+                            onClick={() => handleView(company)}
+                            title="Ver detalles"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() => handleEdit(company)}
+                            title="Editar"
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => handleDelete(company.id)}
+                            onClick={() => handleDelete(company)}
+                            title="Eliminar"
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
@@ -446,6 +459,213 @@ export default function InsurancePage() {
             </Button>
           </div>
         </form>
+      </Modal>
+
+      {/* Modal para ver detalles de aseguradora */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        title="Detalles de la Aseguradora"
+        size="lg"
+      >
+        {viewingCompany && (
+          <div className="space-y-6">
+            {/* Header con nombre y estado */}
+            <div className="flex items-start justify-between">
+              <div className="flex items-center space-x-4">
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
+                  <Building2 className="h-8 w-8 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-gray-900">{viewingCompany.name}</h2>
+                  <div className="flex items-center space-x-2 mt-1">
+                    {viewingCompany.is_active ? (
+                      <CheckCircle className="h-4 w-4 text-green-500" />
+                    ) : (
+                      <XCircle className="h-4 w-4 text-red-500" />
+                    )}
+                    <Badge variant={viewingCompany.is_active ? 'success' : 'danger'}>
+                      {viewingCompany.is_active ? 'Activa' : 'Inactiva'}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Información de contacto */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Información de Contacto</h3>
+                <div className="space-y-3">
+                  {viewingCompany.contact_person && (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Building2 className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Persona de Contacto</p>
+                        <p className="font-medium text-gray-900">{viewingCompany.contact_person}</p>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {viewingCompany.email && (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <Mail className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Email</p>
+                        <a href={`mailto:${viewingCompany.email}`} className="font-medium text-blue-600 hover:text-blue-700">
+                          {viewingCompany.email}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {viewingCompany.phone && (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                        <Phone className="h-4 w-4 text-purple-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Teléfono</p>
+                        <a href={`tel:${viewingCompany.phone}`} className="font-medium text-gray-900">
+                          {viewingCompany.phone}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Información Técnica</h3>
+                <div className="space-y-3">
+                  <div className="flex items-center space-x-3">
+                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                      <Clock className="h-4 w-4 text-orange-600" />
+                    </div>
+                    <div>
+                      <p className="text-sm text-gray-500">Términos de Pago</p>
+                      <p className="font-medium text-gray-900">{viewingCompany.billing_terms} días</p>
+                    </div>
+                  </div>
+                  
+                  {viewingCompany.portal_url && (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
+                        <Globe className="h-4 w-4 text-indigo-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Portal Web</p>
+                        <a 
+                          href={viewingCompany.portal_url} 
+                          target="_blank" 
+                          rel="noopener noreferrer"
+                          className="font-medium text-blue-600 hover:text-blue-700"
+                        >
+                          {viewingCompany.portal_url}
+                        </a>
+                      </div>
+                    </div>
+                  )}
+                  
+                  {viewingCompany.api_endpoint && (
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-teal-100 rounded-full flex items-center justify-center">
+                        <Globe className="h-4 w-4 text-teal-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">API Endpoint</p>
+                        <p className="font-medium text-gray-900 font-mono text-sm">{viewingCompany.api_endpoint}</p>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Dirección */}
+            {viewingCompany.address && (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide mb-3">Dirección</h3>
+                <div className="flex items-start space-x-3">
+                  <div className="w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                    <MapPin className="h-4 w-4 text-red-600" />
+                  </div>
+                  <p className="text-gray-900">{viewingCompany.address}</p>
+                </div>
+              </div>
+            )}
+
+            {/* Fechas */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-500">
+              <div>
+                <span className="font-medium">Creada:</span> {new Date(viewingCompany.created_at).toLocaleDateString('es-ES')}
+              </div>
+              <div>
+                <span className="font-medium">Actualizada:</span> {new Date(viewingCompany.updated_at).toLocaleDateString('es-ES')}
+              </div>
+            </div>
+
+            {/* Botones de acción */}
+            <div className="flex justify-end space-x-3 pt-4 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowViewModal(false)}
+              >
+                Cerrar
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  setShowViewModal(false)
+                  handleEdit(viewingCompany)
+                }}
+              >
+                Editar Aseguradora
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de confirmación para eliminar */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Eliminar Aseguradora"
+      >
+        {deletingCompany && (
+          <div className="space-y-4">
+            <p className="text-gray-700">
+              ¿Estás seguro de que quieres eliminar la aseguradora{' '}
+              <strong>{deletingCompany.name}</strong>?
+            </p>
+            <p className="text-sm text-gray-500">
+              Esta acción no se puede deshacer.
+            </p>
+            
+            <div className="flex justify-end space-x-3 pt-4">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowDeleteModal(false)}
+              >
+                Cancelar
+              </Button>
+              <Button 
+                type="button"
+                className="bg-red-600 hover:bg-red-700 text-white"
+                onClick={confirmDelete}
+              >
+                Eliminar
+              </Button>
+            </div>
+          </div>
+        )}
       </Modal>
       </Layout>
     </ProtectedRoute>
