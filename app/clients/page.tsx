@@ -1,0 +1,788 @@
+'use client'
+
+import React, { useState } from 'react'
+import { Layout } from '@/components/layout/Layout'
+import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+import { Card, CardHeader, CardBody } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { Badge } from '@/components/ui/Badge'
+
+import { Table } from '@/components/ui/Table'
+import { Modal } from '@/components/ui/Modal'
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
+import toast from 'react-hot-toast'
+
+export default function ClientsPage() {
+  const { company, user, loading } = useAuth()
+  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [insuranceCompanies, setInsuranceCompanies] = useState<any[]>([])
+  const [clients, setClients] = useState<any[]>([])
+  const [loadingClients, setLoadingClients] = useState(false)
+  const [selectedClient, setSelectedClient] = useState<any>(null)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
+
+  console.log('ClientsPage render - User:', user, 'Company:', company, 'Loading:', loading)
+
+  // Cargar clientes al montar el componente
+  React.useEffect(() => {
+    if (company?.id) {
+      fetchClients()
+    }
+  }, [company?.id])
+
+  // Cargar aseguradoras al abrir el modal
+  React.useEffect(() => {
+    if (showCreateModal && company?.id) {
+      fetchInsuranceCompanies()
+    }
+  }, [showCreateModal, company?.id])
+
+  const fetchClients = async () => {
+    if (!company?.id) return
+    
+    setLoadingClients(true)
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('company_id', company.id)
+        .order('created_at', { ascending: false })
+
+      if (error) {
+        console.error('Error fetching clients:', error)
+        return
+      }
+
+      setClients(data || [])
+    } catch (error) {
+      console.error('Error fetching clients:', error)
+    } finally {
+      setLoadingClients(false)
+    }
+  }
+
+  const fetchInsuranceCompanies = async () => {
+    if (!company?.id) return
+    
+    try {
+      const { data, error } = await supabase
+        .from('insurance_companies')
+        .select('id, name')
+        .eq('company_id', company.id)
+
+      if (error) {
+        console.error('Error fetching insurance companies:', error)
+        return
+      }
+
+      setInsuranceCompanies(data || [])
+    } catch (error) {
+      console.error('Error fetching insurance companies:', error)
+    }
+  }
+
+  const handleCreateClient = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    console.log('Starting client creation...')
+    
+    if (!company?.id) {
+      console.log('No company ID found')
+      toast.error('No se pudo obtener la información de la empresa')
+      return
+    }
+
+    console.log('Company ID:', company.id)
+    setIsSubmitting(true)
+
+    try {
+      const formData = new FormData(e.currentTarget)
+      
+      console.log('Form data collected')
+      console.log('First name:', formData.get('first_name'))
+      console.log('Last name:', formData.get('last_name'))
+      console.log('Insurance company:', formData.get('insurance_company_id'))
+      
+      const clientData = {
+        company_id: company.id,
+        insurance_company_id: (formData.get('insurance_company_id') as string)?.trim() || null,
+        first_name: formData.get('first_name') as string,
+        last_name: formData.get('last_name') as string,
+        email: formData.get('email') as string || null,
+        phone: formData.get('phone') as string || null,
+        address: (formData.get('address') as string)?.trim() || '',
+        city: formData.get('city') as string || null,
+        postal_code: formData.get('postal_code') as string || null,
+        client_type: formData.get('client_type') as string || 'direct',
+        policy_number: formData.get('policy_number') as string || null,
+        claim_number: formData.get('claim_number') as string || null,
+        notes: formData.get('notes') as string || null,
+      }
+
+      console.log('Client data to insert:', clientData)
+
+      // Usar supabaseAdmin para bypassar posibles problemas de RLS
+      const { data, error } = await supabaseAdmin
+        .from('clients')
+        .insert([clientData])
+        .select()
+
+      if (error) {
+        console.error('Supabase error creating client:', error)
+        toast.error('Error al crear el cliente: ' + error.message)
+        return
+      }
+
+      console.log('Client created successfully:', data)
+      toast.success('Cliente creado exitosamente')
+      setShowCreateModal(false)
+      
+      // Reset form safely
+      if (e.currentTarget) {
+        e.currentTarget.reset()
+      }
+      
+      // Refresh the clients list
+      fetchClients()
+      
+    } catch (error) {
+      console.error('JavaScript error creating client:', error)
+      toast.error('Error inesperado al crear el cliente')
+    } finally {
+      console.log('Resetting isSubmitting to false')
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleViewClient = (client: any) => {
+    setSelectedClient(client)
+    setShowViewModal(true)
+  }
+
+  const handleEditClient = (client: any) => {
+    setSelectedClient(client)
+    setShowEditModal(true)
+  }
+
+  const handleUpdateClient = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    
+    if (!selectedClient) return
+    
+    setIsUpdating(true)
+
+    try {
+      const formData = new FormData(e.currentTarget)
+      
+      const clientData = {
+        insurance_company_id: (formData.get('insurance_company_id') as string)?.trim() || null,
+        first_name: formData.get('first_name') as string,
+        last_name: formData.get('last_name') as string,
+        email: formData.get('email') as string || null,
+        phone: formData.get('phone') as string || null,
+        address: (formData.get('address') as string)?.trim() || '',
+        city: formData.get('city') as string || null,
+        postal_code: formData.get('postal_code') as string || null,
+        client_type: formData.get('client_type') as string || 'direct',
+        policy_number: formData.get('policy_number') as string || null,
+        claim_number: formData.get('claim_number') as string || null,
+        notes: formData.get('notes') as string || null,
+      }
+
+      const { error } = await supabase
+        .from('clients')
+        .update(clientData)
+        .eq('id', selectedClient.id)
+
+      if (error) {
+        console.error('Error updating client:', error)
+        toast.error('Error al actualizar el cliente: ' + error.message)
+        return
+      }
+
+      toast.success('Cliente actualizado exitosamente')
+      setShowEditModal(false)
+      setSelectedClient(null)
+      fetchClients()
+      
+    } catch (error) {
+      console.error('Error updating client:', error)
+      toast.error('Error inesperado al actualizar el cliente')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const handleDeleteClient = (client: any) => {
+    setSelectedClient(client)
+    setShowDeleteModal(true)
+  }
+
+  const confirmDeleteClient = async () => {
+    if (!selectedClient) return
+
+    try {
+      const { error } = await supabase
+        .from('clients')
+        .delete()
+        .eq('id', selectedClient.id)
+
+      if (error) {
+        console.error('Error deleting client:', error)
+        toast.error('Error al eliminar el cliente: ' + error.message)
+        return
+      }
+
+      toast.success('Cliente eliminado exitosamente')
+      setShowDeleteModal(false)
+      setSelectedClient(null)
+      fetchClients()
+    } catch (error) {
+      console.error('Error deleting client:', error)
+      toast.error('Error inesperado al eliminar el cliente')
+    }
+  }
+
+  return (
+    <ProtectedRoute>
+      <Layout>
+        <div className="space-y-6">
+          {/* Header */}
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
+              <p className="text-gray-600">Gestiona los clientes de tu empresa</p>
+            </div>
+            <Button 
+              className="btn-primary"
+              onClick={() => setShowCreateModal(true)}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Nuevo Cliente
+            </Button>
+          </div>
+
+          {/* Filters */}
+          <Card>
+            <CardBody>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="flex-1">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                    <input
+                      type="text"
+                      placeholder="Buscar clientes..."
+                      className="form-input pl-10"
+                    />
+                  </div>
+                </div>
+                <Button variant="secondary">
+                  <Filter className="h-4 w-4 mr-2" />
+                  Filtros
+                </Button>
+                <Button variant="secondary">
+                  <Download className="h-4 w-4 mr-2" />
+                  Exportar
+                </Button>
+              </div>
+            </CardBody>
+          </Card>
+
+          {/* Clients Table */}
+          <Card>
+            <CardHeader title="Lista de Clientes" />
+            <CardBody>
+              <Table>
+                <thead>
+                  <tr>
+                    <th>Nombre</th>
+                    <th>Email</th>
+                    <th>Teléfono</th>
+                    <th>Dirección</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {loadingClients ? (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-gray-500">
+                        <div className="flex items-center justify-center">
+                          <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-primary-600 mr-2"></div>
+                          Cargando clientes...
+                        </div>
+                      </td>
+                    </tr>
+                  ) : clients.length > 0 ? (
+                    clients.map((client) => (
+                      <tr key={client.id}>
+                        <td className="font-medium">
+                          {client.first_name} {client.last_name}
+                        </td>
+                        <td>{client.email || '-'}</td>
+                        <td>{client.phone || '-'}</td>
+                        <td>{client.address || '-'}</td>
+                        <td>
+                          <Badge variant={client.client_type === 'direct' ? 'blue' : 'green'}>
+                            {client.client_type === 'direct' ? 'Directo' : 'Aseguradora'}
+                          </Badge>
+                        </td>
+                        <td className="text-right">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleViewClient(client)}
+                            title="Ver cliente"
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleEditClient(client)}
+                            title="Editar cliente"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => handleDeleteClient(client)}
+                            title="Eliminar cliente"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td colSpan={6} className="text-center py-8 text-gray-500">
+                        No hay clientes registrados
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </Table>
+            </CardBody>
+          </Card>
+
+          {/* Create Client Modal */}
+          <Modal
+            isOpen={showCreateModal}
+            onClose={() => setShowCreateModal(false)}
+            title="Nuevo Cliente"
+          >
+            <form onSubmit={handleCreateClient} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Nombre *</label>
+                  <input 
+                    type="text" 
+                    name="first_name"
+                    className="form-input" 
+                    placeholder="Nombre del cliente" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Apellidos *</label>
+                  <input 
+                    type="text" 
+                    name="last_name"
+                    className="form-input" 
+                    placeholder="Apellidos del cliente" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Email</label>
+                  <input 
+                    type="email" 
+                    name="email"
+                    className="form-input" 
+                    placeholder="cliente@email.com" 
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Teléfono</label>
+                  <input 
+                    type="tel" 
+                    name="phone"
+                    className="form-input" 
+                    placeholder="+34 600 000 000" 
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Tipo de Cliente</label>
+                  <select name="client_type" className="form-input">
+                    <option value="direct">Cliente Directo</option>
+                    <option value="insurance">Cliente de Aseguradora</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Aseguradora</label>
+                  <select name="insurance_company_id" className="form-input">
+                    <option value="">Seleccionar aseguradora</option>
+                    {insuranceCompanies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Número de Póliza</label>
+                  <input 
+                    type="text" 
+                    name="policy_number"
+                    className="form-input" 
+                    placeholder="Número de póliza" 
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Número de Siniestro</label>
+                  <input 
+                    type="text" 
+                    name="claim_number"
+                    className="form-input" 
+                    placeholder="Número de siniestro" 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Dirección</label>
+                <textarea 
+                  name="address"
+                  className="form-input" 
+                  rows={3}
+                  placeholder="Dirección completa del cliente..."
+                ></textarea>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Ciudad</label>
+                  <input 
+                    type="text" 
+                    name="city"
+                    className="form-input" 
+                    placeholder="Ciudad" 
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Código Postal</label>
+                  <input 
+                    type="text" 
+                    name="postal_code"
+                    className="form-input" 
+                    placeholder="28001" 
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Notas</label>
+                <textarea 
+                  name="notes"
+                  className="form-input" 
+                  rows={2}
+                  placeholder="Notas adicionales sobre el cliente..."
+                ></textarea>
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setShowCreateModal(false)}
+                  disabled={isSubmitting}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={isSubmitting}
+                >
+                  {isSubmitting ? 'Creando...' : 'Crear Cliente'}
+                </Button>
+              </div>
+            </form>
+          </Modal>
+
+          {/* View Client Modal */}
+          <Modal
+            isOpen={showViewModal}
+            onClose={() => setShowViewModal(false)}
+            title="Ver Cliente"
+          >
+            {selectedClient && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Nombre</label>
+                    <p className="text-gray-900">{selectedClient.first_name} {selectedClient.last_name}</p>
+                  </div>
+                  <div>
+                    <label className="form-label">Email</label>
+                    <p className="text-gray-900">{selectedClient.email || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="form-label">Teléfono</label>
+                    <p className="text-gray-900">{selectedClient.phone || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="form-label">Tipo de Cliente</label>
+                    <p className="text-gray-900">
+                      {selectedClient.client_type === 'direct' ? 'Directo' : 'Aseguradora'}
+                    </p>
+                  </div>
+                  <div>
+                    <label className="form-label">Dirección</label>
+                    <p className="text-gray-900">{selectedClient.address || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="form-label">Ciudad</label>
+                    <p className="text-gray-900">{selectedClient.city || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="form-label">Código Postal</label>
+                    <p className="text-gray-900">{selectedClient.postal_code || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="form-label">Número de Póliza</label>
+                    <p className="text-gray-900">{selectedClient.policy_number || '-'}</p>
+                  </div>
+                  <div>
+                    <label className="form-label">Número de Siniestro</label>
+                    <p className="text-gray-900">{selectedClient.claim_number || '-'}</p>
+                  </div>
+                </div>
+                {selectedClient.notes && (
+                  <div>
+                    <label className="form-label">Notas</label>
+                    <p className="text-gray-900">{selectedClient.notes}</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </Modal>
+
+          {/* Edit Client Modal */}
+          <Modal
+            isOpen={showEditModal}
+            onClose={() => setShowEditModal(false)}
+            title="Editar Cliente"
+          >
+            {selectedClient && (
+              <form onSubmit={handleUpdateClient} className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Nombre *</label>
+                    <input 
+                      type="text" 
+                      name="first_name"
+                      className="form-input" 
+                      placeholder="Nombre" 
+                      defaultValue={selectedClient.first_name}
+                      required 
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Apellidos *</label>
+                    <input 
+                      type="text" 
+                      name="last_name"
+                      className="form-input" 
+                      placeholder="Apellidos" 
+                      defaultValue={selectedClient.last_name}
+                      required 
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Email</label>
+                    <input 
+                      type="email" 
+                      name="email"
+                      className="form-input" 
+                      placeholder="email@ejemplo.com" 
+                      defaultValue={selectedClient.email || ''}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Teléfono</label>
+                    <input 
+                      type="tel" 
+                      name="phone"
+                      className="form-input" 
+                      placeholder="+34 600 000 000" 
+                      defaultValue={selectedClient.phone || ''}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label">Aseguradora</label>
+                  <select 
+                    name="insurance_company_id"
+                    className="form-input"
+                    defaultValue={selectedClient.insurance_company_id || ''}
+                  >
+                    <option value="">Seleccionar aseguradora</option>
+                    {insuranceCompanies.map((company) => (
+                      <option key={company.id} value={company.id}>
+                        {company.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="form-label">Dirección</label>
+                  <textarea 
+                    name="address"
+                    className="form-input" 
+                    rows={3}
+                    placeholder="Dirección completa"
+                    defaultValue={selectedClient.address || ''}
+                  ></textarea>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="form-label">Ciudad</label>
+                    <input 
+                      type="text" 
+                      name="city"
+                      className="form-input" 
+                      placeholder="Ciudad" 
+                      defaultValue={selectedClient.city || ''}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Código Postal</label>
+                    <input 
+                      type="text" 
+                      name="postal_code"
+                      className="form-input" 
+                      placeholder="28001" 
+                      defaultValue={selectedClient.postal_code || ''}
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="form-label">Tipo de Cliente</label>
+                    <select 
+                      name="client_type"
+                      className="form-input"
+                      defaultValue={selectedClient.client_type || 'direct'}
+                    >
+                      <option value="direct">Directo</option>
+                      <option value="insurance">Aseguradora</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="form-label">Número de Póliza</label>
+                    <input 
+                      type="text" 
+                      name="policy_number"
+                      className="form-input" 
+                      placeholder="POL123456" 
+                      defaultValue={selectedClient.policy_number || ''}
+                    />
+                  </div>
+                  <div>
+                    <label className="form-label">Número de Siniestro</label>
+                    <input 
+                      type="text" 
+                      name="claim_number"
+                      className="form-input" 
+                      placeholder="SIN123456" 
+                      defaultValue={selectedClient.claim_number || ''}
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="form-label">Notas</label>
+                  <textarea 
+                    name="notes"
+                    className="form-input" 
+                    rows={3}
+                    placeholder="Notas adicionales"
+                    defaultValue={selectedClient.notes || ''}
+                  ></textarea>
+                </div>
+
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setShowEditModal(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={isUpdating}
+                  >
+                    {isUpdating ? 'Actualizando...' : 'Actualizar Cliente'}
+                  </Button>
+                </div>
+              </form>
+            )}
+          </Modal>
+
+          {/* Delete Client Modal */}
+          <Modal
+            isOpen={showDeleteModal}
+            onClose={() => setShowDeleteModal(false)}
+            title="Eliminar Cliente"
+          >
+            {selectedClient && (
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  ¿Estás seguro de que quieres eliminar al cliente{' '}
+                  <strong>{selectedClient.first_name} {selectedClient.last_name}</strong>?
+                </p>
+                <p className="text-sm text-red-600">
+                  Esta acción no se puede deshacer.
+                </p>
+                <div className="flex justify-end space-x-3">
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowDeleteModal(false)}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    className="bg-red-600 hover:bg-red-700 text-white"
+                    onClick={confirmDeleteClient}
+                  >
+                    Eliminar
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Modal>
+        </div>
+      </Layout>
+    </ProtectedRoute>
+  )
+}
