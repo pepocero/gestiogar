@@ -437,9 +437,9 @@ export default function InvoicesPage() {
       const { default: html2pdf } = await import('html2pdf.js')
       
       const opt = {
-        margin: [0.2, 0.2, 0.2, 0.2], // Márgenes muy pequeños
+        margin: [0.2, 0.2, 0.2, 0.2] as [number, number, number, number], // Márgenes muy pequeños
         filename: `factura_${invoice.invoice_number}.pdf`,
-        image: { type: 'jpeg', quality: 0.98 }, // Mayor calidad de imagen
+        image: { type: 'jpeg' as const, quality: 0.98 }, // Mayor calidad de imagen
         html2canvas: { 
           scale: 2, // Escala alta para mejor resolución
           useCORS: true,
@@ -458,7 +458,7 @@ export default function InvoicesPage() {
         jsPDF: { 
           unit: 'in', 
           format: 'a4', 
-          orientation: 'landscape'
+          orientation: 'landscape' as const
         }
       }
 
@@ -718,7 +718,9 @@ export default function InvoicesPage() {
 
           {/* Filters */}
           <Card>
-            <CardHeader title="Filtros" />
+            <CardHeader>
+              <h2 className="text-lg font-semibold">Filtros</h2>
+            </CardHeader>
             <CardBody>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4">
                 <div>
@@ -800,9 +802,11 @@ export default function InvoicesPage() {
 
           {/* Invoices Table */}
           <Card>
-            <CardHeader 
-              title={`Lista de Facturas (${filteredInvoices.length} de ${invoices.length})`} 
-            />
+            <CardHeader>
+              <h2 className="text-lg font-semibold">
+                Lista de Facturas ({filteredInvoices.length} de {invoices.length})
+              </h2>
+            </CardHeader>
             <CardBody>
               {loadingInvoices ? (
                 <div className="text-center py-8">

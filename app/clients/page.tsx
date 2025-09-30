@@ -31,8 +31,6 @@ export default function ClientsPage() {
     insurance_company_id: ''
   })
 
-  console.log('ClientsPage render - User:', user, 'Company:', company, 'Loading:', loading)
-
   // Cargar clientes al montar el componente
   React.useEffect(() => {
     if (company?.id) {
@@ -94,24 +92,15 @@ export default function ClientsPage() {
   const handleCreateClient = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     
-    console.log('Starting client creation...')
-    
     if (!company?.id) {
-      console.log('No company ID found')
       toast.error('No se pudo obtener la información de la empresa')
       return
     }
 
-    console.log('Company ID:', company.id)
     setIsSubmitting(true)
-
+    
     try {
       const formData = new FormData(e.currentTarget)
-      
-      console.log('Form data collected')
-      console.log('First name:', formData.get('first_name'))
-      console.log('Last name:', formData.get('last_name'))
-      console.log('Insurance company:', formData.get('insurance_company_id'))
       
       const clientData = {
         company_id: company.id,
@@ -129,8 +118,6 @@ export default function ClientsPage() {
         notes: formData.get('notes') as string || null,
       }
 
-      console.log('Client data to insert:', clientData)
-
       // Usar supabaseAdmin para bypassar posibles problemas de RLS
       const { data, error } = await supabaseAdmin
         .from('clients')
@@ -143,7 +130,6 @@ export default function ClientsPage() {
         return
       }
 
-      console.log('Client created successfully:', data)
       toast.success('Cliente creado exitosamente')
       setShowCreateModal(false)
       
@@ -159,7 +145,6 @@ export default function ClientsPage() {
       console.error('JavaScript error creating client:', error)
       toast.error('Error inesperado al crear el cliente')
     } finally {
-      console.log('Resetting isSubmitting to false')
       setIsSubmitting(false)
     }
   }
@@ -324,7 +309,9 @@ export default function ClientsPage() {
 
           {/* Clients Table */}
           <Card>
-            <CardHeader title="Lista de Clientes" />
+            <CardHeader>
+              <h2 className="text-lg font-semibold">Lista de Clientes</h2>
+            </CardHeader>
             <CardBody>
               <Table>
                 <thead>
@@ -357,13 +344,13 @@ export default function ClientsPage() {
                         <td>{client.phone || '-'}</td>
                         <td>{client.address || '-'}</td>
                         <td>
-                          <Badge variant={client.client_type === 'direct' ? 'blue' : 'green'}>
+                          <Badge variant={client.client_type === 'direct' ? 'info' : 'success'}>
                             {client.client_type === 'direct' ? 'Directo' : 'Aseguradora'}
                           </Badge>
                         </td>
                         <td className="text-right">
                           <Button 
-                            variant="ghost" 
+                            variant="outline" 
                             size="sm"
                             onClick={() => handleViewClient(client)}
                             title="Ver cliente"
@@ -371,7 +358,7 @@ export default function ClientsPage() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           <Button 
-                            variant="ghost" 
+                            variant="outline" 
                             size="sm"
                             onClick={() => handleEditClient(client)}
                             title="Editar cliente"
@@ -379,7 +366,7 @@ export default function ClientsPage() {
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button 
-                            variant="ghost" 
+                            variant="outline" 
                             size="sm"
                             onClick={() => handleDeleteClient(client)}
                             title="Eliminar cliente"
@@ -572,7 +559,7 @@ export default function ClientsPage() {
                         {selectedClient.first_name} {selectedClient.last_name}
                       </h2>
                       <div className="flex items-center space-x-2 mt-1">
-                        <Badge variant={selectedClient.client_type === 'direct' ? 'blue' : 'green'}>
+                        <Badge variant={selectedClient.client_type === 'direct' ? 'info' : 'success'}>
                           {selectedClient.client_type === 'direct' ? 'Cliente Directo' : 'Cliente de Aseguradora'}
                         </Badge>
                       </div>

@@ -9,9 +9,17 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'GestioGar - Gestión de Reparaciones del Hogar',
   description: 'Sistema multitenant para empresas de reparaciones del hogar que trabajan con aseguradoras',
-  icons: {
-    icon: '/favicon.ico',
-  },
+  icons: [
+    {
+      rel: 'icon',
+      type: 'image/png',
+      url: '/favicon.png',
+    },
+    {
+      rel: 'apple-touch-icon',
+      url: '/favicon.png',
+    },
+  ],
 }
 
 export default function RootLayout({
@@ -21,6 +29,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
+      <head>
+        <link rel="icon" type="image/png" href="/favicon.png" />
+        <link rel="apple-touch-icon" href="/favicon.png" />
+      </head>
       <body className={inter.className}>
         <AuthProvider>
           {children}

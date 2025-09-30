@@ -106,22 +106,22 @@ export default function DashboardPage() {
 
       // Calcular estadísticas
       const totalJobs = jobs.length
-      const pendingJobs = jobs.filter(j => j.status === 'pending' || j.status === 'scheduled').length
-      const completedJobs = jobs.filter(j => j.status === 'completed').length
+      const pendingJobs = jobs.filter((j: any) => j.status === 'pending' || j.status === 'scheduled').length
+      const completedJobs = jobs.filter((j: any) => j.status === 'completed').length
       
       const totalEstimates = estimates.length
-      const pendingEstimates = estimates.filter(e => e.status === 'draft' || e.status === 'sent').length
+      const pendingEstimates = estimates.filter((e: any) => e.status === 'draft' || e.status === 'sent').length
       
       const totalInvoices = invoices.length
-      const pendingInvoices = invoices.filter(i => i.status === 'sent' || i.status === 'draft').length
+      const pendingInvoices = invoices.filter((i: any) => i.status === 'sent' || i.status === 'draft').length
       
       const monthlyRevenue = invoices
-        .filter(i => i.paid_date && new Date(i.paid_date).getMonth() === new Date().getMonth())
-        .reduce((sum, i) => sum + (i.total_amount || 0), 0)
+        .filter((i: any) => i.paid_date && new Date(i.paid_date).getMonth() === new Date().getMonth())
+        .reduce((sum: number, i: any) => sum + (i.total_amount || 0), 0)
       
       const pendingPayments = invoices
-        .filter(i => i.status === 'sent')
-        .reduce((sum, i) => sum + (i.total_amount || 0), 0)
+        .filter((i: any) => i.status === 'sent')
+        .reduce((sum: number, i: any) => sum + (i.total_amount || 0), 0)
 
       setStats({
         totalJobs,
@@ -155,12 +155,12 @@ export default function DashboardPage() {
         .limit(5)
 
       if (recentJobsData) {
-        setRecentJobs(recentJobsData.map(job => ({
+        setRecentJobs(recentJobsData.map((job: any) => ({
           id: job.id,
           job_number: job.job_number,
           title: job.title,
           status: job.status,
-          client_name: `${job.clients.first_name} ${job.clients.last_name}`,
+          client_name: job.clients ? `${job.clients[0]?.first_name || ''} ${job.clients[0]?.last_name || ''}`.trim() : 'Sin cliente',
           scheduled_date: job.scheduled_date,
           priority: job.priority
         })))

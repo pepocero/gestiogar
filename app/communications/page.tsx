@@ -147,9 +147,9 @@ export default function CommunicationsPage() {
       }
 
       // Ordenar comunicaciones dentro de cada conversación por fecha
-      const conversationsWithOrderedComms = (data || []).map(conv => ({
+      const conversationsWithOrderedComms = (data || []).map((conv: any) => ({
         ...conv,
-        communications: conv.communications.sort((a: Communication, b: Communication) => 
+        communications: conv.communications.sort((a: Communication, b: Communication) =>
           new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
         )
       }))

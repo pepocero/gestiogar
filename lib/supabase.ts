@@ -6,8 +6,8 @@ const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 
 // Global instances to prevent multiple GoTrueClient instances
 declare global {
-  var __supabase: ReturnType<typeof createClient> | undefined
-  var __supabaseAdmin: ReturnType<typeof createClient> | undefined
+  var __supabase: any | undefined
+  var __supabaseAdmin: any | undefined
 }
 
 // Función para crear el cliente con configuración optimizada

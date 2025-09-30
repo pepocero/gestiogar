@@ -138,10 +138,11 @@ export default function SettingsPage() {
       }
 
       // Obtener URL firmada (con token) que expira en 1 año
-      const { data: { signedUrl } } = await supabase.storage
+      const { data: signedUrlData } = await supabase.storage
         .from('profile-photos')
         .createSignedUrl(filePath, 60 * 60 * 24 * 365) // 1 año
 
+      const signedUrl = signedUrlData?.signedUrl || null
       console.log('URL firmada del logo generada:', signedUrl)
       return signedUrl
     } catch (error) {

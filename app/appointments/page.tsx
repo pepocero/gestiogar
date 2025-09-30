@@ -12,7 +12,7 @@ import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, Clock, Map
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar'
+import { Calendar as BigCalendar, momentLocalizer, View } from 'react-big-calendar'
 import moment from 'moment'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import 'moment/locale/es'
@@ -81,7 +81,7 @@ export default function AppointmentsPage() {
 
   // Cargar datos al abrir el modal
   useEffect(() => {
-    if ((showCreateModal || showEditModal) && company?.id) {
+    if ((showCreateModal || showEditModal) && company?.id && (clients.length === 0 || technicians.length === 0)) {
       fetchClientsAndTechnicians()
     }
   }, [showCreateModal, showEditModal, company?.id])
@@ -217,7 +217,12 @@ export default function AppointmentsPage() {
     setShowViewModal(true)
   }
 
-  const handleEdit = (appointment: Appointment) => {
+  const handleEdit = async (appointment: Appointment) => {
+    // Primero, cargar clientes y técnicos si no están cargados
+    if (clients.length === 0 || technicians.length === 0) {
+      await fetchClientsAndTechnicians()
+    }
+    
     setSelectedAppointment(appointment)
     
     // Separar fecha y hora del timestamp
@@ -225,16 +230,20 @@ export default function AppointmentsPage() {
     const dateStr = scheduledDate.toISOString().split('T')[0]
     const timeStr = scheduledDate.toTimeString().slice(0, 5)
     
-    setFormData({
+    // Preparar datos del formulario
+    const formDataToSet = {
       client_id: appointment.client_id || '',
       technician_id: appointment.technician_id || '',
       scheduled_date: dateStr,
       scheduled_time: timeStr,
-      appointment_type: appointment.appointment_type || '',
+      appointment_type: appointment.appointment_type || 'inspection',
       estimated_duration: appointment.duration_minutes || 60,
       status: appointment.status || 'scheduled',
       notes: appointment.notes || '',
-    })
+    }
+    
+    // Setear datos y abrir modal
+    setFormData(formDataToSet)
     setShowEditModal(true)
   }
 
@@ -383,8 +392,8 @@ export default function AppointmentsPage() {
   }
 
   // Función para manejar cambio de vista
-  const handleViewChange = (view: 'month' | 'week' | 'day' | 'agenda') => {
-    setCurrentView(view)
+  const handleViewChange = (view: View) => {
+    setCurrentView(view as 'month' | 'week' | 'day' | 'agenda')
   }
 
   // Función para manejar navegación de fechas
@@ -510,22 +519,22 @@ export default function AppointmentsPage() {
                       dayFormat: 'dddd',
                       dayHeaderFormat: 'dddd, DD MMMM',
                       dayRangeHeaderFormat: ({ start, end }, culture, localizer) => 
-                        localizer.format(start, 'DD MMMM', culture) + ' – ' + 
-                        localizer.format(end, 'DD MMMM', culture),
+                        localizer?.format(start, 'DD MMMM', culture) + ' – ' + 
+                        localizer?.format(end, 'DD MMMM', culture),
                       monthHeaderFormat: 'MMMM YYYY',
                       agendaDateFormat: 'dddd, DD MMMM',
                       agendaTimeFormat: 'HH:mm',
                       agendaTimeRangeFormat: ({ start, end }, culture, localizer) =>
-                        localizer.format(start, 'HH:mm', culture) + ' – ' +
-                        localizer.format(end, 'HH:mm', culture),
+                        localizer?.format(start, 'HH:mm', culture) + ' – ' +
+                        localizer?.format(end, 'HH:mm', culture),
                       timeGutterFormat: 'HH:mm',
                       eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
-                        localizer.format(start, 'HH:mm', culture) + ' – ' +
-                        localizer.format(end, 'HH:mm', culture),
+                        localizer?.format(start, 'HH:mm', culture) + ' – ' +
+                        localizer?.format(end, 'HH:mm', culture),
                       eventTimeRangeStartFormat: ({ start }, culture, localizer) =>
-                        localizer.format(start, 'HH:mm', culture) + ' –',
+                        localizer?.format(start, 'HH:mm', culture) + ' –',
                       eventTimeRangeEndFormat: ({ end }, culture, localizer) =>
-                        '– ' + localizer.format(end, 'HH:mm', culture)
+                        '– ' + localizer?.format(end, 'HH:mm', culture)
                     }}
                   />
                 </div>
@@ -729,6 +738,7 @@ export default function AppointmentsPage() {
                   >
                     <option value="">Seleccionar tipo</option>
                     <option value="inspection">Inspección</option>
+                    <option value="revision">Revisión</option>
                     <option value="repair">Reparación</option>
                     <option value="maintenance">Mantenimiento</option>
                     <option value="installation">Instalación</option>
@@ -1035,6 +1045,7 @@ export default function AppointmentsPage() {
                   >
                     <option value="">Seleccionar tipo</option>
                     <option value="inspection">Inspección</option>
+                    <option value="revision">Revisión</option>
                     <option value="repair">Reparación</option>
                     <option value="maintenance">Mantenimiento</option>
                     <option value="installation">Instalación</option>

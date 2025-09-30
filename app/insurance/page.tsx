@@ -51,6 +51,7 @@ export default function InsurancePage() {
     api_endpoint: '',
     billing_terms: 30,
     is_active: true,
+    logo_url: '' as string | undefined
   })
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
@@ -331,6 +332,7 @@ export default function InsurancePage() {
       api_endpoint: company.api_endpoint,
       billing_terms: company.billing_terms,
       is_active: company.is_active,
+      logo_url: company.logo_url
     })
     // Limpiar estados de logo para edición
     setLogoFile(null)
@@ -378,6 +380,7 @@ export default function InsurancePage() {
       api_endpoint: '',
       billing_terms: 30,
       is_active: true,
+      logo_url: undefined
     })
     setLogoFile(null)
     setLogoPreview(null)

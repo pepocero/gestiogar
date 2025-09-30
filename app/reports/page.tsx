@@ -68,6 +68,7 @@ interface ChartData {
   name: string
   value: number
   color?: string
+  [key: string]: any
 }
 
 export default function ReportsPage() {
@@ -138,30 +139,30 @@ export default function ReportsPage() {
       const communications = communicationsResult.data || []
 
       // Calcular estadísticas
-      const totalRevenue = invoices.reduce((sum, invoice) => sum + (invoice.total || 0), 0)
-      const completedJobs = jobs.filter(job => job.status === 'completed').length
-      const pendingJobs = jobs.filter(job => job.status === 'pending').length
-      const activeClients = clients.filter(client => client.is_active).length
+      const totalRevenue = invoices.reduce((sum: number, invoice: any) => sum + (invoice.total || 0), 0)
+      const completedJobs = jobs.filter((job: any) => job.status === 'completed').length
+      const pendingJobs = jobs.filter((job: any) => job.status === 'pending').length
+      const activeClients = clients.filter((client: any) => client.is_active).length
 
       // Calcular ingresos del mes actual
       const currentMonth = new Date().getMonth()
       const currentYear = new Date().getFullYear()
       const monthlyRevenue = invoices
-        .filter(invoice => {
+        .filter((invoice: any) => {
           const invoiceDate = new Date(invoice.created_at)
           return invoiceDate.getMonth() === currentMonth && invoiceDate.getFullYear() === currentYear
         })
-        .reduce((sum, invoice) => sum + (invoice.total || 0), 0)
+        .reduce((sum: number, invoice: any) => sum + (invoice.total || 0), 0)
 
       // Calcular tasa de crecimiento (comparar con mes anterior)
       const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1
       const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear
       const lastMonthRevenue = invoices
-        .filter(invoice => {
+        .filter((invoice: any) => {
           const invoiceDate = new Date(invoice.created_at)
           return invoiceDate.getMonth() === lastMonth && invoiceDate.getFullYear() === lastMonthYear
         })
-        .reduce((sum, invoice) => sum + (invoice.total || 0), 0)
+        .reduce((sum: number, invoice: any) => sum + (invoice.total || 0), 0)
 
       const growthRate = lastMonthRevenue > 0 ? ((monthlyRevenue - lastMonthRevenue) / lastMonthRevenue) * 100 : 0
 
@@ -243,12 +244,12 @@ export default function ReportsPage() {
       const monthName = date.toLocaleDateString('es-ES', { month: 'short' })
       
       const monthRevenue = invoices
-        .filter(invoice => {
+        .filter((invoice: any) => {
           const invoiceDate = new Date(invoice.created_at)
           return invoiceDate.getMonth() === date.getMonth() && 
                  invoiceDate.getFullYear() === date.getFullYear()
         })
-        .reduce((sum, invoice) => sum + (invoice.total || 0), 0)
+        .reduce((sum: number, invoice: any) => sum + (invoice.total || 0), 0)
 
       monthlyData.push({
         name: monthName,
@@ -565,7 +566,7 @@ export default function ReportsPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent, value }) => 
+                        label={({ name, percent, value }: any) => 
                           value > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
                         }
                         outerRadius={80}
@@ -604,7 +605,7 @@ export default function ReportsPage() {
                         cx="50%"
                         cy="50%"
                         labelLine={false}
-                        label={({ name, percent, value }) => 
+                        label={({ name, percent, value }: any) => 
                           value > 0 ? `${name} ${(percent * 100).toFixed(0)}%` : ''
                         }
                         outerRadius={80}

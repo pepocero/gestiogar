@@ -50,7 +50,6 @@ export default function TechniciansPage() {
         return
       }
 
-      console.log('Técnicos cargados:', data)
       setTechnicians(data || [])
     } catch (error) {
       console.error('Error fetching technicians:', error)

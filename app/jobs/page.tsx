@@ -277,7 +277,7 @@ export default function JobsPage() {
         client_id: formData.client_id && formData.client_id.trim() !== '' ? formData.client_id : null,
         technician_id: formData.technician_id && formData.technician_id.trim() !== '' ? formData.technician_id : null,
         insurance_company_id: formData.insurance_company_id && formData.insurance_company_id.trim() !== '' ? formData.insurance_company_id : null,
-        estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours) : null,
+        estimated_hours: formData.estimated_hours ? parseFloat(formData.estimated_hours.toString()) : null,
       }
 
       if (editingJob) {
