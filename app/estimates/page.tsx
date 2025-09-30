@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
-import { Plus, Edit, Trash2, FileText, Eye, Send, Check, X, User, Mail, Wrench } from 'lucide-react'
+import { Plus, Edit, Trash2, FileText, Eye, Send, Check, X, User, Mail, Wrench, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -654,106 +654,76 @@ export default function EstimatesPage() {
           </CardHeader>
           <CardBody>
             {filteredEstimates.length > 0 ? (
-              <Table>
-                <TableBody>
-                  {filteredEstimates.map((estimate) => (
-                    <TableRow key={estimate.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <FileText className="h-4 w-4 text-primary-600" />
-                          <span className="font-mono text-sm">
-                            {estimate.estimate_number}
-                          </span>
+              <div className="space-y-4">
+                {filteredEstimates.map((estimate) => (
+                  <div key={estimate.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Izquierda: Número, título y cliente */}
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-700 flex items-center justify-center shadow-sm flex-shrink-0">
+                          <FileText className="h-5 w-5" />
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {estimate.title}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">{estimate.estimate_number}</span>
+                            <select
+                              value={estimate.status}
+                              onChange={(e) => handleStatusChange(estimate.id, e.target.value)}
+                              className={`text-xs px-3 py-1 rounded-full border-0 font-medium cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[110px] ${
+                                estimate.status === 'draft'
+                                  ? 'bg-gray-100 text-gray-800 focus:ring-gray-500'
+                                  : estimate.status === 'sent'
+                                  ? 'bg-blue-100 text-blue-800 focus:ring-blue-500'
+                                  : estimate.status === 'approved'
+                                  ? 'bg-green-100 text-green-800 focus:ring-green-500'
+                                  : 'bg-red-100 text-red-800 focus:ring-red-500'
+                              }`}
+                            >
+                              <option value="draft">Borrador</option>
+                              <option value="sent">Enviado</option>
+                              <option value="approved">Aprobado</option>
+                              <option value="rejected">Rechazado</option>
+                            </select>
                           </div>
+                          <h4 className="mt-1 text-base font-semibold text-gray-900 truncate">{estimate.title}</h4>
                           {estimate.description && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {estimate.description}
-                            </div>
+                            <p className="text-sm text-gray-500 line-clamp-2 max-w-prose">{estimate.description}</p>
                           )}
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {estimate.clients.first_name} {estimate.clients.last_name}
+                          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <User className="h-4 w-4 text-gray-400" />
+                              <span className="truncate">{estimate.clients.first_name} {estimate.clients.last_name}</span>
+                            </div>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <Calendar className="h-4 w-4 text-gray-400" />
+                              <span className="truncate">Válido hasta: {estimate.valid_until ? format(new Date(estimate.valid_until), 'dd/MM/yyyy', { locale: es }) : '-'}</span>
+                            </div>
                           </div>
-                          <div className="text-sm text-gray-500">
-                            {estimate.clients.email}
-                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="font-semibold">
-                          €{estimate.total_amount.toLocaleString()}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <select
-                          value={estimate.status}
-                          onChange={(e) => handleStatusChange(estimate.id, e.target.value)}
-                          className={`text-xs px-3 py-1 rounded-full border-0 font-medium cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[100px] max-w-[120px] ${
-                            estimate.status === 'draft' 
-                              ? 'bg-gray-100 text-gray-800 focus:ring-gray-500' 
-                              : estimate.status === 'sent' 
-                              ? 'bg-blue-100 text-blue-800 focus:ring-blue-500'
-                              : estimate.status === 'approved' 
-                              ? 'bg-green-100 text-green-800 focus:ring-green-500'
-                              : 'bg-red-100 text-red-800 focus:ring-red-500'
-                          }`}
-                        >
-                          <option value="draft">Borrador</option>
-                          <option value="sent">Enviado</option>
-                          <option value="approved">Aprobado</option>
-                          <option value="rejected">Rechazado</option>
-                        </select>
-                      </TableCell>
-                      <TableCell>
-                        {estimate.valid_until ? (
-                          <span className="text-sm">
-                            {format(new Date(estimate.valid_until), 'dd/MM/yyyy', { locale: es })}
-                          </span>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleView(estimate)}
-                            title="Ver presupuesto"
-                          >
+                      </div>
+
+                      {/* Derecha: Importe y acciones */}
+                      <div className="flex flex-col items-end gap-3 flex-shrink-0">
+                        <div className="text-right">
+                          <div className="text-xs text-gray-500">Importe total</div>
+                          <div className="text-lg font-semibold text-gray-900">€{estimate.total_amount.toLocaleString()}</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleView(estimate)} title="Ver presupuesto">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(estimate)}
-                            title="Editar presupuesto"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(estimate)} title="Editar presupuesto">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(estimate.id)}
-                            title="Eliminar presupuesto"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleDelete(estimate.id)} title="Eliminar presupuesto">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : estimates.length === 0 ? (
               <div className="text-center py-12">
                 <FileText className="mx-auto h-12 w-12 text-gray-400" />

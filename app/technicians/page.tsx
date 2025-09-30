@@ -716,11 +716,11 @@ export default function TechniciansPage() {
                 <label className="form-label">Foto de Perfil (Opcional)</label>
                 <div className="space-y-4">
                   {/* Preview de la foto */}
-                  {(profilePhotoPreview || selectedTechnician?.profile_photo_url) && (
+                  {profilePhotoPreview && (
                     <div className="flex items-center space-x-4">
                       <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200">
                         <img 
-                          src={profilePhotoPreview || selectedTechnician?.profile_photo_url} 
+                          src={profilePhotoPreview} 
                           alt="Preview" 
                           className="w-full h-full object-cover"
                         />

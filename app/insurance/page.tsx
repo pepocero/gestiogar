@@ -25,6 +25,7 @@ interface InsuranceCompany {
   api_endpoint: string
   billing_terms: number
   is_active: boolean
+  logo_url?: string
   created_at: string
   updated_at: string
 }
@@ -50,12 +51,25 @@ export default function InsurancePage() {
     billing_terms: 30,
     is_active: true,
   })
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [filters, setFilters] = useState({
+    search: '',
+    status: 'all' // 'all', 'active', 'inactive'
+  })
+  const [filteredCompanies, setFilteredCompanies] = useState<InsuranceCompany[]>([])
 
   useEffect(() => {
     if (company) {
       loadInsuranceCompanies()
     }
   }, [company])
+
+  // Aplicar filtros cuando cambien las aseguradoras o los filtros
+  useEffect(() => {
+    applyFilters()
+  }, [insuranceCompanies, filters])
 
   const loadInsuranceCompanies = async () => {
     try {
@@ -79,6 +93,47 @@ export default function InsurancePage() {
     }
   }
 
+  // Función para aplicar filtros
+  const applyFilters = () => {
+    let filtered = [...insuranceCompanies]
+
+    // Filtro de búsqueda
+    if (filters.search) {
+      const searchTerm = filters.search.toLowerCase()
+      filtered = filtered.filter(company => 
+        company.name.toLowerCase().includes(searchTerm) ||
+        company.contact_person?.toLowerCase().includes(searchTerm) ||
+        company.email?.toLowerCase().includes(searchTerm) ||
+        company.phone?.toLowerCase().includes(searchTerm)
+      )
+    }
+
+    // Filtro de estado
+    if (filters.status !== 'all') {
+      filtered = filtered.filter(company => 
+        filters.status === 'active' ? company.is_active : !company.is_active
+      )
+    }
+
+    setFilteredCompanies(filtered)
+  }
+
+  // Función para manejar cambios en los filtros
+  const handleFilterChange = (name: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
+  // Función para limpiar filtros
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      status: 'all'
+    })
+  }
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type, checked } = e.target
     setFormData(prev => ({
@@ -87,17 +142,125 @@ export default function InsurancePage() {
     }))
   }
 
+  // Función para manejar la selección de logo
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor selecciona un archivo de imagen válido')
+        return
+      }
+      
+      // Validar tamaño (2MB máximo)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('La imagen debe ser menor a 2MB')
+        return
+      }
+      
+      setLogoFile(file)
+      
+      // Crear preview
+      const reader = new FileReader()
+      reader.onload = (e) => {
+        setLogoPreview(e.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
+  // Función para subir logo a Supabase Storage
+  const uploadLogo = async (file: File, companyName: string): Promise<string> => {
+    if (!company) throw new Error('No hay información de empresa')
+    
+    const fileExtension = file.name.split('.').pop()
+    const fileName = `${companyName.replace(/[^a-zA-Z0-9]/g, '')}_logo.${fileExtension}`
+    const filePath = `logo/${company.id}/${fileName}`
+    
+    console.log('Subiendo logo:', {
+      fileName,
+      filePath,
+      fileSize: file.size,
+      fileType: file.type,
+      companyId: company.id
+    })
+    
+    const { data, error } = await supabase.storage
+      .from('profile-photos')
+      .upload(filePath, file, {
+        upsert: true,
+        contentType: file.type
+      })
+    
+    if (error) {
+      console.error('Error subiendo logo:', error)
+      throw error
+    }
+    
+    console.log('Logo subido exitosamente:', data)
+    
+    // Crear URL firmada con expiración de 1 año
+    const { data: signedUrlData } = await supabase.storage
+      .from('profile-photos')
+      .createSignedUrl(filePath, 365 * 24 * 60 * 60) // 1 año
+    
+    if (!signedUrlData?.signedUrl) {
+      throw new Error('No se pudo crear la URL firmada')
+    }
+    
+    console.log('URL firmada creada:', signedUrlData.signedUrl)
+    return signedUrlData.signedUrl
+  }
+
+  // Función para eliminar logo del storage
+  const deleteLogoFromStorage = async (logoUrl: string) => {
+    try {
+      // Extraer el path del archivo de la URL
+      let filePath = ''
+      if (logoUrl.includes('/storage/v1/object/public/profile-photos/')) {
+        filePath = logoUrl.split('/storage/v1/object/public/profile-photos/')[1]
+      } else if (logoUrl.includes('/storage/v1/object/sign/profile-photos/')) {
+        filePath = logoUrl.split('/storage/v1/object/sign/profile-photos/')[1].split('?')[0]
+      }
+      
+      if (filePath) {
+        await supabase.storage
+          .from('profile-photos')
+          .remove([filePath])
+      }
+    } catch (error) {
+      console.error('Error eliminando logo del storage:', error)
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!company) return
 
     try {
+      let logoUrl = null
+      
+      // Subir logo si se seleccionó uno
+      if (logoFile) {
+        setUploadingLogo(true)
+        logoUrl = await uploadLogo(logoFile, formData.name)
+      }
+      
       if (editingCompany) {
         // Actualizar aseguradora existente
+        const updateData = { ...formData }
+        if (logoUrl) {
+          // Eliminar logo anterior si existe
+          if (editingCompany.logo_url) {
+            await deleteLogoFromStorage(editingCompany.logo_url)
+          }
+          updateData.logo_url = logoUrl
+        }
+        
         const { error } = await supabase
           .from('insurance_companies')
-          .update(formData)
+          .update(updateData)
           .eq('id', editingCompany.id)
 
         if (error) {
@@ -111,6 +274,7 @@ export default function InsurancePage() {
           .from('insurance_companies')
           .insert([{
             ...formData,
+            logo_url: logoUrl,
             company_id: company.id
           }])
 
@@ -128,6 +292,8 @@ export default function InsurancePage() {
     } catch (error) {
       console.error('Error saving insurance company:', error)
       toast.error('Error al guardar la aseguradora')
+    } finally {
+      setUploadingLogo(false)
     }
   }
 
@@ -149,6 +315,10 @@ export default function InsurancePage() {
       billing_terms: company.billing_terms,
       is_active: company.is_active,
     })
+    // Limpiar estados de logo para edición
+    setLogoFile(null)
+    setLogoPreview(null)
+    setUploadingLogo(false)
     setShowModal(true)
   }
 
@@ -192,6 +362,9 @@ export default function InsurancePage() {
       billing_terms: 30,
       is_active: true,
     })
+    setLogoFile(null)
+    setLogoPreview(null)
+    setUploadingLogo(false)
   }
 
   const handleNewCompany = () => {
@@ -230,97 +403,181 @@ export default function InsurancePage() {
           </Button>
         </div>
 
+        {/* Filtros */}
+        <Card>
+          <CardHeader>
+            <h3 className="text-lg font-medium text-gray-900">Filtros</h3>
+          </CardHeader>
+          <CardBody>
+            <div className="flex flex-col sm:flex-row gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <input
+                    type="text"
+                    placeholder="Buscar por nombre, contacto, email o teléfono..."
+                    value={filters.search}
+                    onChange={(e) => handleFilterChange('search', e.target.value)}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                    <svg className="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="sm:w-48">
+                <select
+                  value={filters.status}
+                  onChange={(e) => handleFilterChange('status', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="all">Todos los estados</option>
+                  <option value="active">Solo activas</option>
+                  <option value="inactive">Solo inactivas</option>
+                </select>
+              </div>
+              
+              <div className="sm:w-auto">
+                <Button
+                  variant="outline"
+                  onClick={clearFilters}
+                  className="w-full sm:w-auto"
+                >
+                  Limpiar filtros
+                </Button>
+              </div>
+            </div>
+          </CardBody>
+        </Card>
+
         {/* Lista de aseguradoras */}
         <Card>
           <CardHeader>
             <h3 className="text-lg font-medium text-gray-900">
-              Lista de Aseguradoras ({insuranceCompanies.length})
+              Lista de Aseguradoras ({filteredCompanies.length} de {insuranceCompanies.length})
             </h3>
           </CardHeader>
           <CardBody>
             {insuranceCompanies.length > 0 ? (
-              <Table>
-                <TableBody>
-                  {insuranceCompanies.map((company) => (
-                    <TableRow key={company.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-3">
-                          <Building2 className="h-5 w-5 text-primary-600" />
-                          <div>
-                            <div className="font-medium text-gray-900">
+              <div className="space-y-4">
+                {filteredCompanies.length > 0 ? (
+                  filteredCompanies.map((company) => (
+                  <div key={company.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start space-x-4">
+                      {/* Logo/Foto de la aseguradora */}
+                      <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
+                        {company.logo_url ? (
+                          <img 
+                            src={company.logo_url} 
+                            alt={company.name}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <Building2 className="h-8 w-8 text-white" />
+                        )}
+                      </div>
+                      
+                      {/* Información de la aseguradora */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <h3 className="text-lg font-semibold text-gray-900 mb-1">
                               {company.name}
-                            </div>
-                            {company.contact_person && (
-                              <div className="text-sm text-gray-500">
-                                {company.contact_person}
+                            </h3>
+                            
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                              {company.contact_person && (
+                                <div className="flex items-center space-x-2">
+                                  <span className="font-medium">Contacto:</span>
+                                  <span>{company.contact_person}</span>
+                                </div>
+                              )}
+                              
+                              {company.email && (
+                                <div className="flex items-center space-x-2">
+                                  <Mail className="h-4 w-4 text-gray-400" />
+                                  <span>{company.email}</span>
+                                </div>
+                              )}
+                              
+                              {company.phone && (
+                                <div className="flex items-center space-x-2">
+                                  <Phone className="h-4 w-4 text-gray-400" />
+                                  <span>{company.phone}</span>
+                                </div>
+                              )}
+                              
+                              <div className="flex items-center space-x-2">
+                                <Clock className="h-4 w-4 text-gray-400" />
+                                <span>{company.billing_terms} días de pago</span>
                               </div>
-                            )}
+                              
+                              {company.address && (
+                                <div className="flex items-center space-x-2 md:col-span-2">
+                                  <MapPin className="h-4 w-4 text-gray-400" />
+                                  <span className="truncate">{company.address}</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                          
+                          {/* Estado y acciones */}
+                          <div className="flex flex-col items-end space-y-2 ml-4">
+                            <Badge variant={company.is_active ? 'success' : 'danger'}>
+                              {company.is_active ? 'Activa' : 'Inactiva'}
+                            </Badge>
+                            
+                            <div className="flex items-center space-x-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleView(company)}
+                                title="Ver detalles"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleEdit(company)}
+                                title="Editar aseguradora"
+                              >
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleDelete(company)}
+                                title="Eliminar aseguradora"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        {company.contact_person || '-'}
-                      </TableCell>
-                      <TableCell>
-                        {company.email ? (
-                          <div className="flex items-center space-x-1">
-                            <Mail className="h-4 w-4 text-gray-400" />
-                            <span>{company.email}</span>
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {company.phone ? (
-                          <div className="flex items-center space-x-1">
-                            <Phone className="h-4 w-4 text-gray-400" />
-                            <span>{company.phone}</span>
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {company.billing_terms} días
-                      </TableCell>
-                      <TableCell>
-                        <Badge variant={company.is_active ? 'success' : 'danger'}>
-                          {company.is_active ? 'Activa' : 'Inactiva'}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleView(company)}
-                            title="Ver detalles"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(company)}
-                            title="Editar"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(company)}
-                            title="Eliminar"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  </div>
+                ))
+                ) : (
+                  <div className="text-center py-12">
+                    <Building2 className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">
+                      No se encontraron aseguradoras
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-500">
+                      Intenta ajustar los filtros de búsqueda.
+                    </p>
+                    <div className="mt-6">
+                      <Button onClick={clearFilters}>
+                        Limpiar filtros
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             ) : (
               <div className="text-center py-12">
                 <Building2 className="mx-auto h-12 w-12 text-gray-400" />
@@ -430,6 +687,50 @@ export default function InsurancePage() {
                 onChange={handleInputChange}
               />
             </div>
+
+            {/* Logo de la aseguradora */}
+            <div className="md:col-span-2">
+              <label className="form-label">Logo de la Aseguradora (Opcional)</label>
+              <div className="space-y-4">
+                {/* Preview del logo actual o seleccionado */}
+                {(logoPreview || editingCompany?.logo_url) && (
+                  <div className="flex items-center space-x-4">
+                    <div className="w-20 h-20 rounded-lg overflow-hidden border-2 border-gray-200">
+                      <img 
+                        src={logoPreview || editingCompany?.logo_url} 
+                        alt="Preview" 
+                        className="w-full h-full object-cover"
+                      />
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        setLogoFile(null)
+                        setLogoPreview(null)
+                      }}
+                      className="text-red-600 hover:text-red-700"
+                    >
+                      Eliminar
+                    </Button>
+                  </div>
+                )}
+                
+                {/* Input de archivo */}
+                <div>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleLogoSelect}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                  />
+                  <p className="mt-1 text-xs text-gray-500">
+                    Formatos: JPG, PNG, GIF. Tamaño máximo: 2MB
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
           <div className="flex items-center">
@@ -454,8 +755,11 @@ export default function InsurancePage() {
             >
               Cancelar
             </Button>
-            <Button type="submit">
-              {editingCompany ? 'Actualizar' : 'Crear'} Aseguradora
+            <Button 
+              type="submit"
+              disabled={uploadingLogo}
+            >
+              {uploadingLogo ? 'Subiendo logo...' : (editingCompany ? 'Actualizar' : 'Crear') + ' Aseguradora'}
             </Button>
           </div>
         </form>
@@ -473,8 +777,16 @@ export default function InsurancePage() {
             {/* Header con nombre y estado */}
             <div className="flex items-start justify-between">
               <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg">
-                  <Building2 className="h-8 w-8 text-white" />
+                <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                  {viewingCompany.logo_url ? (
+                    <img 
+                      src={viewingCompany.logo_url} 
+                      alt={viewingCompany.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Building2 className="h-8 w-8 text-white" />
+                  )}
                 </div>
                 <div>
                   <h2 className="text-2xl font-bold text-gray-900">{viewingCompany.name}</h2>

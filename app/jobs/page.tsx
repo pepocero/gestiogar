@@ -622,128 +622,83 @@ export default function JobsPage() {
           </CardHeader>
           <CardBody>
             {filteredJobs.length > 0 ? (
-              <Table>
-                <TableBody>
-                  {filteredJobs.map((job) => (
-                    <TableRow key={job.id}>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Wrench className="h-4 w-4 text-primary-600" />
-                          <span className="font-mono text-sm">
-                            {job.job_number}
-                          </span>
+              <div className="space-y-4">
+                {filteredJobs.map((job) => (
+                  <div key={job.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                    <div className="flex items-start justify-between gap-4">
+                      {/* Izquierda: Número y título */}
+                      <div className="flex items-start gap-4 min-w-0">
+                        <div className="w-10 h-10 rounded-lg bg-primary-50 text-primary-700 flex items-center justify-center shadow-sm flex-shrink-0">
+                          <Wrench className="h-5 w-5" />
                         </div>
-                      </TableCell>
-                      <TableCell>
-                        <div>
-                          <div className="font-medium text-gray-900">
-                            {job.title}
+                        <div className="min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-xs px-2 py-0.5 bg-gray-100 text-gray-700 rounded">{job.job_number}</span>
+                            {getJobTypeBadge(job.job_type)}
+                            {getPriorityBadge(job.priority)}
                           </div>
+                          <h4 className="mt-1 text-base font-semibold text-gray-900 truncate">{job.title}</h4>
                           {job.description && (
-                            <div className="text-sm text-gray-500 truncate max-w-xs">
-                              {job.description}
-                            </div>
+                            <p className="text-sm text-gray-500 line-clamp-2 max-w-prose">{job.description}</p>
                           )}
+                          <div className="mt-2 grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
+                            <div className="flex items-center gap-2 min-w-0">
+                              <User className="h-4 w-4 text-gray-400" />
+                              <span className="truncate">{job.technicians ? `${job.technicians.first_name} ${job.technicians.last_name}` : 'Sin asignar'}</span>
+                            </div>
+                            <div className="flex items-center gap-2 min-w-0">
+                              <MapPin className="h-4 w-4 text-gray-400" />
+                              <span className="truncate">{job.clients?.address}</span>
+                            </div>
+                          </div>
                         </div>
-                      </TableCell>
-                      <TableCell>
+                      </div>
+
+                      {/* Derecha: Estado, fecha y acciones */}
+                      <div className="flex flex-col items-end gap-3 flex-shrink-0">
                         <div>
-                          <div className="font-medium text-gray-900">
-                            {job.clients.first_name} {job.clients.last_name}
-                          </div>
-                          <div className="text-sm text-gray-500 flex items-center space-x-1">
-                            <MapPin className="h-3 w-3" />
-                            <span className="truncate max-w-xs">
-                              {job.clients.address}
-                            </span>
-                          </div>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        {job.technicians ? (
-                          <div className="flex items-center space-x-1">
-                            <User className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm">
-                              {job.technicians.first_name} {job.technicians.last_name}
-                            </span>
-                          </div>
-                        ) : (
-                          <span className="text-sm text-gray-500">Sin asignar</span>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {getJobTypeBadge(job.job_type)}
-                      </TableCell>
-                      <TableCell>
-                        {getPriorityBadge(job.priority)}
-                      </TableCell>
-                      <TableCell>
-                        <select
-                          value={job.status}
-                          onChange={(e) => handleStatusChange(job.id, e.target.value)}
-                          className={`text-xs px-3 py-1 rounded-full border-0 font-medium cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[100px] max-w-[120px] ${
-                            job.status === 'pending' 
-                              ? 'bg-yellow-100 text-yellow-800 focus:ring-yellow-500' 
-                              : job.status === 'scheduled' 
-                              ? 'bg-blue-100 text-blue-800 focus:ring-blue-500'
-                              : job.status === 'in_progress' 
-                              ? 'bg-indigo-100 text-indigo-800 focus:ring-indigo-500'
-                              : job.status === 'completed' 
-                              ? 'bg-green-100 text-green-800 focus:ring-green-500'
-                              : 'bg-red-100 text-red-800 focus:ring-red-500'
-                          }`}
-                        >
-                          <option value="pending">Pendiente</option>
-                          <option value="scheduled">Programado</option>
-                          <option value="in_progress">En Progreso</option>
-                          <option value="completed">Completado</option>
-                          <option value="cancelled">Cancelado</option>
-                        </select>
-                      </TableCell>
-                      <TableCell>
-                        {job.scheduled_date ? (
-                          <div className="flex items-center space-x-1">
-                            <Calendar className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm">
-                              {format(new Date(job.scheduled_date), 'dd/MM/yyyy', { locale: es })}
-                            </span>
-                          </div>
-                        ) : (
-                          '-'
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex items-center space-x-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleView(job)}
-                            title="Ver trabajo"
+                          <select
+                            value={job.status}
+                            onChange={(e) => handleStatusChange(job.id, e.target.value)}
+                            className={`text-xs px-3 py-1 rounded-full border-0 font-medium cursor-pointer transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-1 min-w-[110px] ${
+                              job.status === 'pending'
+                                ? 'bg-yellow-100 text-yellow-800 focus:ring-yellow-500'
+                                : job.status === 'scheduled'
+                                ? 'bg-blue-100 text-blue-800 focus:ring-blue-500'
+                                : job.status === 'in_progress'
+                                ? 'bg-indigo-100 text-indigo-800 focus:ring-indigo-500'
+                                : job.status === 'completed'
+                                ? 'bg-green-100 text-green-800 focus:ring-green-500'
+                                : 'bg-red-100 text-red-800 focus:ring-red-500'
+                            }`}
                           >
+                            <option value="pending">Pendiente</option>
+                            <option value="scheduled">Programado</option>
+                            <option value="in_progress">En Progreso</option>
+                            <option value="completed">Completado</option>
+                            <option value="cancelled">Cancelado</option>
+                          </select>
+                        </div>
+                        <div className="flex items-center gap-2 text-sm text-gray-600">
+                          <Calendar className="h-4 w-4 text-gray-400" />
+                          <span>{job.scheduled_date ? format(new Date(job.scheduled_date), 'dd/MM/yyyy', { locale: es }) : '-'}</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Button variant="outline" size="sm" onClick={() => handleView(job)} title="Ver trabajo">
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleEdit(job)}
-                            title="Editar trabajo"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleEdit(job)} title="Editar trabajo">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDelete(job)}
-                            title="Eliminar trabajo"
-                          >
+                          <Button variant="outline" size="sm" onClick={() => handleDelete(job)} title="Eliminar trabajo">
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             ) : jobs.length === 0 ? (
               <div className="text-center py-12">
                 <Wrench className="mx-auto h-12 w-12 text-gray-400" />
