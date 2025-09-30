@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
+import { ImageEditor } from '@/components/ui/ImageEditor'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, User, MapPin, Clock, CheckCircle, XCircle, DollarSign, Wrench, Camera, Upload, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
@@ -28,6 +29,8 @@ export default function TechniciansPage() {
   const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null)
   const [uploadingPhoto, setUploadingPhoto] = useState(false)
   const [removingPhoto, setRemovingPhoto] = useState(false)
+  const [showImageEditor, setShowImageEditor] = useState(false)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
 
   // Función para cargar técnicos
   const fetchTechnicians = async () => {
@@ -295,15 +298,29 @@ export default function TechniciansPage() {
         return
       }
       
-      setProfilePhoto(file)
-      
-      // Crear preview
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setProfilePhotoPreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+      // Abrir editor de imagen
+      setSelectedImageFile(file)
+      setShowImageEditor(true)
     }
+  }
+
+  const handleImageEditorSave = (croppedImageBlob: Blob) => {
+    // Convertir blob a File
+    const croppedFile = new File([croppedImageBlob], 'technician-photo.jpg', {
+      type: 'image/jpeg'
+    })
+    
+    setProfilePhoto(croppedFile)
+    
+    // Crear preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setProfilePhotoPreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(croppedFile)
+    
+    setShowImageEditor(false)
+    setSelectedImageFile(null)
   }
 
   // Función para subir foto de perfil a Supabase Storage
@@ -1159,6 +1176,22 @@ export default function TechniciansPage() {
             )}
           </Modal>
         </div>
+
+        {/* Editor de Imagen */}
+        {selectedImageFile && (
+          <ImageEditor
+            isOpen={showImageEditor}
+            onClose={() => {
+              setShowImageEditor(false)
+              setSelectedImageFile(null)
+            }}
+            onSave={handleImageEditorSave}
+            imageFile={selectedImageFile}
+            aspectRatio={1}
+            title="Editar Foto de Perfil del Técnico"
+            circular={true}
+          />
+        )}
       </Layout>
     </ProtectedRoute>
   )

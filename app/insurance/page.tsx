@@ -8,6 +8,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { ImageEditor } from '@/components/ui/ImageEditor'
 import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { supabase } from '@/lib/supabase'
@@ -53,6 +54,8 @@ export default function InsurancePage() {
   })
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [showImageEditor, setShowImageEditor] = useState(false)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
   const [filters, setFilters] = useState({
     search: '',
@@ -158,15 +161,29 @@ export default function InsurancePage() {
         return
       }
       
-      setLogoFile(file)
-      
-      // Crear preview
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+      // Abrir editor de imagen
+      setSelectedImageFile(file)
+      setShowImageEditor(true)
     }
+  }
+
+  const handleImageEditorSave = (croppedImageBlob: Blob) => {
+    // Convertir blob a File
+    const croppedFile = new File([croppedImageBlob], 'insurance-logo.jpg', {
+      type: 'image/jpeg'
+    })
+    
+    setLogoFile(croppedFile)
+    
+    // Crear preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setLogoPreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(croppedFile)
+    
+    setShowImageEditor(false)
+    setSelectedImageFile(null)
   }
 
   // Función para subir logo a Supabase Storage
@@ -979,6 +996,22 @@ export default function InsurancePage() {
           </div>
         )}
       </Modal>
+
+      {/* Editor de Imagen */}
+      {selectedImageFile && (
+        <ImageEditor
+          isOpen={showImageEditor}
+          onClose={() => {
+            setShowImageEditor(false)
+            setSelectedImageFile(null)
+          }}
+          onSave={handleImageEditorSave}
+          imageFile={selectedImageFile}
+          aspectRatio={1}
+          title="Editar Logo de Aseguradora"
+          circular={false}
+        />
+      )}
       </Layout>
     </ProtectedRoute>
   )

@@ -19,7 +19,9 @@ function createSupabaseClient(url: string, key: string, options: any) {
       // Configuración adicional para evitar múltiples instancias
       storage: typeof window !== 'undefined' ? window.localStorage : undefined,
       storageKey: 'supabase.auth.token',
-      flowType: 'pkce'
+      flowType: 'pkce',
+      // Evitar múltiples instancias
+      debug: false
     }
   })
 }

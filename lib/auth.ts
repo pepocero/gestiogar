@@ -24,6 +24,7 @@ export interface UserProfile {
   role: 'owner' | 'admin' | 'manager' | 'employee'
   phone?: string
   avatar_url?: string
+  profile_photo_url?: string
   is_active: boolean
   created_at: string
   updated_at: string

@@ -1,16 +1,180 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { Bell, Search, Menu } from 'lucide-react'
+import { Bell, Search, Menu, User, Settings, LogOut, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { Modal } from '@/components/ui/Modal'
+import { ImageEditor } from '@/components/ui/ImageEditor'
+import { supabase } from '@/lib/supabase'
+import toast from 'react-hot-toast'
 
 interface HeaderProps {
   onMenuClick?: () => void
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { profile, company } = useAuth()
+  const { profile, company, logout } = useAuth()
+  const [showProfileMenu, setShowProfileMenu] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
+  const [profilePhotoPreview, setProfilePhotoPreview] = useState<string | null>(null)
+  const [isUploading, setIsUploading] = useState(false)
+  const [showImageEditor, setShowImageEditor] = useState(false)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  const handleProfilePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor selecciona un archivo de imagen válido')
+        return
+      }
+
+      // Validar tamaño (2MB máximo)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('La imagen debe ser menor a 2MB')
+        return
+      }
+
+      // Abrir editor de imagen
+      setSelectedImageFile(file)
+      setShowImageEditor(true)
+    }
+  }
+
+  const handleImageEditorSave = (croppedImageBlob: Blob) => {
+    // Convertir blob a File
+    const croppedFile = new File([croppedImageBlob], 'profile-photo.jpg', {
+      type: 'image/jpeg'
+    })
+    
+    setProfilePhoto(croppedFile)
+    
+    // Crear preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setProfilePhotoPreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(croppedFile)
+    
+    setShowImageEditor(false)
+    setSelectedImageFile(null)
+  }
+
+  const uploadProfilePhoto = async (file: File): Promise<string> => {
+    if (!company) throw new Error('No hay información de empresa')
+
+    const fileExt = file.name.split('.').pop()
+    const fileName = `${company.name}_${profile?.first_name}_${profile?.last_name}.${fileExt}`
+    const filePath = `logo/${fileName}`
+
+    const { error: uploadError } = await supabase.storage
+      .from('profile-photos')
+      .upload(filePath, file, {
+        upsert: true,
+        contentType: file.type
+      })
+
+    if (uploadError) {
+      throw uploadError
+    }
+
+    const { data: signedUrlData } = await supabase.storage
+      .from('profile-photos')
+      .createSignedUrl(filePath, 60 * 60 * 24 * 365) // 1 año
+
+    if (!signedUrlData?.signedUrl) {
+      throw new Error('No se pudo generar la URL firmada')
+    }
+
+    return signedUrlData.signedUrl
+  }
+
+  const deleteOldProfilePhoto = async (photoUrl: string) => {
+    try {
+      // Extraer el path del archivo de la URL
+      let filePath = ''
+      if (photoUrl.includes('/storage/v1/object/public/profile-photos/')) {
+        filePath = photoUrl.split('/storage/v1/object/public/profile-photos/')[1]
+      } else if (photoUrl.includes('/storage/v1/object/sign/profile-photos/')) {
+        filePath = photoUrl.split('/storage/v1/object/sign/profile-photos/')[1].split('?')[0]
+      }
+
+      if (filePath) {
+        await supabase.storage
+          .from('profile-photos')
+          .remove([filePath])
+      }
+    } catch (error) {
+      console.error('Error deleting old profile photo:', error)
+    }
+  }
+
+  const handleUpdateProfile = async () => {
+    if (!profile || !company) return
+
+    try {
+      setIsUploading(true)
+
+      let newPhotoUrl = profile.profile_photo_url
+
+      // Si hay una nueva foto, subirla
+      if (profilePhoto) {
+        // Eliminar foto anterior si existe
+        if (profile.profile_photo_url) {
+          await deleteOldProfilePhoto(profile.profile_photo_url)
+        }
+
+        // Subir nueva foto
+        newPhotoUrl = await uploadProfilePhoto(profilePhoto)
+      }
+
+      // Actualizar perfil en la base de datos
+      const { error } = await supabase
+        .from('users')
+        .update({ profile_photo_url: newPhotoUrl })
+        .eq('id', profile.id)
+
+      if (error) {
+        throw error
+      }
+
+      toast.success('Perfil actualizado exitosamente')
+      setShowProfileModal(false)
+      setProfilePhoto(null)
+      setProfilePhotoPreview(null)
+      
+      // Recargar la página para actualizar el perfil
+      window.location.reload()
+
+    } catch (error) {
+      console.error('Error updating profile:', error)
+      toast.error('Error al actualizar el perfil')
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  const handleLogout = async () => {
+    try {
+      await logout()
+      toast.success('Sesión cerrada exitosamente')
+    } catch (error) {
+      console.error('Error logging out:', error)
+      toast.error('Error al cerrar sesión')
+    }
+  }
+
+  const removeProfilePhoto = () => {
+    setProfilePhoto(null)
+    setProfilePhotoPreview(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -54,24 +218,234 @@ export function Header({ onMenuClick }: HeaderProps) {
           </button>
 
           {/* Perfil del usuario */}
-          <div className="flex items-center space-x-3">
-            <div className="text-right hidden sm:block">
-              <p className="text-sm font-medium text-gray-900">
-                {profile?.first_name} {profile?.last_name}
-              </p>
-              <p className="text-xs text-gray-500 capitalize">
-                {profile?.role}
-              </p>
-            </div>
-            
-            <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center">
-              <span className="text-white text-sm font-medium">
-                {profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}
-              </span>
-            </div>
+          <div className="relative">
+            <button
+              onClick={() => setShowProfileMenu(!showProfileMenu)}
+              className="flex items-center space-x-3 hover:bg-gray-50 rounded-lg p-2 transition-colors"
+            >
+              <div className="text-right hidden sm:block">
+                <p className="text-sm font-medium text-gray-900">
+                  {profile?.first_name} {profile?.last_name}
+                </p>
+                <p className="text-xs text-gray-500 capitalize">
+                  {profile?.role}
+                </p>
+              </div>
+              
+              <div className="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center overflow-hidden">
+                {profile?.profile_photo_url ? (
+                  <img
+                    src={profile.profile_photo_url}
+                    alt="Foto de perfil"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="text-white text-sm font-medium">
+                    {profile?.first_name?.charAt(0)}{profile?.last_name?.charAt(0)}
+                  </span>
+                )}
+              </div>
+            </button>
+
+            {/* Menú desplegable del perfil */}
+            {showProfileMenu && (
+              <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
+                <button
+                  onClick={() => {
+                    setShowProfileModal(true)
+                    setShowProfileMenu(false)
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <User className="h-4 w-4 mr-3" />
+                  Editar Perfil
+                </button>
+                <button
+                  onClick={() => {
+                    setShowProfileMenu(false)
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  <Settings className="h-4 w-4 mr-3" />
+                  Configuración
+                </button>
+                <hr className="my-1" />
+                <button
+                  onClick={() => {
+                    handleLogout()
+                    setShowProfileMenu(false)
+                  }}
+                  className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
+                >
+                  <LogOut className="h-4 w-4 mr-3" />
+                  Cerrar Sesión
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>
+
+      {/* Modal de Edición de Perfil */}
+      <Modal
+        isOpen={showProfileModal}
+        onClose={() => {
+          setShowProfileModal(false)
+          setProfilePhoto(null)
+          setProfilePhotoPreview(null)
+        }}
+        title="Editar Perfil"
+        size="md"
+      >
+        <div className="space-y-6">
+          {/* Foto de perfil actual */}
+          <div className="text-center">
+            <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center shadow-lg mx-auto mb-4 overflow-hidden">
+              {profile?.profile_photo_url ? (
+                <img
+                  src={profile.profile_photo_url}
+                  alt="Foto de perfil actual"
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <User className="h-12 w-12 text-white" />
+              )}
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              {profile?.first_name} {profile?.last_name}
+            </h3>
+            <p className="text-sm text-gray-600 capitalize">
+              {profile?.role}
+            </p>
+          </div>
+
+          {/* Sección de foto de perfil */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Foto de Perfil
+              </label>
+              
+              {/* Preview de nueva foto */}
+              {profilePhotoPreview && (
+                <div className="relative w-32 h-32 mx-auto mb-4">
+                  <img
+                    src={profilePhotoPreview}
+                    alt="Preview"
+                    className="w-full h-full object-cover rounded-full border-4 border-blue-200"
+                  />
+                  <button
+                    onClick={removeProfilePhoto}
+                    className="absolute -top-2 -right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-colors"
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                </div>
+              )}
+
+              {/* Input de archivo */}
+              <div className="flex items-center justify-center">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleProfilePhotoSelect}
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center"
+                >
+                  <Camera className="h-4 w-4 mr-2" />
+                  {profilePhotoPreview ? 'Cambiar Foto' : 'Seleccionar Foto'}
+                </Button>
+              </div>
+              
+              <p className="text-xs text-gray-500 text-center mt-2">
+                Máximo 2MB. Formatos: JPG, PNG, GIF
+              </p>
+            </div>
+          </div>
+
+          {/* Información del usuario */}
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Nombre
+              </label>
+              <input
+                type="text"
+                value={profile?.first_name || ''}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Apellidos
+              </label>
+              <input
+                type="text"
+                value={profile?.last_name || ''}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Email
+              </label>
+              <input
+                type="email"
+                value={profile?.email || ''}
+                disabled
+                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+              />
+            </div>
+          </div>
+
+          {/* Botones */}
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setShowProfileModal(false)
+                setProfilePhoto(null)
+                setProfilePhotoPreview(null)
+              }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleUpdateProfile}
+              disabled={isUploading || !profilePhoto}
+              className="btn-primary"
+            >
+              {isUploading ? 'Actualizando...' : 'Actualizar Perfil'}
+            </Button>
+          </div>
+        </div>
+      </Modal>
+
+      {/* Editor de Imagen */}
+      {selectedImageFile && (
+        <ImageEditor
+          isOpen={showImageEditor}
+          onClose={() => {
+            setShowImageEditor(false)
+            setSelectedImageFile(null)
+          }}
+          onSave={handleImageEditorSave}
+          imageFile={selectedImageFile}
+          aspectRatio={1}
+          title="Editar Foto de Perfil"
+          circular={true}
+        />
+      )}
     </header>
   )
 }

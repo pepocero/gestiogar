@@ -8,10 +8,15 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, Clock, MapPin, User, Wrench } from 'lucide-react'
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, Clock, MapPin, User, Wrench, List } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
+import { Calendar as BigCalendar, momentLocalizer } from 'react-big-calendar'
+import moment from 'moment'
+import 'react-big-calendar/lib/css/react-big-calendar.css'
+import 'moment/locale/es'
+import './calendar.css'
 
 interface Appointment {
   id: string
@@ -37,6 +42,10 @@ interface Appointment {
   updated_at: string
 }
 
+// Configurar moment en español
+moment.locale('es')
+const localizer = momentLocalizer(moment)
+
 export default function AppointmentsPage() {
   const { company } = useAuth()
   const [appointments, setAppointments] = useState<Appointment[]>([])
@@ -50,6 +59,9 @@ export default function AppointmentsPage() {
   const [isUpdating, setIsUpdating] = useState(false)
   const [clients, setClients] = useState<any[]>([])
   const [technicians, setTechnicians] = useState<any[]>([])
+  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list')
+  const [currentDate, setCurrentDate] = useState(new Date())
+  const [currentView, setCurrentView] = useState<'month' | 'week' | 'day' | 'agenda'>('month')
   const [formData, setFormData] = useState({
     client_id: '',
     technician_id: '',
@@ -319,6 +331,67 @@ export default function AppointmentsPage() {
     setShowCreateModal(true)
   }
 
+  // Función para convertir citas al formato del calendario
+  const getCalendarEvents = () => {
+    return appointments.map(appointment => ({
+      id: appointment.id,
+      title: `${appointment.appointment_type} - ${appointment.clients ? `${appointment.clients.first_name} ${appointment.clients.last_name}` : 'Sin cliente'}`,
+      start: new Date(appointment.scheduled_date),
+      end: new Date(new Date(appointment.scheduled_date).getTime() + (appointment.duration_minutes * 60000)),
+      resource: appointment,
+      status: appointment.status
+    }))
+  }
+
+  // Función para obtener el color del evento según el estado
+  const getEventStyle = (event: any) => {
+    const status = event.resource?.status
+    switch (status) {
+      case 'scheduled':
+        return { style: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' } }
+      case 'confirmed':
+        return { style: { backgroundColor: '#10B981', borderColor: '#10B981' } }
+      case 'in_progress':
+        return { style: { backgroundColor: '#F59E0B', borderColor: '#F59E0B' } }
+      case 'completed':
+        return { style: { backgroundColor: '#6B7280', borderColor: '#6B7280' } }
+      case 'cancelled':
+        return { style: { backgroundColor: '#EF4444', borderColor: '#EF4444' } }
+      default:
+        return { style: { backgroundColor: '#3B82F6', borderColor: '#3B82F6' } }
+    }
+  }
+
+  // Función para manejar clic en evento del calendario
+  const handleSelectEvent = (event: any) => {
+    setSelectedAppointment(event.resource)
+    setShowViewModal(true)
+  }
+
+  // Función para manejar selección de fecha/hora en el calendario
+  const handleSelectSlot = (slotInfo: any) => {
+    const startDate = new Date(slotInfo.start)
+    const endDate = new Date(slotInfo.end)
+    
+    setFormData(prev => ({
+      ...prev,
+      scheduled_date: startDate.toISOString().split('T')[0],
+      scheduled_time: startDate.toTimeString().slice(0, 5),
+      estimated_duration: Math.round((endDate.getTime() - startDate.getTime()) / 60000)
+    }))
+    setShowCreateModal(true)
+  }
+
+  // Función para manejar cambio de vista
+  const handleViewChange = (view: 'month' | 'week' | 'day' | 'agenda') => {
+    setCurrentView(view)
+  }
+
+  // Función para manejar navegación de fechas
+  const handleNavigate = (date: Date) => {
+    setCurrentDate(date)
+  }
+
   // Helper function to convert string to number or null
   const numberWithValue = (value: FormDataEntryValue | null) => {
     if (!value) return null
@@ -362,19 +435,31 @@ export default function AppointmentsPage() {
                   <Filter className="h-4 w-4 mr-2" />
                   Filtros
                 </Button>
-                <Button variant="secondary">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Vista Calendario
+                <Button 
+                  variant="secondary"
+                  onClick={() => setViewMode(viewMode === 'list' ? 'calendar' : 'list')}
+                >
+                  {viewMode === 'list' ? (
+                    <>
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Vista Calendario
+                    </>
+                  ) : (
+                    <>
+                      <List className="h-4 w-4 mr-2" />
+                      Vista Lista
+                    </>
+                  )}
                 </Button>
               </div>
             </CardBody>
           </Card>
 
-          {/* Appointments Table */}
+          {/* Appointments List/Calendar */}
           <Card>
             <CardHeader>
               <h3 className="text-lg font-medium text-gray-900">
-                Lista de Citas ({appointments.length})
+                {viewMode === 'list' ? `Lista de Citas (${appointments.length})` : `Calendario de Citas (${appointments.length})`}
               </h3>
             </CardHeader>
             <CardBody>
@@ -382,6 +467,67 @@ export default function AppointmentsPage() {
                 <div className="text-center py-12">
                   <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
                   <p className="mt-2 text-sm text-gray-500">Cargando citas...</p>
+                </div>
+              ) : viewMode === 'calendar' ? (
+                <div className="h-[600px]">
+                  <BigCalendar
+                    localizer={localizer}
+                    events={getCalendarEvents()}
+                    startAccessor="start"
+                    endAccessor="end"
+                    onSelectEvent={handleSelectEvent}
+                    onSelectSlot={handleSelectSlot}
+                    onView={handleViewChange}
+                    onNavigate={handleNavigate}
+                    view={currentView}
+                    date={currentDate}
+                    selectable
+                    style={{ height: '100%' }}
+                    eventPropGetter={getEventStyle}
+                    views={['month', 'week', 'day', 'agenda']}
+                    step={60}
+                    timeslots={1}
+                    messages={{
+                      next: 'Siguiente',
+                      previous: 'Anterior',
+                      today: 'Hoy',
+                      month: 'Mes',
+                      week: 'Semana',
+                      day: 'Día',
+                      agenda: 'Agenda',
+                      date: 'Fecha',
+                      time: 'Hora',
+                      event: 'Evento',
+                      noEventsInRange: 'No hay citas en este rango de fechas.',
+                      showMore: (total: number) => `+ Ver más (${total})`,
+                      allDay: 'Todo el día',
+                      work_week: 'Semana laboral',
+                      yesterday: 'Ayer',
+                      tomorrow: 'Mañana'
+                    }}
+                    culture="es"
+                    formats={{
+                      dayFormat: 'dddd',
+                      dayHeaderFormat: 'dddd, DD MMMM',
+                      dayRangeHeaderFormat: ({ start, end }, culture, localizer) => 
+                        localizer.format(start, 'DD MMMM', culture) + ' – ' + 
+                        localizer.format(end, 'DD MMMM', culture),
+                      monthHeaderFormat: 'MMMM YYYY',
+                      agendaDateFormat: 'dddd, DD MMMM',
+                      agendaTimeFormat: 'HH:mm',
+                      agendaTimeRangeFormat: ({ start, end }, culture, localizer) =>
+                        localizer.format(start, 'HH:mm', culture) + ' – ' +
+                        localizer.format(end, 'HH:mm', culture),
+                      timeGutterFormat: 'HH:mm',
+                      eventTimeRangeFormat: ({ start, end }, culture, localizer) =>
+                        localizer.format(start, 'HH:mm', culture) + ' – ' +
+                        localizer.format(end, 'HH:mm', culture),
+                      eventTimeRangeStartFormat: ({ start }, culture, localizer) =>
+                        localizer.format(start, 'HH:mm', culture) + ' –',
+                      eventTimeRangeEndFormat: ({ end }, culture, localizer) =>
+                        '– ' + localizer.format(end, 'HH:mm', culture)
+                    }}
+                  />
                 </div>
               ) : appointments.length > 0 ? (
                 <div className="space-y-4">

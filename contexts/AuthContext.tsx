@@ -21,6 +21,7 @@ interface AuthContextType {
   loading: boolean
   signIn: (email: string, password: string) => Promise<any>
   signOut: () => Promise<void>
+  logout: () => Promise<void>
   resetPassword: (email: string) => Promise<void>
   updatePassword: (newPassword: string) => Promise<void>
   updateProfile: (updates: Partial<UserProfile>) => Promise<any>
@@ -109,6 +110,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const logout = async () => {
+    try {
+      setLoading(true)
+      await authSignOut()
+      setUser(null)
+      setProfile(null)
+      setCompany(null)
+    } catch (error) {
+      throw error
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleResetPassword = async (email: string) => {
     try {
       await resetPassword(email)
@@ -153,6 +168,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     loading,
     signIn,
     signOut,
+    logout,
     resetPassword: handleResetPassword,
     updatePassword: handleUpdatePassword,
     updateProfile,

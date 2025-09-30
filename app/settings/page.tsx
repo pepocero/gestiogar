@@ -8,6 +8,7 @@ import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
+import { ImageEditor } from '@/components/ui/ImageEditor'
 import { updateCompany, updateUserProfile } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
@@ -20,6 +21,8 @@ export default function SettingsPage() {
   const [logoFile, setLogoFile] = useState<File | null>(null)
   const [logoPreview, setLogoPreview] = useState<string | null>(null)
   const [uploadingLogo, setUploadingLogo] = useState(false)
+  const [showImageEditor, setShowImageEditor] = useState(false)
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
 
   // Formulario de empresa
   const [companyForm, setCompanyForm] = useState({
@@ -155,14 +158,26 @@ export default function SettingsPage() {
     try {
       console.log('Iniciando eliminación de logo:', logoUrl)
       
-      // Extraer el path del archivo de la URL
-      const urlParts = logoUrl.split('/storage/v1/object/public/profile-photos/')
-      console.log('URL parts:', urlParts)
+      let filePath = ''
       
-      if (urlParts.length > 1) {
-        const filePath = urlParts[1].split('?')[0] // Remover query parameters
-        console.log('Path del archivo a eliminar:', filePath)
-        
+      // Manejar URLs públicas
+      if (logoUrl.includes('/storage/v1/object/public/profile-photos/')) {
+        const urlParts = logoUrl.split('/storage/v1/object/public/profile-photos/')
+        if (urlParts.length > 1) {
+          filePath = urlParts[1].split('?')[0] // Remover query parameters
+        }
+      } 
+      // Manejar URLs firmadas
+      else if (logoUrl.includes('/storage/v1/object/sign/profile-photos/')) {
+        const urlParts = logoUrl.split('/storage/v1/object/sign/profile-photos/')
+        if (urlParts.length > 1) {
+          filePath = urlParts[1].split('?')[0] // Remover query parameters
+        }
+      }
+      
+      console.log('Path del archivo a eliminar:', filePath)
+      
+      if (filePath) {
         const { error } = await supabase.storage
           .from('profile-photos')
           .remove([filePath])
@@ -174,7 +189,7 @@ export default function SettingsPage() {
           console.log('Logo anterior eliminado correctamente del storage')
         }
       } else {
-        console.error('No se pudo extraer el path del archivo de la URL')
+        console.error('No se pudo extraer el path del archivo de la URL:', logoUrl)
       }
     } catch (error) {
       console.error('Error eliminando logo anterior:', error)
@@ -237,15 +252,29 @@ export default function SettingsPage() {
         return
       }
       
-      setLogoFile(file)
-      
-      // Crear preview
-      const reader = new FileReader()
-      reader.onload = (e) => {
-        setLogoPreview(e.target?.result as string)
-      }
-      reader.readAsDataURL(file)
+      // Abrir editor de imagen
+      setSelectedImageFile(file)
+      setShowImageEditor(true)
     }
+  }
+
+  const handleImageEditorSave = (croppedImageBlob: Blob) => {
+    // Convertir blob a File
+    const croppedFile = new File([croppedImageBlob], 'company-logo.jpg', {
+      type: 'image/jpeg'
+    })
+    
+    setLogoFile(croppedFile)
+    
+    // Crear preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setLogoPreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(croppedFile)
+    
+    setShowImageEditor(false)
+    setSelectedImageFile(null)
   }
 
   // Función para eliminar logo seleccionado
@@ -617,6 +646,22 @@ export default function SettingsPage() {
           </div>
         </div>
       </Modal>
+
+      {/* Editor de Imagen */}
+      {selectedImageFile && (
+        <ImageEditor
+          isOpen={showImageEditor}
+          onClose={() => {
+            setShowImageEditor(false)
+            setSelectedImageFile(null)
+          }}
+          onSave={handleImageEditorSave}
+          imageFile={selectedImageFile}
+          aspectRatio={1}
+          title="Editar Logo de Empresa"
+          circular={false}
+        />
+      )}
       </Layout>
     </ProtectedRoute>
   )
