@@ -42,9 +42,24 @@ export default function AppointmentsPage() {
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(true)
   const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showViewModal, setShowViewModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showDeleteModal, setShowDeleteModal] = useState(false)
+  const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isUpdating, setIsUpdating] = useState(false)
   const [clients, setClients] = useState<any[]>([])
   const [technicians, setTechnicians] = useState<any[]>([])
+  const [formData, setFormData] = useState({
+    client_id: '',
+    technician_id: '',
+    scheduled_date: '',
+    scheduled_time: '',
+    appointment_type: '',
+    estimated_duration: 60,
+    status: 'scheduled',
+    notes: '',
+  })
 
   useEffect(() => {
     if (company) {
@@ -54,10 +69,10 @@ export default function AppointmentsPage() {
 
   // Cargar datos al abrir el modal
   useEffect(() => {
-    if (showCreateModal && company?.id) {
+    if ((showCreateModal || showEditModal) && company?.id) {
       fetchClientsAndTechnicians()
     }
-  }, [showCreateModal, company?.id])
+  }, [showCreateModal, showEditModal, company?.id])
 
   const loadAppointments = async () => {
     try {
@@ -126,7 +141,16 @@ export default function AppointmentsPage() {
     }
   }
 
-  const handleCreateAppointment = async (e: React.FormEvent<HTMLFormElement>) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value, type } = e.target
+    
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'number' ? parseFloat(value) || 0 : value
+    }))
+  }
+
+  const handleCreateAppointment = async (e: React.FormEvent) => {
     e.preventDefault()
     
     if (!company?.id) {
@@ -137,23 +161,19 @@ export default function AppointmentsPage() {
     setIsSubmitting(true)
 
     try {
-      const formData = new FormData(e.currentTarget)
-      
       // Combinar fecha y hora en un timestamp
-      const scheduledDate = formData.get('scheduled_date') as string
-      const scheduledTime = formData.get('scheduled_time') as string
-      const scheduledDateTime = new Date(`${scheduledDate}T${scheduledTime}`).toISOString()
+      const scheduledDateTime = new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
       
       const appointmentData = {
         company_id: company.id,
-        client_id: formData.get('client_id') as string || null,
-        technician_id: formData.get('technician_id') as string || null,
+        client_id: formData.client_id || null,
+        technician_id: formData.technician_id || null,
         job_id: null, // No se incluye en el formulario actual
-        appointment_type: formData.get('appointment_type') as string || 'inspection',
+        appointment_type: formData.appointment_type || 'inspection',
         scheduled_date: scheduledDateTime,
-        duration_minutes: numberWithValue(formData.get('estimated_duration')) || 60,
-        status: formData.get('status') as string || 'scheduled',
-        notes: formData.get('notes') as string || null,
+        duration_minutes: formData.estimated_duration || 60,
+        status: formData.status || 'scheduled',
+        notes: formData.notes || null,
       }
 
       const { data, error } = await supabase
@@ -169,9 +189,7 @@ export default function AppointmentsPage() {
 
       toast.success('Cita creada exitosamente')
       setShowCreateModal(false)
-      if (e.currentTarget) {
-        e.currentTarget.reset()
-      }
+      resetForm()
       loadAppointments() // Recargar la lista de citas
       
     } catch (error) {
@@ -180,6 +198,125 @@ export default function AppointmentsPage() {
     } finally {
       setIsSubmitting(false)
     }
+  }
+
+  const handleView = (appointment: Appointment) => {
+    setSelectedAppointment(appointment)
+    setShowViewModal(true)
+  }
+
+  const handleEdit = (appointment: Appointment) => {
+    setSelectedAppointment(appointment)
+    
+    // Separar fecha y hora del timestamp
+    const scheduledDate = new Date(appointment.scheduled_date)
+    const dateStr = scheduledDate.toISOString().split('T')[0]
+    const timeStr = scheduledDate.toTimeString().slice(0, 5)
+    
+    setFormData({
+      client_id: appointment.client_id || '',
+      technician_id: appointment.technician_id || '',
+      scheduled_date: dateStr,
+      scheduled_time: timeStr,
+      appointment_type: appointment.appointment_type || '',
+      estimated_duration: appointment.duration_minutes || 60,
+      status: appointment.status || 'scheduled',
+      notes: appointment.notes || '',
+    })
+    setShowEditModal(true)
+  }
+
+  const handleDelete = (appointment: Appointment) => {
+    setSelectedAppointment(appointment)
+    setShowDeleteModal(true)
+  }
+
+  const handleUpdate = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!company || !selectedAppointment) return
+
+    setIsUpdating(true)
+
+    try {
+      // Combinar fecha y hora en un timestamp
+      const scheduledDateTime = new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
+      
+      const appointmentData = {
+        client_id: formData.client_id || null,
+        technician_id: formData.technician_id || null,
+        appointment_type: formData.appointment_type || 'inspection',
+        scheduled_date: scheduledDateTime,
+        duration_minutes: formData.estimated_duration || 60,
+        status: formData.status || 'scheduled',
+        notes: formData.notes || null,
+      }
+
+      const { error } = await supabase
+        .from('appointments')
+        .update(appointmentData)
+        .eq('id', selectedAppointment.id)
+
+      if (error) {
+        console.error('Error updating appointment:', error)
+        toast.error('Error al actualizar la cita: ' + error.message)
+        return
+      }
+
+      toast.success('Cita actualizada correctamente')
+      setShowEditModal(false)
+      setSelectedAppointment(null)
+      resetForm()
+      loadAppointments()
+      
+    } catch (error) {
+      console.error('Error updating appointment:', error)
+      toast.error('Error inesperado al actualizar la cita')
+    } finally {
+      setIsUpdating(false)
+    }
+  }
+
+  const confirmDelete = async () => {
+    if (!selectedAppointment) return
+
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', selectedAppointment.id)
+
+      if (error) {
+        throw error
+      }
+
+      toast.success('Cita eliminada correctamente')
+      setShowDeleteModal(false)
+      setSelectedAppointment(null)
+      loadAppointments()
+    } catch (error) {
+      console.error('Error deleting appointment:', error)
+      toast.error('Error al eliminar la cita')
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({
+      client_id: '',
+      technician_id: '',
+      scheduled_date: '',
+      scheduled_time: '',
+      appointment_type: '',
+      estimated_duration: 60,
+      status: 'scheduled',
+      notes: '',
+    })
+  }
+
+  const handleNewAppointment = () => {
+    setSelectedAppointment(null)
+    resetForm()
+    setShowCreateModal(true)
   }
 
   // Helper function to convert string to number or null
@@ -200,7 +337,7 @@ export default function AppointmentsPage() {
             </div>
             <Button 
               className="btn-primary"
-              onClick={() => setShowCreateModal(true)}
+              onClick={handleNewAppointment}
             >
               <Plus className="h-4 w-4 mr-2" />
               Nueva Cita
@@ -319,6 +456,7 @@ export default function AppointmentsPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() => handleView(appointment)}
                                   title="Ver detalles"
                                 >
                                   <Eye className="h-4 w-4" />
@@ -326,6 +464,7 @@ export default function AppointmentsPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() => handleEdit(appointment)}
                                   title="Editar cita"
                                 >
                                   <Edit className="h-4 w-4" />
@@ -333,6 +472,7 @@ export default function AppointmentsPage() {
                                 <Button
                                   variant="outline"
                                   size="sm"
+                                  onClick={() => handleDelete(appointment)}
                                   title="Eliminar cita"
                                 >
                                   <Trash2 className="h-4 w-4" />
@@ -355,7 +495,7 @@ export default function AppointmentsPage() {
                     Comienza programando tu primera cita.
                   </p>
                   <div className="mt-6">
-                    <Button onClick={() => setShowCreateModal(true)}>
+                    <Button onClick={handleNewAppointment}>
                       <Plus className="h-4 w-4 mr-2" />
                       Nueva Cita
                     </Button>
@@ -368,14 +508,23 @@ export default function AppointmentsPage() {
           {/* Create Appointment Modal */}
           <Modal
             isOpen={showCreateModal}
-            onClose={() => setShowCreateModal(false)}
+            onClose={() => {
+              setShowCreateModal(false)
+              resetForm()
+            }}
             title="Nueva Cita"
           >
             <form onSubmit={handleCreateAppointment} className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="form-label">Cliente *</label>
-                  <select name="client_id" className="form-input" required>
+                  <select 
+                    name="client_id" 
+                    value={formData.client_id}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    required
+                  >
                     <option value="">Seleccionar cliente</option>
                     {clients.map((client) => (
                       <option key={client.id} value={client.id}>
@@ -386,7 +535,13 @@ export default function AppointmentsPage() {
                 </div>
                 <div>
                   <label className="form-label">Técnico *</label>
-                  <select name="technician_id" className="form-input" required>
+                  <select 
+                    name="technician_id" 
+                    value={formData.technician_id}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    required
+                  >
                     <option value="">Seleccionar técnico</option>
                     {technicians.map((technician) => (
                       <option key={technician.id} value={technician.id}>
@@ -400,6 +555,8 @@ export default function AppointmentsPage() {
                   <input 
                     type="date" 
                     name="scheduled_date"
+                    value={formData.scheduled_date}
+                    onChange={handleInputChange}
                     className="form-input" 
                     required
                   />
@@ -409,20 +566,28 @@ export default function AppointmentsPage() {
                   <input 
                     type="time" 
                     name="scheduled_time"
+                    value={formData.scheduled_time}
+                    onChange={handleInputChange}
                     className="form-input" 
                     required
                   />
                 </div>
                 <div>
                   <label className="form-label">Tipo de Cita *</label>
-                  <select name="appointment_type" className="form-input" required>
+                  <select 
+                    name="appointment_type" 
+                    value={formData.appointment_type}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    required
+                  >
                     <option value="">Seleccionar tipo</option>
-                    <option value="reparacion">Reparación</option>
-                    <option value="mantenimiento">Mantenimiento</option>
-                    <option value="instalacion">Instalación</option>
-                    <option value="revision">Revisión</option>
-                    <option value="presupuesto">Presupuesto</option>
-                    <option value="otro">Otro</option>
+                    <option value="inspection">Inspección</option>
+                    <option value="repair">Reparación</option>
+                    <option value="maintenance">Mantenimiento</option>
+                    <option value="installation">Instalación</option>
+                    <option value="estimate">Presupuesto</option>
+                    <option value="other">Otro</option>
                   </select>
                 </div>
                 <div>
@@ -430,15 +595,23 @@ export default function AppointmentsPage() {
                   <input 
                     type="number" 
                     name="estimated_duration"
+                    value={formData.estimated_duration}
+                    onChange={handleInputChange}
                     className="form-input" 
                     placeholder="60" 
                   />
                 </div>
               </div>
 
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="form-label">Estado</label>
-                  <select name="status" className="form-input">
+                  <select 
+                    name="status" 
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="form-input"
+                  >
                     <option value="scheduled">Programada</option>
                     <option value="confirmed">Confirmada</option>
                     <option value="in_progress">En Progreso</option>
@@ -446,22 +619,28 @@ export default function AppointmentsPage() {
                     <option value="cancelled">Cancelada</option>
                   </select>
                 </div>
+              </div>
 
               <div>
                 <label className="form-label">Notas Adicionales</label>
                 <textarea 
                   name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
                   className="form-input" 
                   rows={2}
                   placeholder="Notas adicionales sobre la cita..."
-                ></textarea>
+                />
               </div>
 
               <div className="flex justify-end space-x-3 pt-4">
                 <Button
                   type="button"
                   variant="secondary"
-                  onClick={() => setShowCreateModal(false)}
+                  onClick={() => {
+                    setShowCreateModal(false)
+                    resetForm()
+                  }}
                   disabled={isSubmitting}
                 >
                   Cancelar
@@ -475,6 +654,352 @@ export default function AppointmentsPage() {
                 </Button>
               </div>
             </form>
+          </Modal>
+
+          {/* Modal para ver detalles de la cita */}
+          <Modal
+            isOpen={showViewModal}
+            onClose={() => {
+              setShowViewModal(false)
+              setSelectedAppointment(null)
+            }}
+            title="Detalles de la Cita"
+          >
+            {selectedAppointment && (
+              <div className="space-y-6">
+                {/* Header con tipo y estado */}
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
+                      <Calendar className="h-8 w-8 text-white" />
+                    </div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-gray-900">
+                        {selectedAppointment.appointment_type.charAt(0).toUpperCase() + selectedAppointment.appointment_type.slice(1)}
+                      </h2>
+                      <Badge variant={
+                        selectedAppointment.status === 'completed' ? 'success' :
+                        selectedAppointment.status === 'cancelled' ? 'danger' :
+                        selectedAppointment.status === 'in_progress' ? 'warning' :
+                        'info'
+                      }>
+                        {selectedAppointment.status === 'scheduled' ? 'Programada' :
+                         selectedAppointment.status === 'confirmed' ? 'Confirmada' :
+                         selectedAppointment.status === 'in_progress' ? 'En Progreso' :
+                         selectedAppointment.status === 'completed' ? 'Completada' :
+                         selectedAppointment.status === 'cancelled' ? 'Cancelada' :
+                         selectedAppointment.status}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowViewModal(false)
+                      handleEdit(selectedAppointment)
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar Cita
+                  </Button>
+                </div>
+
+                {/* Información de la cita */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Información de la Cita</h3>
+                    
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Fecha y Hora</p>
+                        <p className="font-medium text-gray-900">
+                          {new Date(selectedAppointment.scheduled_date).toLocaleDateString('es-ES')} a las {new Date(selectedAppointment.scheduled_date).toLocaleTimeString('es-ES', { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <Clock className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">Duración</p>
+                        <p className="font-medium text-gray-900">{selectedAppointment.duration_minutes} minutos</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-lg font-semibold text-gray-900">Participantes</h3>
+                    
+                    {selectedAppointment.clients && (
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
+                          <User className="h-4 w-4 text-purple-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Cliente</p>
+                          <p className="font-medium text-gray-900">
+                            {selectedAppointment.clients.first_name} {selectedAppointment.clients.last_name}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                    
+                    {selectedAppointment.technicians && (
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
+                          <Wrench className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <div>
+                          <p className="text-sm text-gray-500">Técnico</p>
+                          <p className="font-medium text-gray-900">
+                            {selectedAppointment.technicians.first_name} {selectedAppointment.technicians.last_name}
+                          </p>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Notas */}
+                {selectedAppointment.notes && (
+                  <div className="border-t pt-6">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-4">Notas</h3>
+                    <p className="text-gray-600">{selectedAppointment.notes}</p>
+                  </div>
+                )}
+
+                {/* Fechas */}
+                <div className="border-t pt-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Información del Sistema</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
+                    <div>
+                      <span className="font-medium">Creado:</span> {new Date(selectedAppointment.created_at).toLocaleDateString('es-ES')}
+                    </div>
+                    <div>
+                      <span className="font-medium">Última actualización:</span> {new Date(selectedAppointment.updated_at).toLocaleDateString('es-ES')}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowViewModal(false)
+                      setSelectedAppointment(null)
+                    }}
+                  >
+                    Cerrar
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      setShowViewModal(false)
+                      handleEdit(selectedAppointment)
+                    }}
+                  >
+                    <Edit className="h-4 w-4 mr-2" />
+                    Editar Cita
+                  </Button>
+                </div>
+              </div>
+            )}
+          </Modal>
+
+          {/* Modal para editar cita */}
+          <Modal
+            isOpen={showEditModal}
+            onClose={() => {
+              setShowEditModal(false)
+              setSelectedAppointment(null)
+              resetForm()
+            }}
+            title="Editar Cita"
+          >
+            <form onSubmit={handleUpdate} className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Cliente *</label>
+                  <select 
+                    name="client_id" 
+                    value={formData.client_id}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    required
+                  >
+                    <option value="">Seleccionar cliente</option>
+                    {clients.map((client) => (
+                      <option key={client.id} value={client.id}>
+                        {client.first_name} {client.last_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Técnico *</label>
+                  <select 
+                    name="technician_id" 
+                    value={formData.technician_id}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    required
+                  >
+                    <option value="">Seleccionar técnico</option>
+                    {technicians.map((technician) => (
+                      <option key={technician.id} value={technician.id}>
+                        {technician.first_name} {technician.last_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Fecha *</label>
+                  <input 
+                    type="date" 
+                    name="scheduled_date"
+                    value={formData.scheduled_date}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Hora *</label>
+                  <input 
+                    type="time" 
+                    name="scheduled_time"
+                    value={formData.scheduled_time}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="form-label">Tipo de Cita *</label>
+                  <select 
+                    name="appointment_type" 
+                    value={formData.appointment_type}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    required
+                  >
+                    <option value="">Seleccionar tipo</option>
+                    <option value="inspection">Inspección</option>
+                    <option value="repair">Reparación</option>
+                    <option value="maintenance">Mantenimiento</option>
+                    <option value="installation">Instalación</option>
+                    <option value="estimate">Presupuesto</option>
+                    <option value="other">Otro</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="form-label">Duración Estimada (min)</label>
+                  <input 
+                    type="number" 
+                    name="estimated_duration"
+                    value={formData.estimated_duration}
+                    onChange={handleInputChange}
+                    className="form-input" 
+                    placeholder="60" 
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label">Estado</label>
+                  <select 
+                    name="status" 
+                    value={formData.status}
+                    onChange={handleInputChange}
+                    className="form-input"
+                  >
+                    <option value="scheduled">Programada</option>
+                    <option value="confirmed">Confirmada</option>
+                    <option value="in_progress">En Progreso</option>
+                    <option value="completed">Completada</option>
+                    <option value="cancelled">Cancelada</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="form-label">Notas Adicionales</label>
+                <textarea 
+                  name="notes"
+                  value={formData.notes}
+                  onChange={handleInputChange}
+                  className="form-input" 
+                  rows={2}
+                  placeholder="Notas adicionales sobre la cita..."
+                />
+              </div>
+
+              <div className="flex justify-end space-x-3 pt-4">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => {
+                    setShowEditModal(false)
+                    setSelectedAppointment(null)
+                    resetForm()
+                  }}
+                  disabled={isUpdating}
+                >
+                  Cancelar
+                </Button>
+                <Button 
+                  type="submit" 
+                  className="btn-primary"
+                  disabled={isUpdating}
+                >
+                  {isUpdating ? 'Actualizando...' : 'Actualizar Cita'}
+                </Button>
+              </div>
+            </form>
+          </Modal>
+
+          {/* Modal para confirmar eliminación */}
+          <Modal
+            isOpen={showDeleteModal}
+            onClose={() => {
+              setShowDeleteModal(false)
+              setSelectedAppointment(null)
+            }}
+            title="Confirmar Eliminación"
+          >
+            {selectedAppointment && (
+              <div className="space-y-4">
+                <p className="text-gray-600">
+                  ¿Estás seguro de que quieres eliminar la cita de <strong>{selectedAppointment.appointment_type}</strong>?
+                </p>
+                <p className="text-sm text-gray-500">
+                  Esta acción no se puede deshacer.
+                </p>
+                <div className="flex justify-end space-x-3 pt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowDeleteModal(false)
+                      setSelectedAppointment(null)
+                    }}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    variant="danger"
+                    onClick={confirmDelete}
+                  >
+                    <Trash2 className="h-4 w-4 mr-2" />
+                    Eliminar
+                  </Button>
+                </div>
+              </div>
+            )}
           </Modal>
         </div>
       </Layout>
