@@ -76,12 +76,18 @@ export default function InsurancePage() {
   }, [insuranceCompanies, filters])
 
   const loadInsuranceCompanies = async () => {
+    if (!company?.id) {
+      console.error('No company available for loading insurance companies')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const { data, error } = await supabase
         .from('insurance_companies')
         .select('*')
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
         .order('name')
 
       if (error) {
@@ -189,7 +195,7 @@ export default function InsurancePage() {
 
   // Función para subir logo a Supabase Storage
   const uploadLogo = async (file: File, companyName: string): Promise<string> => {
-    if (!company) throw new Error('No hay información de empresa')
+    if (!company?.id) throw new Error('No hay información de empresa')
     
     const fileExtension = file.name.split('.').pop()
     const fileName = `${companyName.replace(/[^a-zA-Z0-9]/g, '')}_logo.${fileExtension}`
@@ -288,6 +294,10 @@ export default function InsurancePage() {
         toast.success('Aseguradora actualizada correctamente')
       } else {
         // Crear nueva aseguradora
+        if (!company?.id) {
+          throw new Error('No hay información de empresa disponible')
+        }
+        
         const { error } = await supabase
           .from('insurance_companies')
           .insert([{

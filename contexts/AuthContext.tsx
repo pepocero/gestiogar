@@ -50,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         
         if (session?.user) {
-          await loadUserProfile(session.user.id)
+          await loadUserProfile(session.user.id, true) // true = es carga inicial
         }
       } catch (error) {
         console.error('Error getting initial session:', error)
@@ -68,7 +68,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setUser(session?.user ?? null)
         
         if (session?.user) {
-          await loadUserProfile(session.user.id)
+          await loadUserProfile(session.user.id, false) // false = no es carga inicial
         } else {
           setProfile(null)
           setCompany(null)
@@ -85,7 +85,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = async (userId: string, isInitialLoad = false) => {
     try {
       // Timeout para evitar que se quede cargando indefinidamente
       const timeoutPromise = new Promise((_, reject) => 
@@ -101,9 +101,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCompany(userProfile?.company || null)
     } catch (error) {
       console.error('Error loading user profile:', error)
-      // En caso de error, establecer valores por defecto para que la app no se quede cargando
-      setProfile(null)
-      setCompany(null)
+      // Solo resetear el estado si es la carga inicial, no en recargas automáticas
+      if (isInitialLoad) {
+        setProfile(null)
+        setCompany(null)
+      } else {
+        // En recargas automáticas, mantener el estado actual si hay un error
+        console.warn('Failed to refresh user profile, keeping current state')
+      }
     }
   }
 

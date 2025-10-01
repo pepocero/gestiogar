@@ -24,6 +24,35 @@ export function Header({ onMenuClick }: HeaderProps) {
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
+  // Formulario de edición de perfil
+  const [profileForm, setProfileForm] = useState({
+    first_name: '',
+    last_name: '',
+    phone: '',
+  })
+
+  // Cargar datos del perfil cuando se abre el modal
+  const handleOpenProfileModal = () => {
+    if (profile) {
+      setProfileForm({
+        first_name: profile.first_name || '',
+        last_name: profile.last_name || '',
+        phone: profile.phone || '',
+      })
+    }
+    setShowProfileModal(true)
+    setShowProfileMenu(false)
+  }
+
+  // Manejar cambios en el formulario
+  const handleProfileFormChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setProfileForm(prev => ({
+      ...prev,
+      [name]: value
+    }))
+  }
+
   const handleProfilePhotoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
@@ -87,6 +116,14 @@ export function Header({ onMenuClick }: HeaderProps) {
     const fileName = `${cleanCompanyName}_${cleanFirstName}_${cleanLastName}.${fileExt}`
     const filePath = `logo/${company.id}/${fileName}`
 
+    console.log('Uploading profile photo:', {
+      fileName,
+      filePath,
+      fileSize: file.size,
+      fileType: file.type,
+      companyId: company.id
+    })
+
     const { error: uploadError } = await supabase.storage
       .from('profile-photos')
       .upload(filePath, file, {
@@ -95,17 +132,22 @@ export function Header({ onMenuClick }: HeaderProps) {
       })
 
     if (uploadError) {
+      console.error('Upload error:', uploadError)
       throw uploadError
     }
+
+    console.log('Profile photo uploaded successfully')
 
     const { data: signedUrlData } = await supabase.storage
       .from('profile-photos')
       .createSignedUrl(filePath, 60 * 60 * 24 * 365) // 1 año
 
     if (!signedUrlData?.signedUrl) {
+      console.error('Failed to create signed URL')
       throw new Error('No se pudo generar la URL firmada')
     }
 
+    console.log('Signed URL created:', signedUrlData.signedUrl)
     return signedUrlData.signedUrl
   }
 
@@ -130,15 +172,20 @@ export function Header({ onMenuClick }: HeaderProps) {
   }
 
   const handleUpdateProfile = async () => {
-    if (!profile || !company) return
+    if (!profile || !company) {
+      console.error('No profile or company available')
+      return
+    }
 
     try {
+      console.log('Starting profile update...')
       setIsUploading(true)
 
       let newPhotoUrl = profile.profile_photo_url
 
       // Si hay una nueva foto, subirla
       if (profilePhoto) {
+        console.log('Uploading new profile photo...')
         // Eliminar foto anterior si existe
         if (profile.profile_photo_url) {
           await deleteOldProfilePhoto(profile.profile_photo_url)
@@ -146,29 +193,47 @@ export function Header({ onMenuClick }: HeaderProps) {
 
         // Subir nueva foto
         newPhotoUrl = await uploadProfilePhoto(profilePhoto)
+        console.log('Profile photo uploaded:', newPhotoUrl)
       }
 
       // Actualizar perfil en la base de datos
+      console.log('Updating profile in database...', {
+        profile_photo_url: newPhotoUrl,
+        first_name: profileForm.first_name,
+        last_name: profileForm.last_name,
+        phone: profileForm.phone
+      })
+
       const { error } = await supabase
         .from('users')
-        .update({ profile_photo_url: newPhotoUrl })
+        .update({ 
+          profile_photo_url: newPhotoUrl,
+          first_name: profileForm.first_name,
+          last_name: profileForm.last_name,
+          phone: profileForm.phone
+        })
         .eq('id', profile.id)
 
       if (error) {
+        console.error('Database update error:', error)
         throw error
       }
 
+      console.log('Profile updated successfully')
       toast.success('Perfil actualizado exitosamente')
+      
+      // Cerrar modal y limpiar estado
       setShowProfileModal(false)
       setProfilePhoto(null)
       setProfilePhotoPreview(null)
       
       // Recargar la página para actualizar el perfil
+      console.log('Reloading page...')
       window.location.reload()
 
     } catch (error) {
       console.error('Error updating profile:', error)
-      toast.error('Error al actualizar el perfil')
+      toast.error('Error al actualizar el perfil: ' + (error as Error).message)
     } finally {
       setIsUploading(false)
     }
@@ -267,10 +332,7 @@ export function Header({ onMenuClick }: HeaderProps) {
             {showProfileMenu && (
               <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
                 <button
-                  onClick={() => {
-                    setShowProfileModal(true)
-                    setShowProfileMenu(false)
-                  }}
+                  onClick={handleOpenProfileModal}
                   className="flex items-center w-full px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
                 >
                   <User className="h-4 w-4 mr-3" />
@@ -310,6 +372,14 @@ export function Header({ onMenuClick }: HeaderProps) {
           setShowProfileModal(false)
           setProfilePhoto(null)
           setProfilePhotoPreview(null)
+          // Resetear formulario al cerrar
+          if (profile) {
+            setProfileForm({
+              first_name: profile.first_name || '',
+              last_name: profile.last_name || '',
+              phone: profile.phone || '',
+            })
+          }
         }}
         title="Editar Perfil"
         size="md"
@@ -394,9 +464,11 @@ export function Header({ onMenuClick }: HeaderProps) {
               </label>
               <input
                 type="text"
-                value={profile?.first_name || ''}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                name="first_name"
+                value={profileForm.first_name}
+                onChange={handleProfileFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ingresa tu nombre"
               />
             </div>
             
@@ -406,9 +478,25 @@ export function Header({ onMenuClick }: HeaderProps) {
               </label>
               <input
                 type="text"
-                value={profile?.last_name || ''}
-                disabled
-                className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                name="last_name"
+                value={profileForm.last_name}
+                onChange={handleProfileFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="Ingresa tus apellidos"
+              />
+            </div>
+            
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Teléfono
+              </label>
+              <input
+                type="tel"
+                name="phone"
+                value={profileForm.phone}
+                onChange={handleProfileFormChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                placeholder="+34 600 000 000"
               />
             </div>
             
@@ -422,6 +510,9 @@ export function Header({ onMenuClick }: HeaderProps) {
                 disabled
                 className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
               />
+              <p className="text-xs text-gray-500 mt-1">
+                El email no se puede cambiar desde aquí
+              </p>
             </div>
           </div>
 
@@ -433,13 +524,21 @@ export function Header({ onMenuClick }: HeaderProps) {
                 setShowProfileModal(false)
                 setProfilePhoto(null)
                 setProfilePhotoPreview(null)
+                // Resetear formulario al cancelar
+                if (profile) {
+                  setProfileForm({
+                    first_name: profile.first_name || '',
+                    last_name: profile.last_name || '',
+                    phone: profile.phone || '',
+                  })
+                }
               }}
             >
               Cancelar
             </Button>
             <Button
               onClick={handleUpdateProfile}
-              disabled={isUploading || !profilePhoto}
+              disabled={isUploading}
               className="btn-primary"
             >
               {isUploading ? 'Actualizando...' : 'Actualizar Perfil'}

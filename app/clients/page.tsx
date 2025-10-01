@@ -124,15 +124,34 @@ export default function ClientsPage() {
         notes: formData.get('notes') as string || null,
       }
 
-      // Usar supabaseAdmin para bypassar posibles problemas de RLS
-      const { data, error } = await supabaseAdmin
+      // Intentar primero con cliente normal, luego con admin si falla
+      let { data, error } = await supabase
         .from('clients')
         .insert([clientData])
         .select()
 
+      // Si falla con cliente normal, intentar con admin
+      if (error) {
+        console.log('Error with normal client, trying with admin:', error)
+        const adminResult = await supabaseAdmin
+          .from('clients')
+          .insert([clientData])
+          .select()
+        
+        data = adminResult.data
+        error = adminResult.error
+      }
+
       if (error) {
         console.error('Supabase error creating client:', error)
         toast.error('Error al crear el cliente: ' + error.message)
+        return
+      }
+
+      // Verificar que realmente se creó el cliente
+      if (!data || data.length === 0) {
+        console.error('No data returned after client creation')
+        toast.error('Error: No se pudo verificar la creación del cliente')
         return
       }
 

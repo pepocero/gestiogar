@@ -11,11 +11,11 @@ import { Modal } from '@/components/ui/Modal'
 import { ImageEditor } from '@/components/ui/ImageEditor'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, User, MapPin, Clock, CheckCircle, XCircle, DollarSign, Wrench, Camera, Upload, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseAdmin } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function TechniciansPage() {
-  const { company } = useAuth()
+  const { company, user } = useAuth()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [technicians, setTechnicians] = useState<any[]>([])
@@ -67,6 +67,11 @@ export default function TechniciansPage() {
       return
     }
 
+    if (!user?.id) {
+      toast.error('No se pudo obtener la información del usuario')
+      return
+    }
+
     setIsSubmitting(true)
 
     try {
@@ -74,6 +79,7 @@ export default function TechniciansPage() {
       
       const technicianData = {
         company_id: company.id,
+        user_id: user.id,
         first_name: formData.get('first_name') as string,
         last_name: formData.get('last_name') as string,
         email: formData.get('email') as string || null,
@@ -84,16 +90,37 @@ export default function TechniciansPage() {
 
       console.log('Creating technician with data:', technicianData)
 
-      const { data, error } = await supabase
+      // Intentar primero con cliente normal, luego con admin si falla
+      let { data, error } = await supabase
         .from('technicians')
         .insert([technicianData])
         .select()
+
+      // Si falla con cliente normal, intentar con admin
+      if (error) {
+        console.log('Error with normal client, trying with admin:', error)
+        const adminResult = await supabaseAdmin
+          .from('technicians')
+          .insert([technicianData])
+          .select()
+        
+        data = adminResult.data
+        error = adminResult.error
+      }
 
       console.log('Supabase response:', { data, error })
 
       if (error) {
         console.error('Error creating technician:', error)
         toast.error('Error al crear el técnico: ' + error.message)
+        return
+      }
+
+      // Verificar que realmente se creó el técnico
+      if (!data || data.length === 0) {
+        console.error('No data returned after technician creation')
+        toast.error('Error: No se pudo verificar la creación del técnico')
+        return
       } else {
         // Si hay una foto de perfil, subirla
         if (profilePhoto && data && data[0]) {
@@ -684,12 +711,13 @@ export default function TechniciansPage() {
                   />
                 </div>
                 <div>
-                  <label className="form-label">Teléfono</label>
+                  <label className="form-label">Teléfono *</label>
                   <input 
                     type="tel" 
                     name="phone"
                     className="form-input" 
                     placeholder="+34 600 000 000" 
+                    required
                   />
                 </div>
                 <div>
