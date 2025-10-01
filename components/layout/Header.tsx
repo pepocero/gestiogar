@@ -68,8 +68,24 @@ export function Header({ onMenuClick }: HeaderProps) {
     if (!company) throw new Error('No hay información de empresa')
 
     const fileExt = file.name.split('.').pop()
-    const fileName = `${company.name}_${profile?.first_name}_${profile?.last_name}.${fileExt}`
-    const filePath = `logo/${fileName}`
+    // Limpiar nombre de archivo: eliminar espacios, tildes y caracteres especiales
+    const cleanCompanyName = (company.name || 'Empresa')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '') // Eliminar tildes
+      .replace(/[^a-zA-Z0-9]/g, '') // Eliminar todo excepto letras y números
+      .substring(0, 50) // Limitar longitud
+    const cleanFirstName = (profile?.first_name || 'User')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .substring(0, 30)
+    const cleanLastName = (profile?.last_name || 'Profile')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-zA-Z0-9]/g, '')
+      .substring(0, 30)
+    const fileName = `${cleanCompanyName}_${cleanFirstName}_${cleanLastName}.${fileExt}`
+    const filePath = `logo/${company.id}/${fileName}`
 
     const { error: uploadError } = await supabase.storage
       .from('profile-photos')
