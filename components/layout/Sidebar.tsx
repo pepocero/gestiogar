@@ -17,7 +17,8 @@ import {
   User,
   Package,
   Phone,
-  BarChart3
+  BarChart3,
+  X
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -37,7 +38,11 @@ const navigation = [
   { name: 'Configuración', href: '/settings', icon: Settings },
 ]
 
-export function Sidebar() {
+interface SidebarProps {
+  onClose?: () => void
+}
+
+export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname()
   const { company, signOut } = useAuth()
 
@@ -50,9 +55,9 @@ export function Sidebar() {
   }
 
   return (
-    <div className="flex flex-col w-64 bg-white shadow-lg">
+    <div className="flex flex-col w-64 bg-white shadow-lg h-full">
       {/* Logo y nombre de la empresa */}
-      <div className="flex items-center px-6 py-4 border-b border-gray-200">
+      <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200">
         <div className="flex items-center">
           {company?.logo_url ? (
             <img
@@ -74,16 +79,28 @@ export function Sidebar() {
             <p className="text-xs text-gray-500">Sistema de Gestión</p>
           </div>
         </div>
+        
+        {/* Botón cerrar en móvil */}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="lg:hidden p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100"
+            aria-label="Cerrar menú"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        )}
       </div>
 
       {/* Navegación */}
-      <nav className="flex-1 px-4 py-4 space-y-1">
+      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
         {navigation.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
             <Link
               key={item.name}
               href={item.href}
+              onClick={() => onClose && onClose()}
               className={clsx(
                 'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
                 isActive

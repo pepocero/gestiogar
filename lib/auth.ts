@@ -133,24 +133,58 @@ export async function createCompanyAndOwner(
 // Función para obtener el perfil completo del usuario
 export async function getUserProfile(userId: string): Promise<UserProfile | null> {
   try {
-    // Primero obtener el usuario usando service role
-    const { data: user, error: userError } = await supabaseAdmin
+    console.log('Loading user profile for:', userId)
+    
+    // Primero intentar con el cliente normal (con RLS)
+    const { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
       .single()
 
     if (userError) {
-      console.error('Error fetching user:', userError)
-      return null
+      console.error('Error fetching user with normal client:', userError)
+      
+      // Si falla con el cliente normal, intentar con service role
+      const { data: userAdmin, error: userAdminError } = await supabaseAdmin
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single()
+
+      if (userAdminError) {
+        console.error('Error fetching user with admin client:', userAdminError)
+        return null
+      }
+
+      if (!userAdmin) {
+        return null
+      }
+
+      // Obtener empresa con service role
+      const { data: company, error: companyError } = await supabaseAdmin
+        .from('companies')
+        .select('*')
+        .eq('id', userAdmin.company_id)
+        .single()
+
+      if (companyError) {
+        console.error('Error fetching company:', companyError)
+        return null
+      }
+
+      return {
+        ...userAdmin,
+        company: company
+      }
     }
 
     if (!user) {
       return null
     }
 
-    // Luego obtener la empresa usando service role
-    const { data: company, error: companyError } = await supabaseAdmin
+    // Obtener la empresa
+    const { data: company, error: companyError } = await supabase
       .from('companies')
       .select('*')
       .eq('id', user.company_id)

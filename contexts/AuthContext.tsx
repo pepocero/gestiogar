@@ -37,6 +37,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
+    // Timeout de seguridad para evitar que se quede cargando indefinidamente
+    const safetyTimeout = setTimeout(() => {
+      console.warn('Auth loading timeout - forcing loading to false')
+      setLoading(false)
+    }, 15000) // 15 segundos máximo
+
     // Obtener sesión inicial
     const getInitialSession = async () => {
       try {
@@ -49,6 +55,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       } catch (error) {
         console.error('Error getting initial session:', error)
       } finally {
+        clearTimeout(safetyTimeout)
         setLoading(false)
       }
     }
@@ -67,20 +74,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setCompany(null)
         }
         
+        clearTimeout(safetyTimeout)
         setLoading(false)
       }
     )
 
-    return () => subscription.unsubscribe()
+    return () => {
+      clearTimeout(safetyTimeout)
+      subscription.unsubscribe()
+    }
   }, [])
 
   const loadUserProfile = async (userId: string) => {
     try {
-      const userProfile = await getUserProfile(userId)
+      // Timeout para evitar que se quede cargando indefinidamente
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('Timeout loading user profile')), 10000)
+      )
+      
+      const userProfile = await Promise.race([
+        getUserProfile(userId),
+        timeoutPromise
+      ]) as UserProfile | null
+      
       setProfile(userProfile)
       setCompany(userProfile?.company || null)
     } catch (error) {
       console.error('Error loading user profile:', error)
+      // En caso de error, establecer valores por defecto para que la app no se quede cargando
+      setProfile(null)
+      setCompany(null)
     }
   }
 
