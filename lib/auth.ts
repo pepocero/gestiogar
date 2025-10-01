@@ -95,8 +95,8 @@ export async function createCompanyAndOwner(
     // 3. Esperar a que el usuario esté autenticado
     await new Promise(resolve => setTimeout(resolve, 1000))
 
-    // 4. Crear el perfil del usuario (ahora con usuario autenticado)
-    const { data: profile, error: profileError } = await supabase
+    // 4. Crear el perfil del usuario usando supabaseAdmin (bypass RLS)
+    const { data: profile, error: profileError } = await supabaseAdmin
       .from('users')
       .insert([
         {
