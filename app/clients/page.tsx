@@ -52,7 +52,13 @@ export default function ClientsPage() {
     try {
       const { data, error } = await supabase
         .from('clients')
-        .select('*')
+        .select(`
+          *,
+          insurance_companies (
+            id,
+            name
+          )
+        `)
         .eq('company_id', company.id)
         .order('created_at', { ascending: false })
 
@@ -320,7 +326,7 @@ export default function ClientsPage() {
                     <th>Email</th>
                     <th>Teléfono</th>
                     <th>Dirección</th>
-                    <th>Estado</th>
+                    <th>Tipo / Aseguradora</th>
                     <th>Acciones</th>
                   </tr>
                 </thead>
@@ -344,9 +350,13 @@ export default function ClientsPage() {
                         <td>{client.phone || '-'}</td>
                         <td>{client.address || '-'}</td>
                         <td>
-                          <Badge variant={client.client_type === 'direct' ? 'info' : 'success'}>
-                            {client.client_type === 'direct' ? 'Directo' : 'Aseguradora'}
-                          </Badge>
+                          {client.client_type === 'direct' ? (
+                            <Badge variant="info">Directo</Badge>
+                          ) : (
+                            <Badge variant="success">
+                              {client.insurance_companies ? client.insurance_companies.name : 'Aseguradora'}
+                            </Badge>
+                          )}
                         </td>
                         <td className="text-right">
                           <Button 
