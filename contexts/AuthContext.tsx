@@ -57,6 +57,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (error) {
         console.error('Error getting initial session:', error)
+        // Si hay error de sesión, limpiar estado
+        setUser(null)
+        setProfile(null)
+        setCompany(null)
       } finally {
         clearTimeout(safetyTimeout)
         setLoading(false)
@@ -65,20 +69,40 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getInitialSession()
 
+    // Verificar sesión periódicamente para detectar expiración
+    const sessionCheckInterval = setInterval(async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession()
+        if (!session) {
+          console.log('Session expired, clearing state')
+          setUser(null)
+          setProfile(null)
+          setCompany(null)
+        }
+      } catch (error) {
+        console.error('Error checking session:', error)
+      }
+    }, 60000) // Verificar cada minuto
+
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: any) => {
         console.log('Auth state change:', event, session?.user?.id)
         
-        if (event === 'SIGNED_OUT') {
-          setUser(null)
-          setProfile(null)
-          setCompany(null)
-          setLoading(false)
-          return
-        }
-        
-        if (event === 'SIGNED_IN' && session?.user) {
+        if (event === 'SIGNED_OUT' || event === 'TOKEN_REFRESHED') {
+          if (event === 'SIGNED_OUT') {
+            setUser(null)
+            setProfile(null)
+            setCompany(null)
+            setLoading(false)
+            return
+          }
+          // TOKEN_REFRESHED: la sesión se renovó automáticamente
+          if (session?.user) {
+            setUser(session.user)
+            // No necesitamos recargar el perfil, solo actualizar la sesión
+          }
+        } else if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
           await loadUserProfile(session.user.id, false)
         } else if (event === 'INITIAL_SESSION') {
@@ -104,6 +128,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     return () => {
       clearTimeout(safetyTimeout)
+      clearInterval(sessionCheckInterval)
       subscription.unsubscribe()
     }
   }, [])
@@ -124,6 +149,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCompany(userProfile?.company || null)
     } catch (error) {
       console.error('Error loading user profile:', error)
+      
+      // Si hay error de autenticación, cerrar sesión
+      if (error instanceof Error && (
+        error.message.includes('JWT') || 
+        error.message.includes('token') ||
+        error.message.includes('unauthorized') ||
+        error.message.includes('401') ||
+        error.message.includes('403')
+      )) {
+        console.log('Authentication error, signing out...')
+        await supabase.auth.signOut()
+        return
+      }
+      
       // Solo resetear el estado si es la carga inicial, no en recargas automáticas
       if (isInitialLoad) {
         setProfile(null)
