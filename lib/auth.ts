@@ -92,10 +92,7 @@ export async function createCompanyAndOwner(
       throw new Error('No se pudo crear el usuario')
     }
 
-    // 3. Esperar a que el usuario esté autenticado
-    await new Promise(resolve => setTimeout(resolve, 1000))
-
-    // 4. Crear el perfil del usuario usando supabaseAdmin (bypass RLS)
+    // 3. Crear el perfil del usuario usando supabaseAdmin (bypass RLS)
     const { data: profile, error: profileError } = await supabaseAdmin
       .from('users')
       .insert([
@@ -119,6 +116,10 @@ export async function createCompanyAndOwner(
       throw profileError
     }
 
+    // 4. Cerrar sesión automáticamente después de crear el usuario
+    // No cerrar sesión aquí para evitar conflictos con onAuthStateChange
+    // await supabase.auth.signOut()
+
     return {
       company,
       user: authData.user,
@@ -136,7 +137,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     console.log('Loading user profile for:', userId)
     
     // Primero intentar con el cliente normal (con RLS)
-    const { data: user, error: userError } = await supabase
+    let { data: user, error: userError } = await supabase
       .from('users')
       .select('*')
       .eq('id', userId)
@@ -154,32 +155,35 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
 
       if (userAdminError) {
         console.error('Error fetching user with admin client:', userAdminError)
-        return null
-      }
-
-      if (!userAdmin) {
-        return null
-      }
-
-      // Obtener empresa con service role
-      const { data: company, error: companyError } = await supabaseAdmin
-        .from('companies')
-        .select('*')
-        .eq('id', userAdmin.company_id)
-        .single()
-
-      if (companyError) {
-        console.error('Error fetching company:', companyError)
-        return null
-      }
-
-      return {
-        ...userAdmin,
-        company: company
+        
+        // Si el usuario no existe, esperar un poco y reintentar
+        console.log('User not found, waiting and retrying...')
+        await new Promise(resolve => setTimeout(resolve, 2000))
+        
+        const { data: retryUser, error: retryError } = await supabaseAdmin
+          .from('users')
+          .select('*')
+          .eq('id', userId)
+          .single()
+          
+        if (retryError) {
+          console.error('Retry failed:', retryError)
+          return null
+        }
+        
+        user = retryUser
+      } else {
+        user = userAdmin
       }
     }
 
     if (!user) {
+      return null
+    }
+
+    // Si el usuario no tiene company_id, devolver null (usuario incompleto)
+    if (!user.company_id) {
+      console.log('User has no company_id, this is an incomplete user profile')
       return null
     }
 

@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { createCompanyAndOwner, generateUniqueSlug } from '@/lib/auth'
+import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
@@ -73,8 +74,9 @@ export default function RegisterPage() {
         }
       )
 
-      toast.success('¡Empresa creada exitosamente!')
-      router.push('/dashboard')
+      // Cerrar sesión y redirigir a login con parámetro de éxito
+      await supabase.auth.signOut()
+      router.push('/auth/login?registered=true')
     } catch (error: any) {
       console.error('Error creating company:', error)
       toast.error(error.message || 'Error al crear la empresa')

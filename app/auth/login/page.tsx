@@ -1,19 +1,29 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { Modal } from '@/components/ui/Modal'
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { signIn } = useAuth()
   const [loading, setLoading] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: '',
   })
+
+  // Mostrar modal de éxito si viene del registro
+  useEffect(() => {
+    if (searchParams.get('registered') === 'true') {
+      setShowSuccessModal(true)
+    }
+  }, [searchParams])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -136,6 +146,36 @@ export default function LoginPage() {
           </form>
         </div>
       </div>
+
+      {/* Modal de éxito del registro */}
+      <Modal
+        isOpen={showSuccessModal}
+        onClose={() => setShowSuccessModal(false)}
+        title="¡Empresa creada exitosamente!"
+      >
+        <div className="text-center">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
+            <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+          </div>
+          <h3 className="text-lg font-medium text-gray-900 mb-2">
+            ¡Felicidades!
+          </h3>
+          <p className="text-sm text-gray-500 mb-6">
+            Tu empresa ha sido creada correctamente. Ahora puedes iniciar sesión con las credenciales que acabas de crear.
+          </p>
+          <div className="flex flex-col sm:flex-row gap-3 justify-center">
+            <button
+              type="button"
+              className="btn-primary"
+              onClick={() => setShowSuccessModal(false)}
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      </Modal>
     </div>
   )
 }

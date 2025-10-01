@@ -47,10 +47,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const getInitialSession = async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession()
-        setUser(session?.user ?? null)
         
+        // Si hay una sesión, establecer el usuario y cargar perfil
         if (session?.user) {
+          setUser(session.user)
           await loadUserProfile(session.user.id, true) // true = es carga inicial
+        } else {
+          setUser(null)
         }
       } catch (error) {
         console.error('Error getting initial session:', error)
@@ -65,11 +68,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Escuchar cambios de autenticación
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: any) => {
-        setUser(session?.user ?? null)
+        console.log('Auth state change:', event, session?.user?.id)
         
-        if (session?.user) {
-          await loadUserProfile(session.user.id, false) // false = no es carga inicial
+        if (event === 'SIGNED_OUT') {
+          setUser(null)
+          setProfile(null)
+          setCompany(null)
+          setLoading(false)
+          return
+        }
+        
+        if (event === 'SIGNED_IN' && session?.user) {
+          setUser(session.user)
+          await loadUserProfile(session.user.id, false)
+        } else if (event === 'INITIAL_SESSION') {
+          // Para la sesión inicial, solo establecer el usuario si existe
+          if (session?.user) {
+            setUser(session.user)
+            await loadUserProfile(session.user.id, false)
+          } else {
+            setUser(null)
+            setProfile(null)
+            setCompany(null)
+          }
         } else {
+          setUser(null)
           setProfile(null)
           setCompany(null)
         }
@@ -128,17 +151,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
       await authSignOut()
-      // Limpiar estado local independientemente del resultado
-      setUser(null)
-      setProfile(null)
-      setCompany(null)
+      // El estado se limpiará automáticamente en onAuthStateChange
     } catch (error) {
       console.error('Error in signOut:', error)
-      // Limpiar estado local incluso si hay error
+      // Forzar limpieza en caso de error
       setUser(null)
       setProfile(null)
       setCompany(null)
-      // No relanzar el error para evitar que la UI se quede en estado de error
     } finally {
       setLoading(false)
     }
@@ -148,17 +167,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
       await authSignOut()
-      // Limpiar estado local independientemente del resultado
-      setUser(null)
-      setProfile(null)
-      setCompany(null)
+      // El estado se limpiará automáticamente en onAuthStateChange
     } catch (error) {
       console.error('Error in logout:', error)
-      // Limpiar estado local incluso si hay error
+      // Forzar limpieza en caso de error
       setUser(null)
       setProfile(null)
       setCompany(null)
-      // No relanzar el error para evitar que la UI se quede en estado de error
     } finally {
       setLoading(false)
     }

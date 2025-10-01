@@ -250,6 +250,90 @@ export default function HomePage() {
         </div>
       </section>
 
+      {/* Demo Section */}
+      <section className="py-20 bg-gradient-to-r from-blue-50 to-indigo-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Prueba el sistema ahora
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Accede a una cuenta de demostración para explorar todas las funcionalidades
+            </p>
+          </div>
+
+          <div className="max-w-2xl mx-auto">
+            <div className="bg-white rounded-2xl shadow-xl p-8 border border-gray-200">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                </div>
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Cuenta de Demostración</h3>
+                <p className="text-gray-600">Explora todas las funcionalidades con datos de ejemplo</p>
+              </div>
+
+              <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                <h4 className="text-lg font-semibold text-gray-900 mb-4">Credenciales de acceso:</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                    <span className="text-sm font-medium text-gray-500">Email:</span>
+                    <span className="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded">demo@demo.com</span>
+                  </div>
+                  <div className="flex items-center justify-between bg-white rounded-lg p-3 border border-gray-200">
+                    <span className="text-sm font-medium text-gray-500">Contraseña:</span>
+                    <span className="text-sm font-mono text-gray-900 bg-gray-100 px-2 py-1 rounded">demodemo</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-4">
+                <Link
+                  href="/auth/login"
+                  className="flex-1 bg-primary-600 text-white px-6 py-3 rounded-lg text-lg font-semibold hover:bg-primary-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-center"
+                >
+                  Probar Demo
+                  <ArrowRight className="inline-block ml-2 h-5 w-5" />
+                </Link>
+                <Link
+                  href="/auth/register"
+                  className="flex-1 border-2 border-primary-600 text-primary-600 px-6 py-3 rounded-lg text-lg font-semibold hover:bg-primary-600 hover:text-white transition-all duration-200 text-center"
+                >
+                  Crear mi Empresa
+                </Link>
+              </div>
+
+              <div className="mt-6 text-center">
+                <p className="text-sm text-gray-500">
+                  <span className="inline-flex items-center">
+                    <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Datos de ejemplo incluidos
+                  </span>
+                  <span className="mx-2">•</span>
+                  <span className="inline-flex items-center">
+                    <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Acceso completo
+                  </span>
+                  <span className="mx-2">•</span>
+                  <span className="inline-flex items-center">
+                    <svg className="w-4 h-4 mr-1 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
+                    </svg>
+                    Sin registro
+                  </span>
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* CTA Section */}
       <section className="py-20 bg-primary-600">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
