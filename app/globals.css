@@ -169,14 +169,97 @@
 
 /* Mobile responsive */
 @media (max-width: 640px) {
-  .card-header,
-  .card-body,
-  .card-footer {
+  /* Only apply to app cards, not landing page cards */
+  .app-card .card-header,
+  .app-card .card-body,
+  .app-card .card-footer {
     @apply px-4 py-3;
   }
   
   .table th,
   .table td {
-    @apply px-4 py-3;
+    @apply px-3 py-2 text-xs;
+  }
+  
+  /* Hide less important columns on mobile */
+  .table th:nth-child(3),
+  .table td:nth-child(3),
+  .table th:nth-child(4),
+  .table td:nth-child(4) {
+    display: none;
+  }
+  
+  /* Make table more compact on mobile */
+  .table {
+    @apply text-xs;
+  }
+  
+  /* Stack action buttons vertically on mobile */
+  .table .action-buttons {
+    @apply flex flex-col gap-1;
+  }
+  
+  .table .action-buttons button {
+    @apply text-xs px-2 py-1;
+  }
+  
+  /* Make job cards more mobile-friendly */
+  .job-card {
+    @apply p-3;
+  }
+  
+  .job-card .flex {
+    @apply flex-col gap-3;
+  }
+  
+  .job-card .flex-shrink-0 {
+    @apply self-start;
+  }
+  
+  /* Make insurance cards more mobile-friendly */
+  .insurance-card {
+    @apply p-3;
+  }
+  
+  .insurance-card .flex {
+    @apply flex-col gap-3;
+  }
+  
+  .insurance-card .ml-4 {
+    @apply ml-0 mt-2;
+  }
+  
+  /* Make filter grids more mobile-friendly */
+  .filter-grid {
+    @apply grid-cols-1 gap-3;
+  }
+}
+
+@media (max-width: 480px) {
+  /* Hide even more columns on very small screens */
+  .table th:nth-child(2),
+  .table td:nth-child(2) {
+    display: none;
+  }
+  
+  .table th,
+  .table td {
+    @apply px-2 py-1;
+  }
+  
+  /* Make app cards even more compact */
+  .app-card .card-header,
+  .app-card .card-body,
+  .app-card .card-footer {
+    @apply px-3 py-2;
+  }
+  
+  /* Stack all action buttons vertically on very small screens */
+  .action-buttons {
+    @apply flex-col gap-1;
+  }
+  
+  .action-buttons button {
+    @apply w-full text-xs px-2 py-1;
   }
 }

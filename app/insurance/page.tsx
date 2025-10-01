@@ -418,7 +418,7 @@ export default function InsurancePage() {
       <Layout>
         <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Aseguradoras
@@ -427,14 +427,14 @@ export default function InsurancePage() {
               Gestiona las aseguradoras con las que trabajas.
             </p>
           </div>
-          <Button onClick={handleNewCompany} className="flex items-center space-x-2">
+          <Button onClick={handleNewCompany} className="flex items-center space-x-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             <span>Nueva Aseguradora</span>
           </Button>
         </div>
 
         {/* Filtros */}
-        <Card>
+        <Card className="app-card">
           <CardHeader>
             <h3 className="text-lg font-medium text-gray-900">Filtros</h3>
           </CardHeader>
@@ -483,7 +483,7 @@ export default function InsurancePage() {
         </Card>
 
         {/* Lista de aseguradoras */}
-        <Card>
+        <Card className="app-card">
           <CardHeader>
             <h3 className="text-lg font-medium text-gray-900">
               Lista de Aseguradoras ({filteredCompanies.length} de {insuranceCompanies.length})
@@ -494,7 +494,7 @@ export default function InsurancePage() {
               <div className="space-y-4">
                 {filteredCompanies.length > 0 ? (
                   filteredCompanies.map((company) => (
-                  <div key={company.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
+                  <div key={company.id} className="insurance-card bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start space-x-4">
                       {/* Logo/Foto de la aseguradora */}
                       <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
@@ -559,7 +559,7 @@ export default function InsurancePage() {
                               {company.is_active ? 'Activa' : 'Inactiva'}
                             </Badge>
                             
-                            <div className="flex items-center space-x-2">
+                            <div className="action-buttons flex items-center space-x-2">
                               <Button
                                 variant="outline"
                                 size="sm"

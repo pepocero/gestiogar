@@ -4,6 +4,22 @@ import { useAuth } from '@/contexts/AuthContext'
 import { useRouter } from 'next/navigation'
 import { useEffect } from 'react'
 import Link from 'next/link'
+import Image from 'next/image'
+import { 
+  Building2, 
+  Users, 
+  FileText, 
+  Wrench, 
+  Shield, 
+  Calendar, 
+  BarChart3, 
+  CheckCircle,
+  ArrowRight,
+  Star,
+  Phone,
+  Mail,
+  MapPin
+} from 'lucide-react'
 
 export default function HomePage() {
   const { user, loading } = useAuth()
@@ -17,7 +33,7 @@ export default function HomePage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     )
@@ -26,100 +42,339 @@ export default function HomePage() {
   // Si el usuario está autenticado, redirigir al dashboard
   if (user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center">
-          <h1 className="text-5xl font-bold text-gray-900 mb-6">
-            GestioGar
-          </h1>
-          <p className="text-xl text-gray-600 mb-8 max-w-2xl mx-auto">
-            Sistema multitenant para empresas de reparaciones del hogar que trabajan con aseguradoras.
-            Gestiona presupuestos, trabajos, técnicos y clientes de forma eficiente.
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-white shadow-sm border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center py-6">
+            <Link href="/" className="flex items-center hover:opacity-80 transition-opacity">
+              <div className="w-10 h-10 relative">
+                <Image
+                  src="/logo.png"
+                  alt="GestioGar Logo"
+                  width={40}
+                  height={40}
+                  className="object-contain"
+                />
+              </div>
+              <span className="ml-3 text-2xl font-bold text-gray-900">GestioGar</span>
+            </Link>
+            <div className="flex items-center space-x-4">
+              <Link
+                href="/auth/login"
+                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium transition-colors"
+              >
+                Iniciar Sesión
+              </Link>
+              <Link
+                href="/auth/register"
+                className="bg-primary-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-primary-700 transition-colors"
+              >
+                Crear Empresa
+              </Link>
+            </div>
+          </div>
+        </div>
+      </header>
+
+      {/* Hero Section */}
+      <section className="relative bg-gradient-to-br from-primary-50 via-white to-primary-50 py-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center">
+            <h1 className="text-5xl md:text-6xl font-bold text-gray-900 mb-6">
+              Gestiona tu empresa de
+              <span className="text-primary-600 block">reparaciones</span>
+            </h1>
+            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+              Sistema multitenant completo para empresas de reparaciones del hogar que trabajan con aseguradoras. 
+              Gestiona presupuestos, trabajos, técnicos y clientes de forma eficiente y profesional.
+            </p>
+            
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
+              <Link
+                href="/auth/register"
+                className="bg-primary-600 text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-primary-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+              >
+                Comenzar Gratis
+                <ArrowRight className="inline-block ml-2 h-5 w-5" />
+              </Link>
+              <Link
+                href="/auth/login"
+                className="border-2 border-primary-600 text-primary-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-primary-600 hover:text-white transition-all duration-200"
+              >
+                Iniciar Sesión
+              </Link>
+            </div>
+
+            {/* Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-4xl mx-auto">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary-600 mb-2">100%</div>
+                <div className="text-gray-600">Multitenant</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary-600 mb-2">24/7</div>
+                <div className="text-gray-600">Disponible</div>
+              </div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-primary-600 mb-2">∞</div>
+                <div className="text-gray-600">Escalable</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Todo lo que necesitas en un solo lugar
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Herramientas profesionales diseñadas específicamente para empresas de reparaciones
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mb-6">
+                <Building2 className="h-6 w-6 text-primary-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Gestión de Empresas</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Cada empresa tiene su propio espacio aislado con datos, clientes y configuraciones personalizadas. 
+                Total privacidad y seguridad.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center mb-6">
+                <FileText className="h-6 w-6 text-green-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Presupuestos y Facturas</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Crea presupuestos detallados, gestiona facturas y controla el flujo de caja de tu empresa 
+                con herramientas profesionales.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center mb-6">
+                <Users className="h-6 w-6 text-blue-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Técnicos y Clientes</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Administra tu equipo de técnicos, gestiona clientes y programa citas de forma eficiente 
+                y organizada.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center mb-6">
+                <Wrench className="h-6 w-6 text-purple-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Órdenes de Trabajo</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Gestiona órdenes de trabajo desde la creación hasta la finalización, 
+                con seguimiento completo del proceso.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center mb-6">
+                <Shield className="h-6 w-6 text-orange-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Gestión de Aseguradoras</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Administra las relaciones con aseguradoras, términos de pago y 
+                comunicación especializada.
+              </p>
+            </div>
+
+            <div className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100 hover:shadow-xl transition-shadow duration-300">
+              <div className="w-12 h-12 bg-indigo-100 rounded-lg flex items-center justify-center mb-6">
+                <BarChart3 className="h-6 w-6 text-indigo-600" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-4">Reportes y Analytics</h3>
+              <p className="text-gray-600 leading-relaxed">
+                Obtén insights valiosos sobre tu negocio con reportes detallados 
+                y análisis de rendimiento.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features List Section */}
+      <section className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Funcionalidades Principales
+            </h2>
+            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
+              Todo lo que necesitas para gestionar tu empresa de reparaciones
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[
+              'Gestión de aseguradoras',
+              'Presupuestos detallados',
+              'Órdenes de trabajo',
+              'Inventario de materiales',
+              'Programación de citas',
+              'Facturación integrada',
+              'Comunicación con clientes',
+              'Reportes y analytics',
+              'Gestión de técnicos',
+              'Control de calidad',
+              'Historial de trabajos',
+              'Integración con APIs'
+            ].map((feature, index) => (
+              <div key={index} className="flex items-center space-x-3 p-4 bg-white rounded-lg shadow-sm">
+                <CheckCircle className="h-5 w-5 text-green-500 flex-shrink-0" />
+                <span className="text-gray-700 font-medium">{feature}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section */}
+      <section className="py-20 bg-primary-600">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl font-bold text-white mb-4">
+            ¿Listo para comenzar?
+          </h2>
+          <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
+            Únete a las empresas que ya están gestionando sus reparaciones de forma eficiente
           </p>
-          
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link
               href="/auth/register"
-              className="btn-primary btn-lg"
+              className="bg-white text-primary-600 px-8 py-4 rounded-lg text-lg font-semibold hover:bg-gray-50 transition-all duration-200 transform hover:scale-105 shadow-lg"
             >
-              Crear Empresa
+              Crear mi Empresa
+              <ArrowRight className="inline-block ml-2 h-5 w-5" />
             </Link>
             <Link
               href="/auth/login"
-              className="btn-secondary btn-lg"
+              className="border-2 border-white text-white px-8 py-4 rounded-lg text-lg font-semibold hover:bg-white hover:text-primary-600 transition-all duration-200"
             >
-              Iniciar Sesión
+              Ya tengo cuenta
             </Link>
           </div>
         </div>
+      </section>
 
-        <div className="mt-16 grid md:grid-cols-3 gap-8">
-          <div className="card">
-            <div className="card-body text-center">
-              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Gestión de Empresas</h3>
-              <p className="text-gray-600">
-                Cada empresa tiene su propio espacio aislado con datos, clientes y configuraciones personalizadas.
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <div className="grid md:grid-cols-4 gap-8">
+            {/* Logo y descripción */}
+            <div className="md:col-span-2">
+              <Link href="/" className="flex items-center mb-4 hover:opacity-80 transition-opacity">
+                <div className="w-10 h-10 relative">
+                  <Image
+                    src="/logo.png"
+                    alt="GestioGar Logo"
+                    width={40}
+                    height={40}
+                    className="object-contain"
+                  />
+                </div>
+                <span className="ml-3 text-2xl font-bold">GestioGar</span>
+              </Link>
+              <p className="text-gray-400 mb-6 max-w-md leading-relaxed">
+                Sistema multitenant completo para empresas de reparaciones del hogar. 
+                Gestiona tu negocio de forma profesional y eficiente.
               </p>
+              <div className="flex space-x-4">
+                <div className="flex items-center text-gray-400">
+                  <Star className="h-5 w-5 text-yellow-400 mr-1" />
+                  <span className="text-sm">4.9/5</span>
+                </div>
+                <div className="text-gray-400 text-sm">
+                  • Confiable • Seguro • Escalable
+                </div>
+              </div>
+            </div>
+
+            {/* Enlaces rápidos */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Enlaces Rápidos</h3>
+              <ul className="space-y-2">
+                <li>
+                  <Link href="/auth/login" className="text-gray-400 hover:text-white transition-colors">
+                    Iniciar Sesión
+                  </Link>
+                </li>
+                <li>
+                  <Link href="/auth/register" className="text-gray-400 hover:text-white transition-colors">
+                    Crear Empresa
+                  </Link>
+                </li>
+                <li>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                    Documentación
+                  </a>
+                </li>
+                <li>
+                  <a href="#" className="text-gray-400 hover:text-white transition-colors">
+                    Soporte
+                  </a>
+                </li>
+              </ul>
+            </div>
+
+            {/* Contacto */}
+            <div>
+              <h3 className="text-lg font-semibold mb-4">Contacto</h3>
+              <ul className="space-y-2">
+                <li className="flex items-center text-gray-400">
+                  <Mail className="h-4 w-4 mr-2" />
+                  <span className="text-sm">info@gestiogar.com</span>
+                </li>
+                <li className="flex items-center text-gray-400">
+                  <Phone className="h-4 w-4 mr-2" />
+                  <span className="text-sm">+34 900 000 000</span>
+                </li>
+                <li className="flex items-center text-gray-400">
+                  <MapPin className="h-4 w-4 mr-2" />
+                  <span className="text-sm">España</span>
+                </li>
+              </ul>
             </div>
           </div>
 
-          <div className="card">
-            <div className="card-body text-center">
-              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Presupuestos y Facturas</h3>
-              <p className="text-gray-600">
-                Crea presupuestos detallados, gestiona facturas y controla el flujo de caja de tu empresa.
-              </p>
+          <div className="border-t border-gray-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center">
+            <div className="text-gray-400 text-sm">
+              © 2024 GestioGar. Todos los derechos reservados.
             </div>
-          </div>
-
-          <div className="card">
-            <div className="card-body text-center">
-              <div className="w-12 h-12 bg-primary-100 rounded-lg flex items-center justify-center mx-auto mb-4">
-                <svg className="w-6 h-6 text-primary-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                </svg>
-              </div>
-              <h3 className="text-lg font-semibold mb-2">Técnicos y Clientes</h3>
-              <p className="text-gray-600">
-                Administra tu equipo de técnicos, gestiona clientes y programa citas de forma eficiente.
-              </p>
+            <div className="flex space-x-6 mt-4 md:mt-0">
+              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Términos de Servicio
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Política de Privacidad
+              </a>
+              <a href="#" className="text-gray-400 hover:text-white transition-colors text-sm">
+                Cookies
+              </a>
             </div>
           </div>
         </div>
-
-        <div className="mt-16 text-center">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">
-            Funcionalidades Principales
-          </h2>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm text-gray-600">
-            <div>✓ Gestión de aseguradoras</div>
-            <div>✓ Presupuestos detallados</div>
-            <div>✓ Órdenes de trabajo</div>
-            <div>✓ Inventario de materiales</div>
-            <div>✓ Programación de citas</div>
-            <div>✓ Facturación integrada</div>
-            <div>✓ Comunicación con clientes</div>
-            <div>✓ Reportes y analytics</div>
-          </div>
-        </div>
-      </div>
+      </footer>
     </div>
   )
 }

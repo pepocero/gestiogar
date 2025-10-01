@@ -41,7 +41,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const safetyTimeout = setTimeout(() => {
       console.warn('Auth loading timeout - forcing loading to false')
       setLoading(false)
-    }, 15000) // 15 segundos máximo
+    }, 30000) // 30 segundos máximo
 
     // Obtener sesión inicial
     const getInitialSession = async () => {
@@ -87,9 +87,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const loadUserProfile = async (userId: string, isInitialLoad = false) => {
     try {
-      // Timeout para evitar que se quede cargando indefinidamente
+      // Timeout más largo para evitar errores en páginas complejas
       const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout loading user profile')), 10000)
+        setTimeout(() => reject(new Error('Timeout loading user profile')), 30000)
       )
       
       const userProfile = await Promise.race([
@@ -128,11 +128,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
       await authSignOut()
+      // Limpiar estado local independientemente del resultado
       setUser(null)
       setProfile(null)
       setCompany(null)
     } catch (error) {
-      throw error
+      console.error('Error in signOut:', error)
+      // Limpiar estado local incluso si hay error
+      setUser(null)
+      setProfile(null)
+      setCompany(null)
+      // No relanzar el error para evitar que la UI se quede en estado de error
     } finally {
       setLoading(false)
     }
@@ -142,11 +148,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       setLoading(true)
       await authSignOut()
+      // Limpiar estado local independientemente del resultado
       setUser(null)
       setProfile(null)
       setCompany(null)
     } catch (error) {
-      throw error
+      console.error('Error in logout:', error)
+      // Limpiar estado local incluso si hay error
+      setUser(null)
+      setProfile(null)
+      setCompany(null)
+      // No relanzar el error para evitar que la UI se quede en estado de error
     } finally {
       setLoading(false)
     }

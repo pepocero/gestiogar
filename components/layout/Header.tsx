@@ -243,9 +243,13 @@ export function Header({ onMenuClick }: HeaderProps) {
     try {
       await logout()
       toast.success('Sesión cerrada exitosamente')
+      // Redirigir a la página de bienvenida después de cerrar sesión
+      window.location.href = '/'
     } catch (error) {
       console.error('Error logging out:', error)
       toast.error('Error al cerrar sesión')
+      // Redirigir a la página de bienvenida incluso si hay error
+      window.location.href = '/'
     }
   }
 

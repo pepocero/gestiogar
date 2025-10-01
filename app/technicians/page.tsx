@@ -502,13 +502,13 @@ export default function TechniciansPage() {
       <Layout>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Técnicos</h1>
               <p className="text-gray-600">Gestiona el equipo de técnicos</p>
             </div>
             <Button 
-              className="btn-primary"
+              className="btn-primary w-full sm:w-auto"
               onClick={() => setShowCreateModal(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -517,7 +517,7 @@ export default function TechniciansPage() {
           </div>
 
           {/* Filters */}
-          <Card>
+          <Card className="app-card">
             <CardBody>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
@@ -543,7 +543,7 @@ export default function TechniciansPage() {
           </Card>
 
           {/* Technicians Table */}
-          <Card>
+          <Card className="app-card">
             <CardHeader>
               <h2 className="text-lg font-semibold">Lista de Técnicos</h2>
             </CardHeader>
@@ -640,7 +640,7 @@ export default function TechniciansPage() {
                           </Badge>
                         </td>
                         <td>
-                          <div className="flex space-x-2">
+                          <div className="action-buttons flex space-x-2">
                             <Button 
                               variant="outline" 
                               size="sm"

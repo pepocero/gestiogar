@@ -222,7 +222,7 @@ export default function DashboardPage() {
 
           {/* Estadísticas principales */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+            <Card className="app-card">
               <CardBody>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -236,7 +236,7 @@ export default function DashboardPage() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="app-card">
               <CardBody>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -250,7 +250,7 @@ export default function DashboardPage() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="app-card">
               <CardBody>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -264,7 +264,7 @@ export default function DashboardPage() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="app-card">
               <CardBody>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -281,7 +281,7 @@ export default function DashboardPage() {
 
           {/* Estadísticas secundarias */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+            <Card className="app-card">
               <CardBody>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -295,7 +295,7 @@ export default function DashboardPage() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="app-card">
               <CardBody>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -309,7 +309,7 @@ export default function DashboardPage() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="app-card">
               <CardBody>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -323,7 +323,7 @@ export default function DashboardPage() {
               </CardBody>
             </Card>
 
-            <Card>
+            <Card className="app-card">
               <CardBody>
                 <div className="flex items-center">
                   <div className="flex-shrink-0">
@@ -341,7 +341,7 @@ export default function DashboardPage() {
           </div>
 
           {/* Trabajos recientes */}
-          <Card>
+          <Card className="app-card">
             <CardHeader>
               <h3 className="text-lg font-medium text-gray-900">Trabajos Recientes</h3>
             </CardHeader>

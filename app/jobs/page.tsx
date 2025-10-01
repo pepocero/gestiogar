@@ -482,7 +482,7 @@ export default function JobsPage() {
       <Layout>
         <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Trabajos
@@ -491,19 +491,19 @@ export default function JobsPage() {
               Gestiona las órdenes de trabajo y reparaciones.
             </p>
           </div>
-          <Button onClick={handleNewJob} className="flex items-center space-x-2">
+          <Button onClick={handleNewJob} className="flex items-center space-x-2 w-full sm:w-auto">
             <Plus className="h-4 w-4" />
             <span>Nuevo Trabajo</span>
           </Button>
         </div>
 
         {/* Filtros */}
-        <Card>
+        <Card className="app-card">
           <CardHeader>
             <h3 className="text-lg font-medium text-gray-900">Filtros</h3>
           </CardHeader>
           <CardBody>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="filter-grid grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {/* Búsqueda */}
               <div>
                 <label className="form-label">Buscar</label>
@@ -614,7 +614,7 @@ export default function JobsPage() {
         </Card>
 
         {/* Lista de trabajos */}
-        <Card>
+        <Card className="app-card">
           <CardHeader>
             <h3 className="text-lg font-medium text-gray-900">
               Lista de Trabajos ({filteredJobs.length} de {jobs.length})
@@ -624,7 +624,7 @@ export default function JobsPage() {
             {filteredJobs.length > 0 ? (
               <div className="space-y-4">
                 {filteredJobs.map((job) => (
-                  <div key={job.id} className="bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
+                  <div key={job.id} className="job-card bg-white border border-gray-200 rounded-xl p-4 hover:shadow-md transition-shadow">
                     <div className="flex items-start justify-between gap-4">
                       {/* Izquierda: Número y título */}
                       <div className="flex items-start gap-4 min-w-0">
@@ -683,7 +683,7 @@ export default function JobsPage() {
                           <Calendar className="h-4 w-4 text-gray-400" />
                           <span>{job.scheduled_date ? format(new Date(job.scheduled_date), 'dd/MM/yyyy', { locale: es }) : '-'}</span>
                         </div>
-                        <div className="flex items-center gap-2">
+                        <div className="action-buttons flex items-center gap-2">
                           <Button variant="outline" size="sm" onClick={() => handleView(job)} title="Ver trabajo">
                             <Eye className="h-4 w-4" />
                           </Button>

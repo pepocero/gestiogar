@@ -91,10 +91,10 @@ export default function CommunicationsPage() {
   })
 
   useEffect(() => {
-    if (company) {
+    if (company?.id) {
       loadConversations()
     }
-  }, [company])
+  }, [company?.id])
 
   // Aplicar filtros cuando cambien las conversaciones o los filtros
   useEffect(() => {
@@ -109,6 +109,12 @@ export default function CommunicationsPage() {
   }, [showCreateModal, showEditModal, company?.id])
 
   const loadConversations = async () => {
+    if (!company?.id) {
+      console.error('No company ID available')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const { data, error } = await supabase
@@ -139,7 +145,7 @@ export default function CommunicationsPage() {
             )
           )
         `)
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
         .order('updated_at', { ascending: false })
 
       if (error) {

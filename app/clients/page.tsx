@@ -292,13 +292,13 @@ export default function ClientsPage() {
       <Layout>
         <div className="space-y-6">
           {/* Header */}
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h1 className="text-2xl font-bold text-gray-900">Clientes</h1>
               <p className="text-gray-600">Gestiona los clientes de tu empresa</p>
             </div>
             <Button 
-              className="btn-primary"
+              className="btn-primary w-full sm:w-auto"
               onClick={() => setShowCreateModal(true)}
             >
               <Plus className="h-4 w-4 mr-2" />
@@ -307,7 +307,7 @@ export default function ClientsPage() {
           </div>
 
           {/* Filters */}
-          <Card>
+          <Card className="app-card">
             <CardBody>
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="flex-1">
@@ -320,20 +320,22 @@ export default function ClientsPage() {
                     />
                   </div>
                 </div>
-                <Button variant="secondary">
-                  <Filter className="h-4 w-4 mr-2" />
-                  Filtros
-                </Button>
-                <Button variant="secondary">
-                  <Download className="h-4 w-4 mr-2" />
-                  Exportar
-                </Button>
+                <div className="flex flex-col sm:flex-row gap-2">
+                  <Button variant="secondary" className="w-full sm:w-auto">
+                    <Filter className="h-4 w-4 mr-2" />
+                    Filtros
+                  </Button>
+                  <Button variant="secondary" className="w-full sm:w-auto">
+                    <Download className="h-4 w-4 mr-2" />
+                    Exportar
+                  </Button>
+                </div>
               </div>
             </CardBody>
           </Card>
 
           {/* Clients Table */}
-          <Card>
+          <Card className="app-card">
             <CardHeader>
               <h2 className="text-lg font-semibold">Lista de Clientes</h2>
             </CardHeader>
@@ -378,30 +380,32 @@ export default function ClientsPage() {
                           )}
                         </td>
                         <td className="text-right">
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleViewClient(client)}
-                            title="Ver cliente"
-                          >
-                            <Eye className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleEditClient(client)}
-                            title="Editar cliente"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => handleDeleteClient(client)}
-                            title="Eliminar cliente"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
+                          <div className="action-buttons flex gap-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleViewClient(client)}
+                              title="Ver cliente"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEditClient(client)}
+                              title="Editar cliente"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeleteClient(client)}
+                              title="Eliminar cliente"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
                         </td>
                       </tr>
                     ))

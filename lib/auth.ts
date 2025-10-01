@@ -353,12 +353,25 @@ export async function signIn(email: string, password: string) {
 // Función para cerrar sesión
 export async function signOut() {
   try {
-    const { error } = await supabase.auth.signOut()
-    if (error) {
-      throw error
+    // Verificar si hay una sesión activa antes de intentar cerrar sesión
+    const { data: { session } } = await supabase.auth.getSession()
+    
+    if (session) {
+      const { error } = await supabase.auth.signOut()
+      if (error) {
+        console.error('Error signing out:', error)
+        throw error
+      }
+    } else {
+      console.log('No active session found, clearing local state')
     }
   } catch (error) {
     console.error('Error signing out:', error)
+    // No relanzar el error si es AuthSessionMissingError
+    if (error instanceof Error && error.message.includes('Auth session missing')) {
+      console.log('Session already expired, continuing with logout')
+      return
+    }
     throw error
   }
 }
