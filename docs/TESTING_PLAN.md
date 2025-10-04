@@ -1,4 +1,4 @@
-# 🧪 GestioGar - Plan de Testing
+# 🧪 Gestiogar - Plan de Testing
 
 **Versión:** 1.0  
 **Fecha:** Diciembre 2024  
@@ -295,7 +295,7 @@ const testJob = {
 ```javascript
 // testsprite.config.js
 module.exports = {
-  projectName: 'GestioGar',
+  projectName: 'Gestiogar',
   baseUrl: 'http://localhost:3000',
   testScope: 'frontend',
   parallel: true,
@@ -359,5 +359,5 @@ TRUNCATE TABLE users CASCADE;
 
 **Test Commander: Ready for Testing! 🚀**
 
-Este plan te permite probar sistemáticamente todo el proyecto GestioGar. Una vez que el TestSprite esté conectado, podemos automatizar estos tests.
+Este plan te permite probar sistemáticamente todo el proyecto Gestiogar. Una vez que el TestSprite esté conectado, podemos automatizar estos tests.
 

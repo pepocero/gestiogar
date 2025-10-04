@@ -1,5 +1,5 @@
 /**
- * GestioGar Manual Test Suite
+ * Gestiogar Manual Test Suite
  * Script para testing automatizado de funcionalidades principales
  * Ejecutar con: node tests/manual-test-suite.js
  */
@@ -7,7 +7,7 @@
 const https = require('http');
 const { performance } = require('perf_hooks');
 
-class GestioGarTester {
+class GestiogarTester {
   constructor(baseUrl = 'http://localhost:3000') {
     this.baseUrl = baseUrl;
     this.testResults = {
@@ -30,7 +30,7 @@ class GestioGarTester {
         method: method,
         headers: {
           'Content-Type': 'application/json',
-          'User-Agent': 'GestioGarTester/1.0'
+          'User-Agent': 'GestiogarTester/1.0'
         }
       };
 
@@ -102,7 +102,7 @@ class GestioGarTester {
   }
 
   async runAllTests() {
-    console.log('🚀 Starting GestioGar Test Suite...\n');
+    console.log('🚀 Starting Gestiogar Test Suite...\n');
     console.log(`🎯 Testing against: ${this.baseUrl}\n`);
 
     // Public Routes Tests
@@ -215,7 +215,7 @@ class GestioGarTester {
     console.log('❌ Error handling working');
     
     if (this.testResults.passed === total) {
-      console.log('\n🎉 ALL TESTS PASSED! GestioGar is ready for production! 🚀');
+      console.log('\n🎉 ALL TESTS PASSED! Gestiogar is ready for production! 🚀');
     } else {
       console.log('\n⚠️  Some tests failed. Review failed tests above.');
     }
@@ -238,8 +238,8 @@ class GestioGarTester {
 }
 
 // TestRunner Execution
-async function runGestioGarTests() {
-  const tester = new GestioGarTester();
+async function runGestiogarTests() {
+  const tester = new GestiogarTester();
   
   try {
     await tester.runAllTests();
@@ -251,8 +251,8 @@ async function runGestioGarTests() {
 
 // Execute tests if script is run directly
 if (require.main === module) {
-  runGestioGarTests();
+  runGestiogarTests();
 }
 
-module.exports = GestioGarTester;
+module.exports = GestiogarTester;
 

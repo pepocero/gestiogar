@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useModules } from '@/contexts/ModulesContext'
+import { useSidebar } from '@/contexts/SidebarContext'
 // import { useAdvancedModules } from '@/contexts/AdvancedModulesContext' // Temporalmente deshabilitado
 
 const navigation = [
@@ -52,6 +53,7 @@ export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname()
   const { company, signOut } = useAuth()
   const { modules } = useModules()
+  const { sidebarOpen, isDesktop } = useSidebar()
   // Temporalmente deshabilitado - módulos avanzados
   const advancedSidebarItems: any[] = []
 
@@ -86,10 +88,15 @@ export function Sidebar({ onClose }: SidebarProps) {
             </div>
           )}
           <div className="ml-3">
-            <h1 className="text-lg font-semibold text-gray-900">
-              {company?.name || 'GestioGar'}
-            </h1>
-            <p className="text-xs text-gray-500">Sistema de Gestión</p>
+            {/* Mostrar nombre de empresa solo cuando el sidebar esté visible */}
+            {(isDesktop || sidebarOpen) && (
+              <>
+                <h1 className="text-lg font-semibold text-gray-900">
+                  {company?.name || 'Gestiogar'}
+                </h1>
+                <p className="text-xs text-gray-500">Sistema de Gestión</p>
+              </>
+            )}
           </div>
         </div>
         

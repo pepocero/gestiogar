@@ -13,7 +13,7 @@ Ejecuta el siguiente SQL en **Supabase Dashboard > SQL Editor**:
 ```sql
 -- =====================================================
 -- SCRIPT COMPLETO PARA CREAR TABLAS DE MÓDULOS
--- GestioGar - Sistema Multitenant
+-- Gestiogar - Sistema Multitenant
 -- =====================================================
 
 -- Habilitar extensiones necesarias

@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "implementation_date": "2024-04-12",
   "description": "Controla el inventario de equipos, herramientas y maquinaria",
-  "author": "Equipo GestioGar",
+  "author": "Equipo Gestiogar",
   "license": "MIT",
   "config": {
     "title": "Equipos e Inventario",

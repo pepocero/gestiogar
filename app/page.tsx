@@ -32,14 +32,14 @@ export default function HomePage() {
               <div className="flex-shrink-0">
                 <Image
                   src="/logo.png"
-                  alt="GestioGar"
+                  alt="Gestiogar"
                   width={32}
                   height={32}
                   className="h-8 w-8"
                 />
               </div>
               <div className="ml-4">
-                <h1 className="text-2xl font-bold text-gray-900">GestioGar</h1>
+                <h1 className="text-2xl font-bold text-gray-900">Gestiogar</h1>
               </div>
             </div>
             <div className="hidden md:flex items-center space-x-8">
@@ -116,7 +116,7 @@ export default function HomePage() {
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
               Desde la primera llamada del cliente hasta la facturación final, 
-              GestioGar te acompaña en cada paso.
+              Gestiogar te acompaña en cada paso.
             </p>
           </div>
 
@@ -203,7 +203,7 @@ export default function HomePage() {
             ¿Listo para digitalizar tu empresa?
           </h2>
           <p className="text-xl mb-8 text-blue-100 max-w-2xl mx-auto">
-            Únete empresas que ya están usando GestioGar para mejorar su eficiencia 
+            Únete empresas que ya están usando Gestiogar para mejorar su eficiencia 
             y aumentar su productividad.
           </p>
           <Link 
@@ -223,12 +223,12 @@ export default function HomePage() {
               <div className="flex items-center mb-4">
                 <Image
                   src="/logo.png"
-                  alt="GestioGar"
+                  alt="Gestiogar"
                   width={24}
                   height={24}
                   className="h-6 w-6"
                 />
-                <span className="ml-2 text-xl font-bold">GestioGar</span>
+                <span className="ml-2 text-xl font-bold">Gestiogar</span>
               </div>
               <p className="text-gray-400">
                 Plataforma de gestión para empresas de reparaciones del hogar.
@@ -267,7 +267,7 @@ export default function HomePage() {
           </div>
           
           <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 GestioGar. Todos los derechos reservados.</p>
+            <p>&copy; 2024 Gestiogar. Todos los derechos reservados.</p>
           </div>
         </div>
       </footer>

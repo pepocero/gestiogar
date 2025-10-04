@@ -1,6 +1,6 @@
-# GestioGar - Sistema de Gestión para Empresas de Reparaciones del Hogar
+# Gestiogar - Sistema de Gestión para Empresas de Reparaciones del Hogar
 
-GestioGar es una aplicación web multitenant desarrollada para empresas de reparaciones del hogar que trabajan con aseguradoras. Permite gestionar presupuestos, trabajos, técnicos, clientes y aseguradoras de forma eficiente.
+Gestiogar es una aplicación web multitenant desarrollada para empresas de reparaciones del hogar que trabajan con aseguradoras. Permite gestionar presupuestos, trabajos, técnicos, clientes y aseguradoras de forma eficiente.
 
 ## Características Principales
 

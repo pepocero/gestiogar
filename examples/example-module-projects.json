@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "implementation_date": "2024-04-12",
   "description": "Gestiona trabajos especializados y proyectos de mayor envergadura",
-  "author": "Equipo GestioGar",
+  "author": "Equipo Gestiogar",
   "license": "MIT",
   "config": {
     "title": "Proyectos Especiales",

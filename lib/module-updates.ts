@@ -78,6 +78,69 @@ export const MODULE_UPDATES: ModuleUpdate[] = [
       'v1.1.0 - Agregado campo de fecha fin',
       'v1.1.0 - Mejorada la interfaz de usuario'
     ]
+  },
+  {
+    slug: 'vehicle-management',
+    version: '1.2.1',
+    config: {
+      title: 'Vehículos',
+      description: 'Gestiona tu flota de vehículos de servicio',
+      icon: 'Truck',
+      fields: [
+        {
+          name: 'marca',
+          label: 'Marca',
+          type: 'text',
+          required: true
+        },
+        {
+          name: 'modelo',
+          label: 'Modelo',
+          type: 'text',
+          required: true
+        },
+        {
+          name: 'placa',
+          label: 'Placa',
+          type: 'text',
+          required: true
+        },
+        {
+          name: 'año',
+          label: 'Año',
+          type: 'number',
+          required: true
+        },
+        {
+          name: 'tipo_combustible',
+          label: 'Tipo de Combustible',
+          type: 'select',
+          required: true,
+          options: [
+            { value: 'gasolina', label: 'Gasolina' },
+            { value: 'diesel', label: 'Diésel' },
+            { value: 'electrico', label: 'Eléctrico' },
+            { value: 'hibrido', label: 'Híbrido' }
+          ]
+        },
+        {
+          name: 'tecnico',
+          label: 'Técnico Asignado',
+          type: 'select',
+          required: true,
+          dynamic: true,
+          source: 'technicians',
+          options: [
+            { value: 'sin_asignar', label: 'Sin asignar' }
+          ]
+        }
+      ]
+    },
+    changelog: [
+      'v1.2.1 - Agregado campo "Técnico Asignado" obligatorio',
+      'v1.2.1 - Campo dinámico que se llena desde la tabla technicians',
+      'v1.2.1 - Opción "Sin asignar" para vehículos no asignados'
+    ]
   }
   // Aquí se pueden agregar más módulos y sus actualizaciones
 ]

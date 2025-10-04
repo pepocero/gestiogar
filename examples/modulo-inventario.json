@@ -3,7 +3,7 @@
   "slug": "gestion-inventario",
   "version": "1.0.0",
   "description": "Módulo para gestionar inventario de herramientas y materiales",
-  "author": "GestioGar Team",
+  "author": "Gestiogar Team",
   "icon": "Package",
   "category": "inventario",
   "fields": [

@@ -14,7 +14,7 @@ export async function initializeDemoModule() {
       slug: "inventario-herramientas",
       version: "2.0.0",
       description: "Sistema completo de gestión de herramientas con funcionalidades avanzadas",
-      author: "GestioGar Team",
+      author: "Gestiogar Team",
       icon: "Wrench",
       category: "inventario" as const,
       dependencies: [],

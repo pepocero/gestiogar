@@ -1,4 +1,4 @@
-# GestioGar - Product Requirements Document (PRD)
+# Gestiogar - Product Requirements Document (PRD)
 
 **Versión:** 1.0  
 **Fecha:** Diciembre 2024  
@@ -8,7 +8,7 @@
 
 ## 📋 Executive Summary
 
-**GestioGar** es una plataforma SaaS multitenant desarrollada para empresas de reparaciones del hogar que operan con aseguradoras. El sistema centraliza la gestión de clientes, técnicos, trabajos, presupuestos, facturas y comunicaciones en una solución integrada moderna.
+**Gestiogar** es una plataforma SaaS multitenant desarrollada para empresas de reparaciones del hogar que operan con aseguradoras. El sistema centraliza la gestión de clientes, técnicos, trabajos, presupuestos, facturas y comunicaciones en una solución integrada moderna.
 
 ### Stack Tecnológico
 - **Frontend:** Next.js 14, TypeScript, React, Tailwind CSS
@@ -593,4 +593,4 @@ const requireCompany = () => {
 
 ---
 
-*Este documento técnico es la especificación completa para el desarrollo y mantenimiento de GestioGar. Para la versión ejecutiva en HTML, consulte `docs/prd.html`.*
+*Este documento técnico es la especificación completa para el desarrollo y mantenimiento de Gestiogar. Para la versión ejecutiva en HTML, consulte `docs/prd.html`.*

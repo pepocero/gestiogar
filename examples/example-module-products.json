@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "implementation_date": "2024-04-12",
   "description": "Gestiona el catálogo de productos y servicios de la empresa",
-  "author": "Equipo GestioGar",
+  "author": "Equipo Gestiogar",
   "license": "MIT",
   "config": {
     "title": "Productos",

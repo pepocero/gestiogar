@@ -3,7 +3,7 @@
   "slug": "holidays-vacations",
   "version": "1.0.0",
   "description": "Gestiona los días festivos y vacaciones de los técnicos. Incluye calendario de vacaciones, solicitudes de días libres y planificación de horarios.",
-  "author": "GestioGar Team",
+  "author": "Gestiogar Team",
   "icon": "Calendar",
   "category": "recursos-humanos",
   "dependencies": ["users", "companies"],

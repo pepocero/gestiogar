@@ -1,4 +1,4 @@
-# 🧪 GestioGar Test Results Analysis
+# 🧪 Gestiogar Test Results Analysis
 
 **Fecha:** Diciembre 2024  
 **Test Suite:** Manual Test Suite v1.0  

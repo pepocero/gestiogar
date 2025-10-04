@@ -157,7 +157,7 @@ export default function HerramientasPage() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Autor:</span>
-                  <span className="font-medium">{moduleManifest?.author || 'GestioGar Team'}</span>
+                  <span className="font-medium">{moduleManifest?.author || 'Gestiogar Team'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Categoría:</span>

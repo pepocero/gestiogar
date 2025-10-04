@@ -1,6 +1,6 @@
 -- =====================================================
 -- SCRIPT COMPLETO PARA CREAR TABLAS DE MÓDULOS
--- GestioGar - Sistema Multitenant
+-- Gestiogar - Sistema Multitenant
 -- =====================================================
 -- Ejecutar este script completo en Supabase Dashboard > SQL Editor
 

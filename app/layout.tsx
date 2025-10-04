@@ -10,7 +10,7 @@ import { Toaster } from 'react-hot-toast'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'GestioGar - Gestión de Reparaciones del Hogar',
+  title: 'Gestiogar - Gestión de Reparaciones del Hogar',
   description: 'Sistema multitenant para empresas de reparaciones del hogar que trabajan con aseguradoras',
   icons: [
     {

@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ success: false, error: checkError.message }, { status: 500 })
     }
 
-    const existingTableNames = existingTables?.map(t => t.table_name) || []
+    const existingTableNames = existingTables?.map((t: { table_name: string }) => t.table_name) || []
     
     if (existingTableNames.includes('modules') && existingTableNames.includes('module_data')) {
       return NextResponse.json({ 

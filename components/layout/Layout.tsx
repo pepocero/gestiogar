@@ -1,15 +1,28 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
+import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
 
 interface LayoutProps {
   children: React.ReactNode
 }
 
-export function Layout({ children }: LayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+function LayoutContent({ children }: LayoutProps) {
+  const { sidebarOpen, setSidebarOpen, isDesktop, setIsDesktop } = useSidebar()
+
+  // Detectar tamaño de pantalla
+  useEffect(() => {
+    const checkScreenSize = () => {
+      setIsDesktop(window.innerWidth >= 1024) // lg breakpoint
+    }
+
+    checkScreenSize()
+    window.addEventListener('resize', checkScreenSize)
+    
+    return () => window.removeEventListener('resize', checkScreenSize)
+  }, [setIsDesktop])
 
   return (
     <div className="flex h-screen bg-gray-50">
@@ -44,5 +57,13 @@ export function Layout({ children }: LayoutProps) {
         />
       )}
     </div>
+  )
+}
+
+export function Layout({ children }: LayoutProps) {
+  return (
+    <SidebarProvider>
+      <LayoutContent>{children}</LayoutContent>
+    </SidebarProvider>
   )
 }

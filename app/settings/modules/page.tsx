@@ -19,7 +19,7 @@ const AVAILABLE_MODULES = [
     name: 'Gestión de Días Festivos y Vacaciones',
     version: '1.0.0',
     description: 'Gestiona los días festivos y vacaciones de los técnicos. Incluye calendario de vacaciones, solicitudes de días libres y planificación de horarios.',
-    author: 'GestioGar Team',
+    author: 'Gestiogar Team',
     category: 'recursos-humanos',
     icon: 'Calendar',
     price: 'Gratis',
@@ -37,7 +37,7 @@ const AVAILABLE_MODULES = [
       name: 'Gestión de Días Festivos y Vacaciones',
       version: '1.0.0',
       description: 'Gestiona los días festivos y vacaciones de los técnicos',
-      author: 'GestioGar Team',
+      author: 'Gestiogar Team',
       license: 'MIT',
       config: {
         title: 'Días Festivos y Vacaciones',
@@ -106,7 +106,7 @@ const AVAILABLE_MODULES = [
     name: 'Gestión de Vehículos de Servicio',
     version: '1.2.0',
     description: 'Administra la flota de vehículos de la empresa. Control de mantenimientos, combustible, seguros y asignación a técnicos.',
-    author: 'GestioGar Team',
+    author: 'Gestiogar Team',
     category: 'logistica',
     icon: 'Truck',
     price: 'Gratis',
@@ -124,7 +124,7 @@ const AVAILABLE_MODULES = [
       name: 'Gestión de Vehículos de Servicio',
       version: '1.2.0',
       description: 'Administra la flota de vehículos de la empresa',
-      author: 'GestioGar Team',
+      author: 'Gestiogar Team',
       license: 'MIT',
       config: {
         title: 'Vehículos',
@@ -166,6 +166,17 @@ const AVAILABLE_MODULES = [
               { value: 'electrico', label: 'Eléctrico' },
               { value: 'hibrido', label: 'Híbrido' }
             ]
+          },
+          {
+            name: 'tecnico',
+            label: 'Técnico Asignado',
+            type: 'select',
+            required: true,
+            dynamic: true,
+            source: 'technicians',
+            options: [
+              { value: 'sin_asignar', label: 'Sin asignar' }
+            ]
           }
         ]
       }
@@ -176,7 +187,7 @@ const AVAILABLE_MODULES = [
     name: 'Control de Gastos Operativos',
     version: '1.1.0',
     description: 'Registra y controla todos los gastos operativos de la empresa. Categorización, aprobaciones y reportes detallados.',
-    author: 'GestioGar Team',
+    author: 'Gestiogar Team',
     category: 'finanzas',
     icon: 'Receipt',
     price: 'Gratis',
@@ -194,7 +205,7 @@ const AVAILABLE_MODULES = [
       name: 'Control de Gastos Operativos',
       version: '1.1.0',
       description: 'Registra y controla todos los gastos operativos',
-      author: 'GestioGar Team',
+      author: 'Gestiogar Team',
       license: 'MIT',
       config: {
         title: 'Gastos',

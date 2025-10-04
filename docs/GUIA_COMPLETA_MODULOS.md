@@ -16,7 +16,7 @@
 
 ## 🎯 INTRODUCCIÓN AL SISTEMA
 
-El sistema de módulos de GestioGar es una plataforma multitenant que permite a cada empresa instalar y gestionar módulos adicionales de manera independiente. Cada módulo instalado es **completamente aislado por empresa** (multitenant).
+El sistema de módulos de Gestiogar es una plataforma multitenant que permite a cada empresa instalar y gestionar módulos adicionales de manera independiente. Cada módulo instalado es **completamente aislado por empresa** (multitenant).
 
 ### Características Principales:
 - ✅ **Multitenant**: Cada empresa solo ve sus propios módulos y datos
@@ -500,7 +500,7 @@ Para que tu módulo aparezca en la tienda:
   "slug": "gestion-productos",
   "version": "1.0.0",
   "description": "Gestiona el catálogo de productos y servicios",
-  "author": "GestioGar Team",
+  "author": "Gestiogar Team",
   "icon": "Gift",
   "category": "inventario",
   "fields": [
@@ -553,7 +553,7 @@ Para que tu módulo aparezca en la tienda:
   "slug": "sistema-tickets",
   "version": "1.0.0",
   "description": "Gestión de tickets de soporte y incidencias",
-  "author": "GestioGar Team",
+  "author": "Gestiogar Team",
   "icon": "Ticket",
   "category": "soporte",
   "hooks": ["sidebar_menu", "dashboard_widgets"],
@@ -914,5 +914,5 @@ console.log('❌ Module error:', error)
 
 ---
 
-**🎉 ¡El sistema de módulos de GestioGar está diseñado para ser potente, seguro y fácil de usar. Esta guía te permitirá crear módulos increíbles que se integren perfectamente con el sistema!**
+**🎉 ¡El sistema de módulos de Gestiogar está diseñado para ser potente, seguro y fácil de usar. Esta guía te permitirá crear módulos increíbles que se integren perfectamente con el sistema!**
 

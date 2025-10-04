@@ -5,11 +5,12 @@ import { useParams } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui'
 import { Modal, Input, Badge } from '@/components/ui'
-import { Plus, Edit, Trash2, Eye, Calendar, FileText, ChevronDown, ChevronRight, Users, Clock } from 'lucide-react'
+import { Plus, Edit, Trash2, Eye, Calendar, FileText, ChevronDown, ChevronRight, Users, Clock, Truck } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useModules } from '@/contexts/ModulesContext'
 import { getModuleData, createModuleData, updateModuleData, deleteModuleData, getTechnicians, updateModule } from '@/lib/modules'
 import { getLatestModuleConfig } from '@/lib/module-updates'
+import { logger } from '@/lib/logger'
 import toast from 'react-hot-toast'
 
 interface ModuleDataItem {
@@ -38,9 +39,9 @@ export default function ModulePage() {
   const currentModule = modules.find(m => m.slug === params.slug)
   
   // Debug: Ver la configuración del módulo
-  console.log('🔍 Current module:', currentModule)
-  console.log('🔍 Module config:', currentModule?.config)
-  console.log('🔍 Module fields:', currentModule?.config?.fields)
+  logger.debug('Current module:', currentModule)
+  logger.config('Module config:', currentModule?.config)
+  logger.config('Module fields:', currentModule?.config?.fields)
 
   const loadModuleData = async () => {
     if (!currentModule?.id) return
@@ -59,12 +60,12 @@ export default function ModulePage() {
 
   const loadTechnicians = async () => {
     try {
-      console.log('🔍 Loading technicians...')
+      logger.debug('Loading technicians...')
       const data = await getTechnicians()
-      console.log('🔍 Technicians loaded:', data)
+      logger.data('Technicians loaded:', data)
       setTechnicians(data)
     } catch (error: any) {
-      console.error('❌ Error loading technicians:', error)
+      logger.error('Error loading technicians:', error)
       // No mostrar error si no hay técnicos, simplemente usar lista vacía
     }
   }
@@ -73,6 +74,25 @@ export default function ModulePage() {
     loadModuleData()
     loadTechnicians()
   }, [currentModule?.id])
+
+  // Limpiar estado al desmontar el componente para evitar problemas de navegación
+  useEffect(() => {
+    return () => {
+      // Limpiar estados que pueden causar problemas de navegación
+      setExpandedRows(new Set())
+      setFormData({})
+      setEditingItem(null)
+      setSelectedItem(null)
+      setShowModal(false)
+      setShowViewModal(false)
+      setShowDeleteModal(false)
+      
+      // Limpiar logs en producción
+      if (process.env.NODE_ENV === 'production') {
+        logger.info('Cleaning up module state...')
+      }
+    }
+  }, [])
 
   const resetForm = () => {
     setFormData({})
@@ -107,7 +127,7 @@ export default function ModulePage() {
       resetForm()
       loadModuleData()
     } catch (error: any) {
-      console.error('Error saving module data:', error)
+      logger.error('Error saving module data:', error)
       toast.error('Error guardando datos')
     }
   }
@@ -128,7 +148,7 @@ export default function ModulePage() {
       setSelectedItem(null)
       loadModuleData()
     } catch (error: any) {
-      console.error('Error deleting module data:', error)
+      logger.error('Error deleting module data:', error)
       toast.error('Error eliminando registro')
     }
   }
@@ -192,7 +212,7 @@ export default function ModulePage() {
     if (!currentModule?.id) return
     
     try {
-      console.log('🔧 Checking module update...')
+      logger.update('Checking module update...')
       
       // Obtener la configuración más reciente desde la configuración centralizada
       const latestUpdate = getLatestModuleConfig(currentModule.slug)
@@ -200,7 +220,7 @@ export default function ModulePage() {
       // Si no hay configuración actualizada disponible, mostrar mensaje
       if (!latestUpdate) {
         toast.info('ℹ️ No hay actualizaciones disponibles para este módulo.')
-        console.log('ℹ️ No updates available for this module')
+        logger.info('No updates available for this module')
         return
       }
       
@@ -217,16 +237,16 @@ export default function ModulePage() {
       
       if (!needsUpdate) {
         toast.success('✅ El módulo ya está actualizado. No se realizaron cambios.')
-        console.log('✅ Module is already up to date')
+        logger.success('Module is already up to date')
         return
       }
       
-      console.log('🔧 Updating module...')
-      console.log(`📊 Version: ${currentVersion} → ${latestVersion}`)
-      console.log(`📊 Config changed: ${configChanged}`)
+      logger.update('Updating module...')
+      logger.data(`Version: ${currentVersion} → ${latestVersion}`)
+      logger.data(`Config changed: ${configChanged}`)
       
       if (latestUpdate.changelog) {
-        console.log('📋 Changelog:', latestUpdate.changelog)
+        logger.info('Changelog:', latestUpdate.changelog)
       }
       
       await updateModule(currentModule.id, {
@@ -235,7 +255,7 @@ export default function ModulePage() {
       })
       
       toast.success(`✅ Módulo actualizado correctamente (v${latestVersion}). Recarga la página.`)
-      console.log('✅ Module updated successfully')
+      logger.success('Module updated successfully')
       
       // Recargar la página después de 2 segundos
       setTimeout(() => {
@@ -243,7 +263,7 @@ export default function ModulePage() {
       }, 2000)
       
     } catch (error) {
-      console.error('❌ Error updating module:', error)
+      logger.error('Error updating module:', error)
       toast.error('❌ Error actualizando módulo')
     }
   }
@@ -333,19 +353,19 @@ export default function ModulePage() {
         // Manejar campos dinámicos
         let selectOptions = field.options || []
         
-        console.log('🔍 renderFormField - select field:', field)
-        console.log('🔍 technicians loaded:', technicians)
+        logger.debug('renderFormField - select field:', field)
+        logger.data('technicians loaded:', technicians)
         
         if (field.dynamic && field.source === 'technicians') {
-          console.log('🔍 Field is dynamic for technicians')
+          logger.debug('Field is dynamic for technicians')
           // Agregar técnicos dinámicamente
           const technicianOptions = technicians.map(tech => ({
             value: tech.id,
             label: `${tech.first_name} ${tech.last_name}`
           }))
-          console.log('🔍 technicianOptions:', technicianOptions)
+          logger.data('technicianOptions:', technicianOptions)
           selectOptions = [...field.options, ...technicianOptions]
-          console.log('🔍 final selectOptions:', selectOptions)
+          logger.data('final selectOptions:', selectOptions)
         }
         
         return (
@@ -496,21 +516,43 @@ export default function ModulePage() {
                   <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-8">
                     {/* Columna para el botón de expansión */}
                   </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Técnico
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Tipo
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha Inicio
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Fecha Fin
-                  </th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                    Acciones
-                  </th>
+                  {currentModule.slug === 'vehicle-management' ? (
+                    <>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Técnico
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Marca
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Modelo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Placa
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </>
+                  ) : (
+                    <>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Técnico
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Tipo
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha Inicio
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Fecha Fin
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Acciones
+                      </th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
@@ -532,32 +574,49 @@ export default function ModulePage() {
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
                         <Badge variant="outline" className="text-xs">
-                          {item.data.tecnico === 'todos' ? 'Todos' : 
+                          {item.data.tecnico === 'todos' || item.data.tecnico === 'sin_asignar' ? 
+                            (item.data.tecnico === 'todos' ? 'Todos' : 'Sin asignar') : 
                            (() => {
                              const tech = technicians.find(t => t.id === item.data.tecnico)
                              return tech ? `${tech.first_name} ${tech.last_name}` : item.data.tecnico || '-'
                            })()}
                         </Badge>
                       </td>
-                      <td className="px-4 py-4 whitespace-nowrap">
-                        <Badge variant={
-                          item.data.tipo === 'vacaciones' ? 'primary' : 
-                          item.data.tipo === 'festivo' ? 'success' : 
-                          item.data.tipo === 'local' ? 'warning' : 'secondary'
-                        } className="text-xs">
-                          {item.data.tipo === 'vacaciones' ? 'Vacaciones' :
-                           item.data.tipo === 'festivo' ? 'Festivo Nacional' :
-                           item.data.tipo === 'local' ? 'Festivo Local' :
-                           item.data.tipo === 'empresa' ? 'Festivo Empresa' :
-                           item.data.tipo || '-'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.data.fecha_inicio ? new Date(item.data.fecha_inicio).toLocaleDateString('es-ES') : '-'}
-                      </td>
-                      <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {item.data.fecha_fin ? new Date(item.data.fecha_fin).toLocaleDateString('es-ES') : '-'}
-                      </td>
+                      {currentModule.slug === 'vehicle-management' ? (
+                        <>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.data.marca || '-'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.data.modelo || '-'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.data.placa || '-'}
+                          </td>
+                        </>
+                      ) : (
+                        <>
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <Badge variant={
+                              item.data.tipo === 'vacaciones' ? 'primary' : 
+                              item.data.tipo === 'festivo' ? 'success' : 
+                              item.data.tipo === 'local' ? 'warning' : 'secondary'
+                            } className="text-xs">
+                              {item.data.tipo === 'vacaciones' ? 'Vacaciones' :
+                               item.data.tipo === 'festivo' ? 'Festivo Nacional' :
+                               item.data.tipo === 'local' ? 'Festivo Local' :
+                               item.data.tipo === 'empresa' ? 'Festivo Empresa' :
+                               item.data.tipo || '-'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.data.fecha_inicio ? new Date(item.data.fecha_inicio).toLocaleDateString('es-ES') : '-'}
+                          </td>
+                          <td className="px-4 py-4 whitespace-nowrap text-sm text-gray-900">
+                            {item.data.fecha_fin ? new Date(item.data.fecha_fin).toLocaleDateString('es-ES') : '-'}
+                          </td>
+                        </>
+                      )}
                       <td className="px-4 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex space-x-2" onClick={(e) => e.stopPropagation()}>
                           <button
@@ -591,18 +650,25 @@ export default function ModulePage() {
                     {/* Fila expandida */}
                     {isRowExpanded(item.id) && (
                       <tr className="bg-gray-50">
-                        <td colSpan={6} className="px-4 py-4">
+                        <td colSpan={currentModule.slug === 'vehicle-management' ? 6 : 6} className="px-4 py-4">
                           <div className="bg-gradient-to-br from-blue-50 to-indigo-50 rounded-xl border border-blue-200 shadow-sm">
                             {/* Header con título y fecha */}
                             <div className="bg-white rounded-t-xl border-b border-gray-200 px-6 py-4">
                               <div className="flex items-center justify-between">
                                 <div className="flex items-center space-x-3">
                                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                                    <Calendar className="h-5 w-5 text-blue-600" />
+                                    {currentModule.slug === 'vehicle-management' ? (
+                                      <Truck className="h-5 w-5 text-blue-600" />
+                                    ) : (
+                                      <Calendar className="h-5 w-5 text-blue-600" />
+                                    )}
                                   </div>
                                   <div>
                                     <h3 className="text-lg font-semibold text-gray-900">
-                                      {item.data.nombre || 'Sin nombre'}
+                                      {currentModule.slug === 'vehicle-management' 
+                                        ? `${item.data.marca || ''} ${item.data.modelo || ''}`.trim() || 'Vehículo'
+                                        : item.data.nombre || 'Sin nombre'
+                                      }
                                     </h3>
                                     <p className="text-sm text-gray-500">
                                       Registro creado el {new Date(item.created_at).toLocaleDateString('es-ES')}
@@ -610,17 +676,23 @@ export default function ModulePage() {
                                   </div>
                                 </div>
                                 <div className="flex space-x-2">
-                                  <Badge variant={
-                                    item.data.tipo === 'vacaciones' ? 'primary' : 
-                                    item.data.tipo === 'festivo' ? 'success' : 
-                                    item.data.tipo === 'local' ? 'warning' : 'secondary'
-                                  } className="text-xs">
-                                    {item.data.tipo === 'vacaciones' ? 'Vacaciones' :
-                                     item.data.tipo === 'festivo' ? 'Festivo Nacional' :
-                                     item.data.tipo === 'local' ? 'Festivo Local' :
-                                     item.data.tipo === 'empresa' ? 'Festivo Empresa' :
-                                     item.data.tipo || '-'}
-                                  </Badge>
+                                  {currentModule.slug === 'vehicle-management' ? (
+                                    <Badge variant="outline" className="text-xs">
+                                      {item.data.placa || 'Sin placa'}
+                                    </Badge>
+                                  ) : (
+                                    <Badge variant={
+                                      item.data.tipo === 'vacaciones' ? 'primary' : 
+                                      item.data.tipo === 'festivo' ? 'success' : 
+                                      item.data.tipo === 'local' ? 'warning' : 'secondary'
+                                    } className="text-xs">
+                                      {item.data.tipo === 'vacaciones' ? 'Vacaciones' :
+                                       item.data.tipo === 'festivo' ? 'Festivo Nacional' :
+                                       item.data.tipo === 'local' ? 'Festivo Local' :
+                                       item.data.tipo === 'empresa' ? 'Festivo Empresa' :
+                                       item.data.tipo || '-'}
+                                    </Badge>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -633,33 +705,36 @@ export default function ModulePage() {
                                   <div className="bg-white rounded-lg border border-gray-200 p-4">
                                     <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                                       <Users className="h-4 w-4 mr-2 text-blue-600" />
-                                      Asignación
+                                      {currentModule.slug === 'vehicle-management' ? 'Asignación del Vehículo' : 'Asignación'}
                                     </h4>
                                     <div className="space-y-3">
                                       <div className="flex items-center justify-between py-2 border-b border-gray-100">
                                         <span className="text-sm font-medium text-gray-600">Técnico:</span>
                                         <Badge variant="outline" className="text-xs">
-                                          {item.data.tecnico === 'todos' ? 'Todos los técnicos' : 
+                                          {item.data.tecnico === 'todos' || item.data.tecnico === 'sin_asignar' ? 
+                                            (item.data.tecnico === 'todos' ? 'Todos los técnicos' : 'Sin asignar') : 
                                            (() => {
                                              const tech = technicians.find(t => t.id === item.data.tecnico)
                                              return tech ? `${tech.first_name} ${tech.last_name}` : item.data.tecnico || '-'
                                            })()}
                                         </Badge>
                                       </div>
-                                      <div className="flex items-center justify-between py-2">
-                                        <span className="text-sm font-medium text-gray-600">Tipo:</span>
-                                        <Badge variant={
-                                          item.data.tipo === 'vacaciones' ? 'primary' : 
-                                          item.data.tipo === 'festivo' ? 'success' : 
-                                          item.data.tipo === 'local' ? 'warning' : 'secondary'
-                                        } className="text-xs">
-                                          {item.data.tipo === 'vacaciones' ? 'Vacaciones' :
-                                           item.data.tipo === 'festivo' ? 'Festivo Nacional' :
-                                           item.data.tipo === 'local' ? 'Festivo Local' :
-                                           item.data.tipo === 'empresa' ? 'Festivo Empresa' :
-                                           item.data.tipo || '-'}
-                                        </Badge>
-                                      </div>
+                                      {currentModule.slug !== 'vehicle-management' && (
+                                        <div className="flex items-center justify-between py-2">
+                                          <span className="text-sm font-medium text-gray-600">Tipo:</span>
+                                          <Badge variant={
+                                            item.data.tipo === 'vacaciones' ? 'primary' : 
+                                            item.data.tipo === 'festivo' ? 'success' : 
+                                            item.data.tipo === 'local' ? 'warning' : 'secondary'
+                                          } className="text-xs">
+                                            {item.data.tipo === 'vacaciones' ? 'Vacaciones' :
+                                             item.data.tipo === 'festivo' ? 'Festivo Nacional' :
+                                             item.data.tipo === 'local' ? 'Festivo Local' :
+                                             item.data.tipo === 'empresa' ? 'Festivo Empresa' :
+                                             item.data.tipo || '-'}
+                                          </Badge>
+                                        </div>
+                                      )}
                                     </div>
                                   </div>
 
@@ -713,21 +788,56 @@ export default function ModulePage() {
                                   <div className="bg-white rounded-lg border border-gray-200 p-4">
                                     <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
                                       <Calendar className="h-4 w-4 mr-2 text-green-600" />
-                                      Fechas
+                                      {currentModule.slug === 'vehicle-management' ? 'Información del Vehículo' : 'Fechas'}
                                     </h4>
                                     <div className="space-y-3">
-                                      <div className="flex items-center justify-between py-2 border-b border-gray-100">
-                                        <span className="text-sm font-medium text-gray-600">Inicio:</span>
-                                        <span className="text-sm font-semibold text-gray-900">
-                                          {item.data.fecha_inicio ? new Date(item.data.fecha_inicio).toLocaleDateString('es-ES') : '-'}
-                                        </span>
-                                      </div>
-                                      <div className="flex items-center justify-between py-2">
-                                        <span className="text-sm font-medium text-gray-600">Fin:</span>
-                                        <span className="text-sm font-semibold text-gray-900">
-                                          {item.data.fecha_fin ? new Date(item.data.fecha_fin).toLocaleDateString('es-ES') : '-'}
-                                        </span>
-                                      </div>
+                                      {currentModule.slug === 'vehicle-management' ? (
+                                        <>
+                                          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm font-medium text-gray-600">Marca:</span>
+                                            <span className="text-sm font-semibold text-gray-900">
+                                              {item.data.marca || '-'}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm font-medium text-gray-600">Modelo:</span>
+                                            <span className="text-sm font-semibold text-gray-900">
+                                              {item.data.modelo || '-'}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm font-medium text-gray-600">Año:</span>
+                                            <span className="text-sm font-semibold text-gray-900">
+                                              {item.data.año || '-'}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between py-2">
+                                            <span className="text-sm font-medium text-gray-600">Combustible:</span>
+                                            <Badge variant="outline" className="text-xs">
+                                              {item.data.tipo_combustible === 'gasolina' ? 'Gasolina' :
+                                               item.data.tipo_combustible === 'diesel' ? 'Diésel' :
+                                               item.data.tipo_combustible === 'electrico' ? 'Eléctrico' :
+                                               item.data.tipo_combustible === 'hibrido' ? 'Híbrido' :
+                                               item.data.tipo_combustible || '-'}
+                                            </Badge>
+                                          </div>
+                                        </>
+                                      ) : (
+                                        <>
+                                          <div className="flex items-center justify-between py-2 border-b border-gray-100">
+                                            <span className="text-sm font-medium text-gray-600">Inicio:</span>
+                                            <span className="text-sm font-semibold text-gray-900">
+                                              {item.data.fecha_inicio ? new Date(item.data.fecha_inicio).toLocaleDateString('es-ES') : '-'}
+                                            </span>
+                                          </div>
+                                          <div className="flex items-center justify-between py-2">
+                                            <span className="text-sm font-medium text-gray-600">Fin:</span>
+                                            <span className="text-sm font-semibold text-gray-900">
+                                              {item.data.fecha_fin ? new Date(item.data.fecha_fin).toLocaleDateString('es-ES') : '-'}
+                                            </span>
+                                          </div>
+                                        </>
+                                      )}
                                     </div>
                                   </div>
 
@@ -802,26 +912,40 @@ export default function ModulePage() {
             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-lg p-4 border border-blue-200">
               <div className="flex items-center space-x-3">
                 <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
-                  <Calendar className="h-6 w-6 text-blue-600" />
+                  {currentModule.slug === 'vehicle-management' ? (
+                    <Truck className="h-6 w-6 text-blue-600" />
+                  ) : (
+                    <Calendar className="h-6 w-6 text-blue-600" />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-lg font-semibold text-gray-900">
-                    {selectedItem.data.nombre || 'Sin nombre'}
+                    {currentModule.slug === 'vehicle-management' 
+                      ? `${selectedItem.data.marca || ''} ${selectedItem.data.modelo || ''}`.trim() || 'Vehículo'
+                      : selectedItem.data.nombre || 'Sin nombre'
+                    }
                   </h3>
                   <div className="flex items-center space-x-2 mt-1">
-                    <Badge variant={
-                      selectedItem.data.tipo === 'vacaciones' ? 'primary' : 
-                      selectedItem.data.tipo === 'festivo' ? 'success' : 
-                      selectedItem.data.tipo === 'local' ? 'warning' : 'secondary'
-                    } className="text-xs">
-                      {selectedItem.data.tipo === 'vacaciones' ? 'Vacaciones' :
-                       selectedItem.data.tipo === 'festivo' ? 'Festivo Nacional' :
-                       selectedItem.data.tipo === 'local' ? 'Festivo Local' :
-                       selectedItem.data.tipo === 'empresa' ? 'Festivo Empresa' :
-                       selectedItem.data.tipo || '-'}
-                    </Badge>
+                    {currentModule.slug === 'vehicle-management' ? (
+                      <Badge variant="outline" className="text-xs">
+                        {selectedItem.data.placa || 'Sin placa'}
+                      </Badge>
+                    ) : (
+                      <Badge variant={
+                        selectedItem.data.tipo === 'vacaciones' ? 'primary' : 
+                        selectedItem.data.tipo === 'festivo' ? 'success' : 
+                        selectedItem.data.tipo === 'local' ? 'warning' : 'secondary'
+                      } className="text-xs">
+                        {selectedItem.data.tipo === 'vacaciones' ? 'Vacaciones' :
+                         selectedItem.data.tipo === 'festivo' ? 'Festivo Nacional' :
+                         selectedItem.data.tipo === 'local' ? 'Festivo Local' :
+                         selectedItem.data.tipo === 'empresa' ? 'Festivo Empresa' :
+                         selectedItem.data.tipo || '-'}
+                      </Badge>
+                    )}
                     <Badge variant="outline" className="text-xs">
-                      {selectedItem.data.tecnico === 'todos' ? 'Todos los técnicos' : 
+                      {selectedItem.data.tecnico === 'todos' || selectedItem.data.tecnico === 'sin_asignar' ? 
+                        (selectedItem.data.tecnico === 'todos' ? 'Todos los técnicos' : 'Sin asignar') : 
                        (() => {
                          const tech = technicians.find(t => t.id === selectedItem.data.tecnico)
                          return tech ? `${tech.first_name} ${tech.last_name}` : selectedItem.data.tecnico || '-'
@@ -834,69 +958,143 @@ export default function ModulePage() {
 
             {/* Información detallada */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Fechas */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Fechas
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Inicio:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {selectedItem.data.fecha_inicio ? new Date(selectedItem.data.fecha_inicio).toLocaleDateString('es-ES') : '-'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Fin:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {selectedItem.data.fecha_fin ? new Date(selectedItem.data.fecha_fin).toLocaleDateString('es-ES') : '-'}
-                    </span>
-                  </div>
-                  {selectedItem.data.repetir_anual && (
-                    <div className="flex justify-between">
-                      <span className="text-sm text-gray-600">Repetir:</span>
-                      <Badge variant="success" className="text-xs">Anualmente</Badge>
+              {currentModule.slug === 'vehicle-management' ? (
+                <>
+                  {/* Información del vehículo */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <Truck className="h-4 w-4 mr-2" />
+                      Información del Vehículo
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Marca:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedItem.data.marca || '-'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Modelo:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedItem.data.modelo || '-'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Año:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedItem.data.año || '-'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Combustible:</span>
+                        <Badge variant="outline" className="text-xs">
+                          {selectedItem.data.tipo_combustible === 'gasolina' ? 'Gasolina' :
+                           selectedItem.data.tipo_combustible === 'diesel' ? 'Diésel' :
+                           selectedItem.data.tipo_combustible === 'electrico' ? 'Eléctrico' :
+                           selectedItem.data.tipo_combustible === 'hibrido' ? 'Híbrido' :
+                           selectedItem.data.tipo_combustible || '-'}
+                        </Badge>
+                      </div>
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
 
-              {/* Información adicional */}
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Información
-                </h4>
-                <div className="space-y-2">
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Creado:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {new Date(selectedItem.created_at).toLocaleDateString('es-ES')}
-                    </span>
+                  {/* Asignación */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <Users className="h-4 w-4 mr-2" />
+                      Asignación
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Técnico:</span>
+                        <Badge variant="outline" className="text-xs">
+                          {selectedItem.data.tecnico === 'todos' || selectedItem.data.tecnico === 'sin_asignar' ? 
+                            (selectedItem.data.tecnico === 'todos' ? 'Todos los técnicos' : 'Sin asignar') : 
+                           (() => {
+                             const tech = technicians.find(t => t.id === selectedItem.data.tecnico)
+                             return tech ? `${tech.first_name} ${tech.last_name}` : selectedItem.data.tecnico || '-'
+                           })()}
+                        </Badge>
+                      </div>
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span className="text-sm text-gray-600">Actualizado:</span>
-                    <span className="text-sm font-medium text-gray-900">
-                      {new Date(selectedItem.updated_at).toLocaleDateString('es-ES')}
-                    </span>
+                </>
+              ) : (
+                <>
+                  {/* Fechas */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <Calendar className="h-4 w-4 mr-2" />
+                      Fechas
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Inicio:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedItem.data.fecha_inicio ? new Date(selectedItem.data.fecha_inicio).toLocaleDateString('es-ES') : '-'}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Fin:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {selectedItem.data.fecha_fin ? new Date(selectedItem.data.fecha_fin).toLocaleDateString('es-ES') : '-'}
+                        </span>
+                      </div>
+                      {selectedItem.data.repetir_anual && (
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-600">Repetir:</span>
+                          <Badge variant="success" className="text-xs">Anualmente</Badge>
+                        </div>
+                      )}
+                    </div>
                   </div>
+
+                  {/* Información adicional */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                      <FileText className="h-4 w-4 mr-2" />
+                      Información
+                    </h4>
+                    <div className="space-y-2">
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Creado:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Date(selectedItem.created_at).toLocaleDateString('es-ES')}
+                        </span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-sm text-gray-600">Actualizado:</span>
+                        <span className="text-sm font-medium text-gray-900">
+                          {new Date(selectedItem.updated_at).toLocaleDateString('es-ES')}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+
+            {/* Metadatos */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                <Clock className="h-4 w-4 mr-2" />
+                Metadatos
+              </h4>
+              <div className="space-y-2">
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Creado:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {new Date(selectedItem.created_at).toLocaleDateString('es-ES')}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-sm text-gray-600">Actualizado:</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {new Date(selectedItem.updated_at).toLocaleDateString('es-ES')}
+                  </span>
                 </div>
               </div>
             </div>
-
-            {/* Descripción */}
-            {selectedItem.data.descripcion && (
-              <div className="bg-gray-50 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-700 mb-3 flex items-center">
-                  <FileText className="h-4 w-4 mr-2" />
-                  Descripción
-                </h4>
-                <p className="text-sm text-gray-700 leading-relaxed">
-                  {selectedItem.data.descripcion}
-                </p>
-              </div>
-            )}
 
             {/* Botones de acción */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
