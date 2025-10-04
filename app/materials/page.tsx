@@ -1,956 +1,489 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { useAuth } from '@/contexts/AuthContext'
-import { Layout } from '@/components/layout/Layout'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
-import { Card, CardHeader, CardBody } from '@/components/ui/Card'
-import { Button } from '@/components/ui/Button'
-import { Badge } from '@/components/ui/Badge'
-import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
-import { Modal } from '@/components/ui/Modal'
-import { supabase } from '@/lib/supabase'
+import React, { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui'
+import { Modal, Input, Badge } from '@/components/ui'
+import { Package, Plus, Settings, Eye, Edit, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Package, AlertTriangle, Building2, MapPin, Clock, CheckCircle, XCircle, DollarSign, Hash, Tag } from 'lucide-react'
-
-interface Material {
-  id: string
-  name: string
-  description: string
-  category: string
-  unit: string
-  cost_price: number
-  selling_price: number
-  stock_quantity: number
-  min_stock: number
-  is_active: boolean
-  supplier_id: string
-  suppliers?: {
-    id: string
-    name: string
-  }
-  created_at: string
-  updated_at: string
-}
 
 export default function MaterialsPage() {
-  const { company } = useAuth()
-  const [materials, setMaterials] = useState<Material[]>([])
+  const [materials, setMaterials] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
-  const [showCreateModal, setShowCreateModal] = useState(false)
+  const [showModal, setShowModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
-  const [showEditModal, setShowEditModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
-  const [selectedMaterial, setSelectedMaterial] = useState<Material | null>(null)
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isUpdating, setIsUpdating] = useState(false)
-  const [suppliers, setSuppliers] = useState<any[]>([])
-  const [filters, setFilters] = useState({
-    search: '',
-    category: 'all',
-    status: 'all' // 'all', 'active', 'inactive', 'low_stock'
-  })
-  const [filteredMaterials, setFilteredMaterials] = useState<Material[]>([])
-  const [formData, setFormData] = useState({
+  const [editingMaterial, setEditingMaterial] = useState<any>(null)
+  const [selectedMaterial, setSelectedMaterial] = useState<any>(null)
+
+  const [form, setForm] = useState({
     name: '',
     description: '',
     category: '',
-    unit: 'unidad',
-    cost_price: 0,
-    selling_price: 0,
-    stock_quantity: 0,
-    min_stock: 0,
-    supplier_id: '',
-    is_active: true,
+    unit_price: '',
+    stock_quantity: '',
+    min_stock: '',
+    supplier: '',
+    sku: ''
   })
 
-  useEffect(() => {
-    if (company) {
-      loadMaterials()
-    }
-  }, [company])
+  const resetForm = () => {
+    setForm({
+      name: '',
+      description: '',
+      category: '',
+      unit_price: '',
+      stock_quantity: '',
+      min_stock: '',
+      supplier: '',
+      sku: ''
+    })
+  }
 
-  // Aplicar filtros cuando cambien los materiales o los filtros
   useEffect(() => {
-    applyFilters()
-  }, [materials, filters])
-
-  // Cargar proveedores al abrir el modal
-  useEffect(() => {
-    if ((showCreateModal || showEditModal) && company?.id) {
-      fetchSuppliers()
-    }
-  }, [showCreateModal, showEditModal, company?.id])
+    loadMaterials()
+  }, [])
 
   const loadMaterials = async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase
-        .from('materials')
-        .select(`
-          *,
-          suppliers (
-            id,
-            name
-          )
-        `)
-        .eq('company_id', company!.id)
-        .order('name')
-
-      if (error) {
-        throw error
-      }
-
-      setMaterials(data || [])
+      // Simular carga de datos
+      const mockData = [
+        {
+          id: 1,
+          name: 'Tornillos M8',
+          description: 'Tornillos metálicos galvanizados',
+          category: 'Ferretería',
+          unit_price: 0.05,
+          stock_quantity: 1000,
+          min_stock: 100,
+          supplier: 'Ferretería López',
+          sku: 'TOR-M8-001',
+          low_stock: false
+        },
+        {
+          id: 2,
+          name: 'Cable eléctrico',
+          description: 'Cable de cobre flexible',
+          category: 'Electricidad',
+          unit_price: 2.50,
+          stock_quantity: 50,
+          min_stock: 25,
+          supplier: 'Electrosan',
+          sku: 'CAB-EL-001',
+          low_stock: true
+        }
+      ]
+      setMaterials(mockData)
     } catch (error) {
       console.error('Error loading materials:', error)
-      toast.error('Error al cargar los materiales')
+      toast.error('Error cargando materiales')
     } finally {
       setLoading(false)
     }
   }
 
-  const fetchSuppliers = async () => {
-    if (!company?.id) return
-    
-    try {
-      const { data, error } = await supabase
-        .from('suppliers')
-        .select('id, name')
-        .eq('company_id', company.id)
-        .eq('is_active', true)
-
-      if (error) {
-        console.error('Error fetching suppliers:', error)
-        return
-      }
-
-      setSuppliers(data || [])
-    } catch (error) {
-      console.error('Error fetching suppliers:', error)
-    }
-  }
-
-  // Función para aplicar filtros
-  const applyFilters = () => {
-    let filtered = [...materials]
-
-    // Filtro de búsqueda
-    if (filters.search) {
-      const searchTerm = filters.search.toLowerCase()
-      filtered = filtered.filter(material => 
-        material.name.toLowerCase().includes(searchTerm) ||
-        material.description?.toLowerCase().includes(searchTerm) ||
-        material.category?.toLowerCase().includes(searchTerm)
-      )
-    }
-
-    // Filtro de categoría
-    if (filters.category !== 'all') {
-      filtered = filtered.filter(material => material.category === filters.category)
-    }
-
-    // Filtro de estado
-    if (filters.status !== 'all') {
-      if (filters.status === 'active') {
-        filtered = filtered.filter(material => material.is_active)
-      } else if (filters.status === 'inactive') {
-        filtered = filtered.filter(material => !material.is_active)
-      } else if (filters.status === 'low_stock') {
-        filtered = filtered.filter(material => material.stock_quantity <= material.min_stock)
-      }
-    }
-
-    setFilteredMaterials(filtered)
-  }
-
-  // Función para manejar cambios en los filtros
-  const handleFilterChange = (name: string, value: string) => {
-    setFilters(prev => ({
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = e.target
+    setForm(prev => ({
       ...prev,
       [name]: value
     }))
   }
 
-  // Función para limpiar filtros
-  const clearFilters = () => {
-    setFilters({
-      search: '',
-      category: 'all',
-      status: 'all'
-    })
-  }
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-    const { name, value, type } = e.target
-    const checked = (e.target as HTMLInputElement).checked
-    
-    setFormData(prev => ({
-      ...prev,
-      [name]: type === 'checkbox' ? checked : (type === 'number' ? parseFloat(value) || 0 : value)
-    }))
+  // Helper function to convert string to number or null
+  const numberWithValue = (value: string) => {
+    if (!value) return ''
+    const num = parseFloat(value)
+    return isNaN(num) ? '' : num.toString()
   }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
-    if (!company) return
-
     try {
-      if (selectedMaterial) {
-        setIsUpdating(true)
-        // Actualizar material existente
-        const { error } = await supabase
-          .from('materials')
-          .update({
-            ...formData,
-            supplier_id: formData.supplier_id || null
-          })
-          .eq('id', selectedMaterial.id)
-
-        if (error) {
-          throw error
-        }
-
+      // Simular operación
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      
+      const materialData = {
+        ...form,
+        unit_price: parseFloat(form.unit_price) || 0,
+        stock_quantity: parseInt(form.stock_quantity) || 0,
+        min_stock: parseInt(form.min_stock) || 0
+      }
+      
+      if (editingMaterial) {
+        const updatedMaterials = materials.map(material => 
+          material.id === editingMaterial.id ? { ...material, ...materialData } : material
+        )
+        setMaterials(updatedMaterials)
         toast.success('Material actualizado correctamente')
       } else {
-        setIsSubmitting(true)
-        // Crear nuevo material
-        const { error } = await supabase
-          .from('materials')
-          .insert([{
-            ...formData,
-            company_id: company.id,
-            supplier_id: formData.supplier_id || null
-          }])
-
-        if (error) {
-          throw error
+        const newMaterial = {
+          id: Date.now(),
+          ...materialData,
+          low_stock: materialData.stock_quantity < materialData.min_stock
         }
-
+        setMaterials([...materials, newMaterial])
         toast.success('Material creado correctamente')
       }
-
-      setShowCreateModal(false)
-      setShowEditModal(false)
-      setSelectedMaterial(null)
+      
+      setShowModal(false)
+      setEditingMaterial(null)
       resetForm()
-      loadMaterials()
     } catch (error) {
-      console.error('Error saving material:', error)
-      toast.error('Error al guardar el material')
-    } finally {
-      setIsSubmitting(false)
-      setIsUpdating(false)
+      toast.error('Error guardando material')
     }
   }
 
-  const handleView = (material: Material) => {
+  const handleNewMaterial = () => {
+    setEditingMaterial(null)
+    resetForm()
+    setShowModal(true)
+  }
+
+  const handleEdit = (material: any) => {
+    setEditingMaterial(material)
+    setForm({
+      name: material.name,
+      description: material.description,
+      category: material.category,
+      unit_price: material.unit_price.toString(),
+      stock_quantity: material.stock_quantity.toString(),
+      min_stock: material.min_stock.toString(),
+      supplier: material.supplier,
+      sku: material.sku
+    })
+    setShowModal(true)
+  }
+
+  const handleView = (material: any) => {
     setSelectedMaterial(material)
     setShowViewModal(true)
   }
 
-  const handleEdit = (material: Material) => {
-    setSelectedMaterial(material)
-    setFormData({
-      name: material.name,
-      description: material.description || '',
-      category: material.category || '',
-      unit: material.unit || 'unidad',
-      cost_price: material.cost_price || 0,
-      selling_price: material.selling_price || 0,
-      stock_quantity: material.stock_quantity || 0,
-      min_stock: material.min_stock || 0,
-      supplier_id: material.supplier_id || '',
-      is_active: material.is_active,
-    })
-    setShowEditModal(true)
-  }
-
-  const handleDelete = (material: Material) => {
+  const handleDelete = (material: any) => {
     setSelectedMaterial(material)
     setShowDeleteModal(true)
   }
 
   const confirmDelete = async () => {
     if (!selectedMaterial) return
-
+    
     try {
-      const { error } = await supabase
-        .from('materials')
-        .delete()
-        .eq('id', selectedMaterial.id)
-
-      if (error) {
-        throw error
-      }
-
-      toast.success('Material eliminado correctamente')
+      const filteredMaterials = materials.filter(material => material.id !== selectedMaterial.id)
+      setMaterials(filteredMaterials)
       setShowDeleteModal(false)
       setSelectedMaterial(null)
-      loadMaterials()
+      toast.success('Material eliminado correctamente')
     } catch (error) {
-      console.error('Error deleting material:', error)
-      toast.error('Error al eliminar el material')
+      toast.error('Error eliminando material')
     }
   }
 
-  const resetForm = () => {
-    setFormData({
-      name: '',
-      description: '',
-      category: '',
-      unit: 'unidad',
-      cost_price: 0,
-      selling_price: 0,
-      stock_quantity: 0,
-      min_stock: 0,
-      supplier_id: '',
-      is_active: true,
-    })
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+      </div>
+    )
   }
 
-  const handleNewMaterial = () => {
-    setSelectedMaterial(null)
-    resetForm()
-    setShowCreateModal(true)
-  }
-
-  // Helper function to convert string to number or null
-  const numberWithValue = (value: FormDataEntryValue | null) => {
-    if (!value) return null
-    const num = parseFloat(value as string)
-    return isNaN(num) ? null : num
-  }
   return (
-    <ProtectedRoute>
-      <Layout>
-        <div className="space-y-6">
-          {/* Header */}
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Materiales</h1>
-              <p className="text-gray-600">Gestiona el inventario de materiales</p>
-            </div>
-            <Button 
-              className="btn-primary"
-              onClick={handleNewMaterial}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Nuevo Material
-            </Button>
-          </div>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">Materiales</h1>
+          <p className="text-gray-600">Gestiona el inventario de materiales</p>
+        </div>
+        <Button 
+          onClick={handleNewMaterial}
+          className="flex items-center space-x-2"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Nuevo Material</span>
+        </Button>
+      </div>
 
-          {/* Filtros */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-medium text-gray-900">Filtros</h3>
-            </CardHeader>
-            <CardBody>
-              <div className="flex flex-col sm:flex-row gap-4">
-                <div className="flex-1">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="Buscar por nombre, descripción o categoría..."
-                      value={filters.search}
-                      onChange={(e) => handleFilterChange('search', e.target.value)}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                    />
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <Search className="h-5 w-5 text-gray-400" />
+      {/* Materials List */}
+      {materials.length === 0 ? (
+        <Card>
+          <div className="text-center py-12">
+            <Package className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">
+              No hay materiales
+            </h3>
+            <p className="mt-1 text-sm text-gray-500">
+              Comienza agregando tu primer material.
+            </p>
+            <div className="mt-6">
+              <Button onClick={handleNewMaterial}>
+                <Plus className="h-4 w-4 mr-2" />
+                Nuevo Material
+              </Button>
+            </div>
+          </div>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {materials.map((material) => (
+            <Card key={material.id}>
+              <div className="p-6">
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center">
+                    <div className={`p-2 rounded-lg ${material.low_stock ? 'bg-red-100' : 'bg-green-100'}`}>
+                      <Package className={`h-6 w-6 ${material.low_stock ? 'text-red-600' : 'text-green-600'}`} />
+                    </div>
+                    <div className="ml-3">
+                      <h3 className="text-lg font-semibold text-gray-900">
+                        {material.name}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {material.category}
+                      </p>
                     </div>
                   </div>
+                  {material.low_stock && (
+                    <Badge variant="warning">
+                      Stock Bajo
+                    </Badge>
+                  )}
                 </div>
                 
-                <div className="sm:w-48">
-                  <select
-                    value={filters.category}
-                    onChange={(e) => handleFilterChange('category', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">Todas las categorías</option>
-                    <option value="electricidad">Electricidad</option>
-                    <option value="fontaneria">Fontanería</option>
-                    <option value="carpinteria">Carpintería</option>
-                    <option value="pintura">Pintura</option>
-                    <option value="albanileria">Albañilería</option>
-                    <option value="herramientas">Herramientas</option>
-                    <option value="otros">Otros</option>
-                  </select>
+                <div className="space-y-2 text-sm text-gray-600 mb-4">
+                  <p><strong>SKU:</strong> {material.sku}</p>
+                  <p><strong>Stock:</strong> {material.stock_quantity} und</p>
+                  <p><strong>Precio:</strong> €{material.unit_price}</p>
+                  <p><strong>Proveedor:</strong> {material.supplier}</p>
                 </div>
-                
-                <div className="sm:w-48">
-                  <select
-                    value={filters.status}
-                    onChange={(e) => handleFilterChange('status', e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="all">Todos los estados</option>
-                    <option value="active">Solo activos</option>
-                    <option value="inactive">Solo inactivos</option>
-                    <option value="low_stock">Stock bajo</option>
-                  </select>
-                </div>
-                
-                <div className="sm:w-auto">
+
+                <div className="flex space-x-2">
                   <Button
                     variant="outline"
-                    onClick={clearFilters}
-                    className="w-full sm:w-auto"
+                    size="sm"
+                    onClick={() => handleView(material)}
+                    className="flex-1"
                   >
-                    Limpiar filtros
+                    <Eye className="h-4 w-4 mr-1" />
+                    Ver
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleEdit(material)}
+                    className="flex-1"
+                  >
+                    <Edit className="h-4 w-4 mr-1" />
+                    Editar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDelete(material)}
+                    className="text-red-600 hover:text-red-700"
+                  >
+                    <Trash2 className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
-            </CardBody>
-          </Card>
-
-          {/* Lista de materiales */}
-          <Card>
-            <CardHeader>
-              <h3 className="text-lg font-medium text-gray-900">
-                Inventario de Materiales ({filteredMaterials.length} de {materials.length})
-              </h3>
-            </CardHeader>
-            <CardBody>
-              {loading ? (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-                  <p className="mt-2 text-sm text-gray-500">Cargando materiales...</p>
-                </div>
-              ) : materials.length > 0 ? (
-                <div className="space-y-4">
-                  {filteredMaterials.length > 0 ? (
-                    filteredMaterials.map((material) => (
-                      <div key={material.id} className="bg-white border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
-                        <div className="flex items-start space-x-4">
-                          {/* Icono del material */}
-                          <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-lg flex items-center justify-center shadow-sm overflow-hidden flex-shrink-0">
-                            <Package className="h-8 w-8 text-white" />
-                          </div>
-                          
-                          {/* Información del material */}
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-start justify-between">
-                              <div className="flex-1">
-                                <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                                  {material.name}
-                                </h3>
-                                
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm text-gray-600">
-                                  {material.category && (
-                                    <div className="flex items-center space-x-2">
-                                      <Tag className="h-4 w-4 text-gray-400" />
-                                      <span>{material.category}</span>
-                                    </div>
-                                  )}
-                                  
-                                  <div className="flex items-center space-x-2">
-                                    <Hash className="h-4 w-4 text-gray-400" />
-                                    <span>Stock: {material.stock_quantity} {material.unit}</span>
-                                  </div>
-                                  
-                                  <div className="flex items-center space-x-2">
-                                    <DollarSign className="h-4 w-4 text-gray-400" />
-                                    <span>Compra: €{material.cost_price?.toFixed(2) || '0.00'}</span>
-                                  </div>
-                                  
-                                  <div className="flex items-center space-x-2">
-                                    <DollarSign className="h-4 w-4 text-gray-400" />
-                                    <span>Venta: €{material.selling_price?.toFixed(2) || '0.00'}</span>
-                                  </div>
-                                  
-                                  {material.suppliers && (
-                                    <div className="flex items-center space-x-2 md:col-span-2">
-                                      <Building2 className="h-4 w-4 text-gray-400" />
-                                      <span className="truncate">{material.suppliers.name}</span>
-                                    </div>
-                                  )}
-                                  
-                                  {material.description && (
-                                    <div className="flex items-center space-x-2 md:col-span-2">
-                                      <span className="truncate text-gray-500">{material.description}</span>
-                                    </div>
-                                  )}
-                                </div>
-                              </div>
-                              
-                              {/* Estado y acciones */}
-                              <div className="flex flex-col items-end space-y-2 ml-4">
-                                <div className="flex items-center space-x-2">
-                                  <Badge variant={material.is_active ? 'success' : 'danger'}>
-                                    {material.is_active ? 'Activo' : 'Inactivo'}
-                                  </Badge>
-                                  {material.stock_quantity <= material.min_stock && (
-                                    <Badge variant="warning">
-                                      <AlertTriangle className="h-3 w-3 mr-1" />
-                                      Stock bajo
-                                    </Badge>
-                                  )}
-                                </div>
-                                
-                                <div className="flex items-center space-x-2">
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleView(material)}
-                                    title="Ver detalles"
-                                  >
-                                    <Eye className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleEdit(material)}
-                                    title="Editar material"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => handleDelete(material)}
-                                    title="Eliminar material"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-12">
-                      <Package className="mx-auto h-12 w-12 text-gray-400" />
-                      <h3 className="mt-2 text-sm font-medium text-gray-900">
-                        No se encontraron materiales
-                      </h3>
-                      <p className="mt-1 text-sm text-gray-500">
-                        Intenta ajustar los filtros de búsqueda.
-                      </p>
-                      <div className="mt-6">
-                        <Button onClick={clearFilters}>
-                          Limpiar filtros
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              ) : (
-                <div className="text-center py-12">
-                  <Package className="mx-auto h-12 w-12 text-gray-400" />
-                  <h3 className="mt-2 text-sm font-medium text-gray-900">
-                    No hay materiales
-                  </h3>
-                  <p className="mt-1 text-sm text-gray-500">
-                    Comienza agregando tu primer material.
-                  </p>
-                  <div className="mt-6">
-                    <Button onClick={handleNewMaterial}>
-                      <Plus className="h-4 w-4 mr-2" />
-                      Nuevo Material
-                    </Button>
-                  </div>
-                </div>
-              )}
-            </CardBody>
-          </Card>
+            </Card>
+          ))}
         </div>
+      )}
 
-        {/* Modal para crear/editar material */}
-        <Modal
-          isOpen={showCreateModal || showEditModal}
-          onClose={() => {
-            setShowCreateModal(false)
-            setShowEditModal(false)
-            setSelectedMaterial(null)
-            resetForm()
-          }}
-          title={selectedMaterial ? 'Editar Material' : 'Nuevo Material'}
-          size="lg"
-        >
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      {/* Modal para crear/editar material */}
+      <Modal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        title={editingMaterial ? 'Editar Material' : 'Nuevo Material'}
+        size="lg"
+      >
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <Input
+            label="Nombre del material"
+            name="name"
+            value={form.name}
+            onChange={handleInputChange}
+            required
+          />
+          
+          <Input
+            label="Descripción"
+            name="description"
+            value={form.description}
+            onChange={handleInputChange}
+          />
+          
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Categoría"
+              name="category"
+              value={form.category}
+              onChange={handleInputChange}
+            />
+            
+            <Input
+              label="SKU"
+              name="sku"
+              value={form.sku}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Precio unitario (€)"
+              name="unit_price"
+              type="number"
+              step="0.01"
+              value={form.unit_price}
+              onChange={handleInputChange}
+            />
+            
+            <Input
+              label="Stock actual"
+              name="stock_quantity"
+              type="number"
+              value={form.stock_quantity}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+            <Input
+              label="Stock mínimo"
+              name="min_stock"
+              type="number"
+              value={form.min_stock}
+              onChange={handleInputChange}
+            />
+            
+            <Input
+              label="Proveedor"
+              name="supplier"
+              value={form.supplier}
+              onChange={handleInputChange}
+            />
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setShowModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button type="submit">
+              {editingMaterial ? 'Actualizar' : 'Crear'} Material
+            </Button>
+          </div>
+        </form>
+      </Modal>
+
+      {/* Modal para ver detalles del material */}
+      <Modal
+        isOpen={showViewModal}
+        onClose={() => setShowViewModal(false)}
+        title="Detalles del Material"
+        size="lg"
+      >
+        {selectedMaterial && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="form-label">Nombre del Material *</label>
-                <input 
-                  type="text" 
-                  name="name"
-                  value={formData.name}
-                  onChange={handleInputChange}
-                  className="form-input" 
-                  placeholder="Nombre del material"
-                  required
-                />
+                <label className="block text-sm font-medium text-gray-700">Material</label>
+                <p className="text-sm text-gray-900">{selectedMaterial.name}</p>
               </div>
               <div>
-                <label className="form-label">Categoría</label>
-                <select 
-                  name="category"
-                  value={formData.category}
-                  onChange={handleInputChange}
-                  className="form-input"
-                >
-                  <option value="">Seleccionar categoría</option>
-                  <option value="electricidad">Electricidad</option>
-                  <option value="fontaneria">Fontanería</option>
-                  <option value="carpinteria">Carpintería</option>
-                  <option value="pintura">Pintura</option>
-                  <option value="albanileria">Albañilería</option>
-                  <option value="herramientas">Herramientas</option>
-                  <option value="otros">Otros</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700">Categoría</label>
+                <p className="text-sm text-gray-900">{selectedMaterial.category}</p>
               </div>
               <div>
-                <label className="form-label">Proveedor</label>
-                <select 
-                  name="supplier_id"
-                  value={formData.supplier_id}
-                  onChange={handleInputChange}
-                  className="form-input"
-                >
-                  <option value="">Seleccionar proveedor</option>
-                  {suppliers.map((supplier) => (
-                    <option key={supplier.id} value={supplier.id}>
-                      {supplier.name}
-                    </option>
-                  ))}
-                </select>
+                <label className="block text-sm font-medium text-gray-700">SKU</label>
+                <p className="text-sm text-gray-900">{selectedMaterial.sku}</p>
               </div>
               <div>
-                <label className="form-label">Unidad de Medida</label>
-                <select 
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleInputChange}
-                  className="form-input"
-                >
-                  <option value="unidad">Unidad</option>
-                  <option value="metro">Metro</option>
-                  <option value="metro_cuadrado">Metro cuadrado</option>
-                  <option value="metro_cubico">Metro cúbico</option>
-                  <option value="kilogramo">Kilogramo</option>
-                  <option value="litro">Litro</option>
-                  <option value="caja">Caja</option>
-                  <option value="rollo">Rollo</option>
-                </select>
+                <label className="block text-sm font-medium text-gray-700">Precio</label>
+                <p className="text-sm text-gray-900">€{selectedMaterial.unit_price}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Stock Actual</label>
+                <p className="text-sm text-gray-900">{selectedMaterial.stock_quantity}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Stock Mínimo</label>
+                <p className="text-sm text-gray-900">{selectedMaterial.min_stock}</p>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700">Proveedor</label>
+                <p className="text-sm text-gray-900">{selectedMaterial.supplier}</p>
               </div>
             </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            
+            {selectedMaterial.description && (
               <div>
-                <label className="form-label">Precio de Compra (€)</label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  name="cost_price"
-                  value={formData.cost_price}
-                  onChange={handleInputChange}
-                  className="form-input" 
-                  placeholder="0.00"
-                />
+                <label className="block text-sm font-medium text-gray-700">Descripción</label>
+                <p className="text-sm text-gray-900">{selectedMaterial.description}</p>
               </div>
-              <div>
-                <label className="form-label">Precio de Venta (€)</label>
-                <input 
-                  type="number" 
-                  step="0.01"
-                  name="selling_price"
-                  value={formData.selling_price}
-                  onChange={handleInputChange}
-                  className="form-input" 
-                  placeholder="0.00"
-                />
-              </div>
-              <div>
-                <label className="form-label">Stock Actual</label>
-                <input 
-                  type="number"
-                  name="stock_quantity"
-                  value={formData.stock_quantity}
-                  onChange={handleInputChange}
-                  className="form-input" 
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Stock Mínimo</label>
-                <input 
-                  type="number"
-                  name="min_stock"
-                  value={formData.min_stock}
-                  onChange={handleInputChange}
-                  className="form-input" 
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="form-label">Descripción</label>
-              <textarea 
-                name="description"
-                value={formData.description}
-                onChange={handleInputChange}
-                className="form-input" 
-                rows={3}
-                placeholder="Descripción detallada del material..."
-              />
-            </div>
-
-            <div className="flex items-center">
-              <input
-                id="is_active"
-                name="is_active"
-                type="checkbox"
-                checked={formData.is_active}
-                onChange={handleInputChange}
-                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-              />
-              <label htmlFor="is_active" className="ml-2 block text-sm text-gray-900">
-                Material activo
-              </label>
-            </div>
-
-            <div className="flex justify-end space-x-3 pt-4">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  setShowCreateModal(false)
-                  setShowEditModal(false)
-                  setSelectedMaterial(null)
-                  resetForm()
-                }}
-                disabled={isSubmitting || isUpdating}
-              >
-                Cancelar
-              </Button>
-              <Button 
-                type="submit" 
-                className="btn-primary"
-                disabled={isSubmitting || isUpdating}
-              >
-                {isSubmitting || isUpdating ? 'Guardando...' : (selectedMaterial ? 'Actualizar' : 'Crear') + ' Material'}
-              </Button>
-            </div>
-          </form>
-        </Modal>
-
-        {/* Modal para ver detalles del material */}
-        <Modal
-          isOpen={showViewModal}
-          onClose={() => {
-            setShowViewModal(false)
-            setSelectedMaterial(null)
-          }}
-          title="Detalles del Material"
-        >
-          {selectedMaterial && (
-            <div className="space-y-6">
-              {/* Header con nombre y estado */}
-              <div className="flex items-start justify-between">
-                <div className="flex items-center space-x-4">
-                  <div className="w-16 h-16 bg-gradient-to-br from-orange-500 to-orange-600 rounded-xl flex items-center justify-center shadow-lg overflow-hidden">
-                    <Package className="h-8 w-8 text-white" />
-                  </div>
-                  <div>
-                    <h2 className="text-2xl font-bold text-gray-900">{selectedMaterial.name}</h2>
-                    <div className="flex items-center space-x-2 mt-1">
-                      {selectedMaterial.is_active ? (
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      ) : (
-                        <XCircle className="h-4 w-4 text-red-500" />
-                      )}
-                      <Badge variant={selectedMaterial.is_active ? 'success' : 'danger'}>
-                        {selectedMaterial.is_active ? 'Activo' : 'Inactivo'}
-                      </Badge>
-                      {selectedMaterial.stock_quantity <= selectedMaterial.min_stock && (
-                        <Badge variant="warning">
-                          <AlertTriangle className="h-3 w-3 mr-1" />
-                          Stock bajo
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-                </div>
+            )}
+            
+            <div className="pt-4 border-t">
+              <div className="flex space-x-3">
                 <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowViewModal(false)
-                    handleEdit(selectedMaterial)
-                  }}
+                  onClick={() => handleEdit(selectedMaterial)}
+                  className="flex-1"
                 >
                   <Edit className="h-4 w-4 mr-2" />
-                  Editar Material
+                  Editar
                 </Button>
-              </div>
-
-              {/* Información del material */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Información General</h3>
-                  
-                  {selectedMaterial.category && (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Tag className="h-4 w-4 text-blue-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Categoría</p>
-                        <p className="font-medium text-gray-900">{selectedMaterial.category}</p>
-                      </div>
-                    </div>
-                  )}
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                      <Hash className="h-4 w-4 text-green-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Stock Actual</p>
-                      <p className="font-medium text-gray-900">{selectedMaterial.stock_quantity} {selectedMaterial.unit}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-orange-100 rounded-full flex items-center justify-center">
-                      <AlertTriangle className="h-4 w-4 text-orange-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Stock Mínimo</p>
-                      <p className="font-medium text-gray-900">{selectedMaterial.min_stock} {selectedMaterial.unit}</p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Información Económica</h3>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-purple-100 rounded-full flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-purple-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Precio de Compra</p>
-                      <p className="font-medium text-gray-900">€{selectedMaterial.cost_price?.toFixed(2) || '0.00'}</p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center space-x-3">
-                    <div className="w-8 h-8 bg-indigo-100 rounded-full flex items-center justify-center">
-                      <DollarSign className="h-4 w-4 text-indigo-600" />
-                    </div>
-                    <div>
-                      <p className="text-sm text-gray-500">Precio de Venta</p>
-                      <p className="font-medium text-gray-900">€{selectedMaterial.selling_price?.toFixed(2) || '0.00'}</p>
-                    </div>
-                  </div>
-                  
-                  {selectedMaterial.suppliers && (
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <Building2 className="h-4 w-4 text-yellow-600" />
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-500">Proveedor</p>
-                        <p className="font-medium text-gray-900">{selectedMaterial.suppliers.name}</p>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Descripción */}
-              {selectedMaterial.description && (
-                <div className="border-t pt-6">
-                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Descripción</h3>
-                  <p className="text-gray-600">{selectedMaterial.description}</p>
-                </div>
-              )}
-
-              {/* Fechas */}
-              <div className="border-t pt-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Información del Sistema</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-600">
-                  <div>
-                    <span className="font-medium">Creado:</span> {new Date(selectedMaterial.created_at).toLocaleDateString('es-ES')}
-                  </div>
-                  <div>
-                    <span className="font-medium">Última actualización:</span> {new Date(selectedMaterial.updated_at).toLocaleDateString('es-ES')}
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-4">
                 <Button
+                  onClick={() => handleDelete(selectedMaterial)}
                   variant="outline"
-                  onClick={() => {
-                    setShowViewModal(false)
-                    setSelectedMaterial(null)
-                  }}
-                >
-                  Cerrar
-                </Button>
-                <Button
-                  onClick={() => {
-                    setShowViewModal(false)
-                    handleEdit(selectedMaterial)
-                  }}
-                >
-                  <Edit className="h-4 w-4 mr-2" />
-                  Editar Material
-                </Button>
-              </div>
-            </div>
-          )}
-        </Modal>
-
-        {/* Modal para confirmar eliminación */}
-        <Modal
-          isOpen={showDeleteModal}
-          onClose={() => {
-            setShowDeleteModal(false)
-            setSelectedMaterial(null)
-          }}
-          title="Confirmar Eliminación"
-        >
-          {selectedMaterial && (
-            <div className="space-y-4">
-              <p className="text-gray-600">
-                ¿Estás seguro de que quieres eliminar el material <strong>{selectedMaterial.name}</strong>?
-              </p>
-              <p className="text-sm text-gray-500">
-                Esta acción no se puede deshacer.
-              </p>
-              <div className="flex justify-end space-x-3 pt-4">
-                <Button
-                  variant="outline"
-                  onClick={() => {
-                    setShowDeleteModal(false)
-                    setSelectedMaterial(null)
-                  }}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  variant="danger"
-                  onClick={confirmDelete}
+                  className="flex-1 text-red-600 hover:text-red-700"
                 >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Eliminar
                 </Button>
               </div>
             </div>
-          )}
-        </Modal>
-      </Layout>
-    </ProtectedRoute>
+          </div>
+        )}
+      </Modal>
+
+      {/* Modal de confirmación para eliminar */}
+      <Modal
+        isOpen={showDeleteModal}
+        onClose={() => setShowDeleteModal(false)}
+        title="Confirmar Eliminación"
+      >
+        <div className="space-y-4">
+          <p className="text-gray-600">
+            ¿Estás seguro de que quieres eliminar el material{' '}
+            <strong>{selectedMaterial?.name}</strong>?
+          </p>
+          <p className="text-sm text-gray-500">
+            Esta acción no se puede deshacer.
+          </p>
+          
+          <div className="flex justify-end space-x-3 pt-4">
+            <Button
+              variant="outline"
+              onClick={() => setShowDeleteModal(false)}
+            >
+              Cancelar
+            </Button>
+            <Button
+              variant="danger"
+              onClick={confirmDelete}
+            >
+              <Trash2 className="h-4 w-4 mr-2" />
+              Eliminar
+            </Button>
+          </div>
+        </div>
+      </Modal>
+    </div>
   )
 }

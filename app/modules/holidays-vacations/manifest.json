@@ -1,0 +1,119 @@
+{
+  "name": "Gestión de Días Festivos y Vacaciones",
+  "slug": "holidays-vacations",
+  "version": "1.0.0",
+  "description": "Gestiona los días festivos y vacaciones de los técnicos. Incluye calendario de vacaciones, solicitudes de días libres y planificación de horarios.",
+  "author": "GestioGar Team",
+  "icon": "Calendar",
+  "category": "recursos-humanos",
+  "dependencies": ["users", "companies"],
+  "permissions": [
+    "read_holidays",
+    "write_holidays", 
+    "delete_holidays",
+    "read_vacations",
+    "write_vacations",
+    "approve_vacations"
+  ],
+  "routes": [
+    {
+      "path": "/holidays",
+      "component": "HolidaysList",
+      "title": "Días Festivos"
+    },
+    {
+      "path": "/holidays/nuevo",
+      "component": "HolidayForm", 
+      "title": "Nuevo Día Festivo"
+    },
+    {
+      "path": "/holidays/editar/:id",
+      "component": "HolidayForm",
+      "title": "Editar Día Festivo"
+    },
+    {
+      "path": "/vacations",
+      "component": "VacationsList",
+      "title": "Solicitudes de Vacaciones"
+    },
+    {
+      "path": "/vacations/nueva",
+      "component": "VacationForm",
+      "title": "Nueva Solicitud"
+    },
+    {
+      "path": "/vacations/calendario",
+      "component": "VacationCalendar",
+      "title": "Calendario de Vacaciones"
+    }
+  ],
+  "hooks": [
+    "sidebar_menu",
+    "dashboard_widgets", 
+    "after_create_holiday",
+    "before_delete_holiday",
+    "vacation_request_created",
+    "vacation_request_approved"
+  ],
+  "database": {
+    "create_tables": true,
+    "tables": [
+      "holidays",
+      "vacation_requests",
+      "vacation_balances"
+    ]
+  },
+  "fields": [
+    {
+      "name": "nombre",
+      "label": "Nombre del Día Festivo",
+      "type": "text",
+      "required": true,
+      "validation": "required|min:2|max:100"
+    },
+    {
+      "name": "fecha", 
+      "label": "Fecha",
+      "type": "date",
+      "required": true,
+      "validation": "required"
+    },
+    {
+      "name": "tipo",
+      "label": "Tipo",
+      "type": "select",
+      "required": true,
+      "options": [
+        {"value": "festivo_nacional", "label": "Día Festivo Nacional"},
+        {"value": "festivo_local", "label": "Día Festivo Local"},
+        {"value": "festivo_empresa", "label": "Día Festivo de Empresa"},
+        {"value": "puente", "label": "Día Puente"}
+      ],
+      "validation": "required|in:festivo_nacional,festivo_local,festivo_empresa,puente"
+    },
+    {
+      "name": "repetir_anual",
+      "label": "Repetir Anualmente",
+      "type": "boolean",
+      "required": false,
+      "validation": "boolean"
+    },
+    {
+      "name": "descripcion",
+      "label": "Descripción",
+      "type": "textarea",
+      "required": false,
+      "validation": "max:500"
+    },
+    {
+      "name": "aplica_todos",
+      "label": "Aplica a Todos los Empleados",
+      "type": "boolean",
+      "required": false,
+      "validation": "boolean"
+    }
+  ],
+  "displayName": "Días Festivos y Vacaciones",
+  "displayDescription": "Gestión de días festivos y vacaciones del equipo"
+}
+

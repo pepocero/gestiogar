@@ -2,8 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { Layout } from '@/components/layout/Layout'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+// Layout ya se aplica automáticamente en ProtectedLayout
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -534,20 +533,15 @@ export default function EstimatesPage() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="spinner"></div>
-        </div>
-      </Layout>
+      <div className="flex items-center justify-center h-64">
+        <div className="spinner"></div>
+      </div>
     )
   }
 
   return (
-    <ProtectedRoute>
-      <Layout>
-        <div className="space-y-6">
-        {/* Header */}
-        <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
               Presupuestos
@@ -758,14 +752,12 @@ export default function EstimatesPage() {
             )}
           </CardBody>
         </Card>
-      </div>
 
-      {/* Modal para crear/editar presupuesto */}
-      <Modal
-        isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        title={editingEstimate ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
-        size="xl"
+        <Modal
+          isOpen={showModal}
+          onClose={() => setShowModal(false)}
+          title={editingEstimate ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}
+          size="xl"
       >
         <form onSubmit={handleSubmit} className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -1199,7 +1191,6 @@ export default function EstimatesPage() {
           </div>
         </div>
       </Modal>
-      </Layout>
-    </ProtectedRoute>
+    </div>
   )
 }

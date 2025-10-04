@@ -1,0 +1,71 @@
+{
+  "name": "Gestión de Productos",
+  "version": "1.0.0",
+  "implementation_date": "2024-04-12",
+  "description": "Gestiona el catálogo de productos y servicios de la empresa",
+  "author": "Equipo GestioGar",
+  "license": "MIT",
+  "config": {
+    "title": "Productos",
+    "description": "Administra tu catálogo completo de productos y servicios que tu empresa ofrece a los clientes",
+    "icon": "Gift",
+    "fields": [
+      {
+        "name": "nombre",
+        "label": "Nombre del Producto",
+        "type": "text",
+        "required": true,
+        "description": "Nombre comercial del producto"
+      },
+      {
+        "name": "descripcion",
+        "label": "Descripción",
+        "type": "textarea",
+        "required": false,
+        "description": "Descripción detallada del producto"
+      },
+      {
+        "name": "precio",
+        "label": "Precio (€)",
+        "type": "number",
+        "required": true,
+        "description": "Precio del producto en euros"
+      },
+      {
+        "name": "categoria",
+        "label": "Categoría",
+        "type": "text",
+        "required": false,
+        "description": "Categoría del producto (ej: Mantenimiento, Reparación)"
+      },
+      {
+        "name": "disponible",
+        "label": "Disponible para Ventas",
+        "type": "boolean",
+        "required": false,
+        "description": "Indica si el producto está activo y disponible para la venta"
+      },
+      {
+        "name": "codigo",
+        "label": "Código del Producto",
+        "type": "text",
+        "required": false,
+        "description": "Identificador único interno del producto"
+      },
+      {
+        "name": "materiales",
+        "label": "Lista de Materiales",
+        "type": "textarea",
+        "required": false,
+        "description": "Materiales necesarios para realizar el trabajo"
+      },
+      {
+        "name": "tiempo_estimado",
+        "label": "Tiempo Estimado (horas)",
+        "type": "number",
+        "required": false,
+        "description": "Tiempo estimado de trabajo en horas"
+      }
+    ]
+  }
+}

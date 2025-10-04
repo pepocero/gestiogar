@@ -2,6 +2,9 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ModulesProvider } from '@/contexts/ModulesContext'
+import { AdvancedModulesProvider } from '@/contexts/AdvancedModulesContext'
+import { ProtectedLayout } from '@/components/ProtectedLayout'
 import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -35,17 +38,21 @@ export default function RootLayout({
       </head>
       <body className={inter.className}>
         <AuthProvider>
-          {children}
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-            }}
-          />
+          <ModulesProvider>
+            <ProtectedLayout>
+              {children}
+            </ProtectedLayout>
+            <Toaster 
+              position="top-right"
+              toastOptions={{
+                duration: 4000,
+                style: {
+                  background: '#363636',
+                  color: '#fff',
+                },
+              }}
+            />
+          </ModulesProvider>
         </AuthProvider>
       </body>
     </html>

@@ -1,0 +1,92 @@
+{
+  "name": "Proyectos Especiales",
+  "version": "1.0.0",
+  "implementation_date": "2024-04-12",
+  "description": "Gestiona trabajos especializados y proyectos de mayor envergadura",
+  "author": "Equipo GestioGar",
+  "license": "MIT",
+  "config": {
+    "title": "Proyectos Especiales",
+    "description": "Administra proyectos de reparación complejos o trabajos especializados que requieren seguimiento detallado",
+    "icon": "FileText",
+    "fields": [
+      {
+        "name": "titulo_proyecto",
+        "label": "Título del Proyecto",
+        "type": "text",
+        "required": true,
+        "description": "Nombre descriptivo del proyecto"
+      },
+      {
+        "name": "cliente",
+        "label": "Cliente",
+        "type": "text",
+        "required": true,
+        "description": "Nombre del cliente"
+      },
+      {
+        "name": "asignado_a",
+        "label": "Técnico Asignado",
+        "type": "text",
+        "required": false,
+        "description": "Técnico responsable del proyecto"
+      },
+      {
+        "name": "ubicacion",
+        "label": "Ubicación",
+        "type": "text",
+        "required": true,
+        "description": "Dirección del trabajo"
+      },
+      {
+        "name": "progreso",
+        "label": "Progreso (%)",
+        "type": "number",
+        "required": false,
+        "description": "Progreso del proyecto en porcentaje"
+      },
+      {
+        "name": "fecha_inicio",
+        "label": "Fecha de Inicio",
+        "type": "date",
+        "required": false,
+        "description": "Fecha planificada de inicio"
+      },
+      {
+        "name": "fecha_fin",
+        "label": "Fecha de Finalización",
+        "type": "date",
+        "required": false,
+        "description": "Fecha estimada de finalización"
+      },
+      {
+        "name": "prioridad",
+        "label": "Prioridad",
+        "type": "text",
+        "required": false,
+        "description": "Prioridad: Alta, Media, Baja"
+      },
+      {
+        "name": "observaciones",
+        "label": "Observaciones",
+        "type": "textarea",
+        "required": false,
+        "description": "Notas importantes del proyecto"
+      },
+      {
+        "name": "presupuesto",
+        "label": "Presupuesto (€)",
+        "type": "number",
+        "required": false,
+        "description": "Presupuesto acordado para el proyecto"
+      },
+      {
+        "name": "activo",
+        "label": "Proyecto Activo",
+        "type": "boolean",
+        "required": false,
+        "description": "Indica si el proyecto está en curso"
+      }
+    ]
+  }
+}

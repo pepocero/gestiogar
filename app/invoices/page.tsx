@@ -1,8 +1,7 @@
 'use client'
 
 import React, { useState, useEffect } from 'react'
-import { Layout } from '@/components/layout/Layout'
-import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
+// Layout ya se aplica automáticamente en ProtectedLayout
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
@@ -698,9 +697,7 @@ export default function InvoicesPage() {
     }
   }
   return (
-    <ProtectedRoute>
-      <Layout>
-        <div className="space-y-6">
+    <div className="space-y-6">
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>
@@ -1343,7 +1340,5 @@ export default function InvoicesPage() {
             )}
           </Modal>
         </div>
-      </Layout>
-    </ProtectedRoute>
   )
 }

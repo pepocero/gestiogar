@@ -1,0 +1,194 @@
+{
+  "name": "Inventario de Herramientas Avanzado",
+  "slug": "inventario-herramientas",
+  "version": "2.0.0",
+  "description": "Sistema completo de gestión de herramientas con funcionalidades avanzadas",
+  "author": "GestioGar Team",
+  "icon": "Wrench",
+  "category": "inventario",
+  "dependencies": ["users"],
+  "permissions": [
+    "read_herramientas",
+    "write_herramientas", 
+    "delete_herramientas",
+    "manage_maintenance"
+  ],
+  "routes": [
+    {
+      "path": "/inventario/herramientas",
+      "component": "HerramientasList",
+      "title": "Listado de Herramientas",
+      "protected": true
+    },
+    {
+      "path": "/inventario/herramientas/nueva",
+      "component": "HerramientasForm", 
+      "title": "Nueva Herramienta",
+      "protected": true
+    },
+    {
+      "path": "/inventario/herramientas/editar/:id",
+      "component": "HerramientasForm",
+      "title": "Editar Herramienta",
+      "protected": true
+    },
+    {
+      "path": "/inventario/mantenimientos",
+      "component": "MantenimientosDashboard",
+      "title": "Mantenimientos",
+      "protected": true
+    },
+    {
+      "path": "/inventario/reportes",
+      "component": "HerramientasReports",
+      "title": "Reportes de Inventario",
+      "protected": true
+    }
+  ],
+  "hooks": [
+    "sidebar_menu",
+    "dashboard_widgets", 
+    "after_create_herramienta",
+    "before_delete_herramienta",
+    "send_notification"
+  ],
+  "database": {
+    "create_tables": true,
+    "tables": [
+      "herramientas",
+      "mantenimientos",
+      "marcas",
+      "categorias"
+    ]
+  },
+  "fields": [
+    {
+      "name": "nombre",
+      "label": "Nombre de la herramienta",
+      "type": "text",
+      "required": true,
+      "validation": "required|min:2|max:50",
+      "description": "Nombre específico de la herramienta"
+    },
+    {
+      "name": "marca",
+      "label": "Marca",
+      "type": "text",
+      "required": true,
+      "validation": "required|max:30",
+      "description": "Marca o fabricante"
+    },
+    {
+      "name": "modelo",
+      "label": "Modelo",
+      "type": "text",
+      "required": false,
+      "validation": "max:50",
+      "description": "Modelo específico"
+    },
+    {
+      "name": "numero_serie",
+      "label": "Número de serie",
+      "type": "text",
+      "required": false,
+      "validation": "unique:herramientas,numero_serie",
+      "description": "Si aplica"
+    },
+    {
+      "name": "categoria",
+      "label": "Categoría",
+      "type": "select",
+      "required": true,
+      "description": "Tipo de herramienta",
+      "options": [
+        {"value": "manual", "label": "Manual"},
+        {"value": "electrico", "label": "Eléctrico"},
+        {"value": "diagnostico", "label": "Diagnóstico"},
+        {"value": "especializada", "label": "Especializada"},
+        {"value": "medicion", "label": "Medición"},
+        {"value": "seguridad", "label": "Seguridad"}
+      ],
+      "validation": "required|in:manual,electrico,diagnostico,especializada,medicion,seguridad"
+    },
+    {
+      "name": "estado",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "description": "Estado actual",
+      "options": [
+        {"value": "excelente", "label": "Excelente"},
+        {"value": "bueno", "label": "Bueno"},
+        {"value": "regular", "label": "Regular"},
+        {"value": "reparar", "label": "Necesita reparación"},
+        {"value": "no_funciona", "label": "No funciona"},
+        {"value": "reserva", "label": "En reserva"}
+      ],
+      "validation": "required|in:excelente,bueno,regular,reparar,no_funciona,reserva"
+    },
+    {
+      "name": "ubicacion",
+      "label": "Ubicación",
+      "type": "text",
+      "required": true,
+      "validation": "required|max:100",
+      "description": "Dónde está guardada"
+    },
+    {
+      "name": "fecha_compra",
+      "label": "Fecha de compra",
+      "type": "date",
+      "required": false,
+      "description": "Cuándo se adquirió"
+    },
+    {
+      "name": "precio",
+      "label": "Precio",
+      "type": "number",
+      "required": false,
+      "validation": "min:0|max:99999.99",
+      "description": "Valor en euros"
+    },
+    {
+      "name": "proveedor",
+      "label": "Proveedor",
+      "type": "text",
+      "required": false,
+      "validation": "max:100",
+      "description": "Dónde se compró"
+    },
+    {
+      "name": "mantenimiento_proximo",
+      "label": "Próximo mantenimiento",
+      "type": "date",
+      "required": false,
+      "description": "Cuándo necesita mantenimiento"
+    },
+    {
+      "name": "responsable",
+      "label": "Responsable",
+      "type": "text",
+      "required": false,
+      "validation": "max:50",
+      "description": "Persona responsable del mantenimiento"
+    },
+    {
+      "name": "observaciones",
+      "label": "Observaciones",
+      "type": "textarea",
+      "required": false,
+      "validation": "max:500",
+      "description": "Notas adicionales"
+    },
+    {
+      "name": "imagen_url",
+      "label": "Imagen",
+      "type": "text",
+      "required": false,
+      "validation": "url",
+      "description": "URL de imagen de la herramienta"
+    }
+  ],
+  "displayName": "Herramientas Avanzadas",
+  "displayDescription": "Gestión completa de inventario de herramientas"
+}

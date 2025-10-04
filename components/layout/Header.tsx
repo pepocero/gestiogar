@@ -14,7 +14,7 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { profile, company, logout } = useAuth()
+  const { profile, company, signOut } = useAuth()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
@@ -241,7 +241,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      await logout()
+      await signOut()
       toast.success('Sesión cerrada exitosamente')
       // Redirigir a la página de bienvenida después de cerrar sesión
       window.location.href = '/'

@@ -1,29 +1,18 @@
 'use client'
 
-import { useState, useEffect, Suspense } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import React, { useState } from 'react'
 import Link from 'next/link'
-import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
-import { Modal } from '@/components/ui/Modal'
+import { supabase } from '@/lib/supabase'
 
-function LoginForm() {
+export default function SimpleLoginPage() {
   const router = useRouter()
-  const searchParams = useSearchParams()
-  const { signIn } = useAuth()
   const [loading, setLoading] = useState(false)
-  const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
-    password: '',
+    password: ''
   })
-
-  // Mostrar modal de éxito si viene del registro
-  useEffect(() => {
-    if (searchParams.get('registered') === 'true') {
-      setShowSuccessModal(true)
-    }
-  }, [searchParams])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -38,11 +27,28 @@ function LoginForm() {
     setLoading(true)
 
     try {
-      await signIn(formData.email, formData.password)
-      toast.success('¡Bienvenido!')
-      router.push('/dashboard')
+      console.log('🔄 Attempting login with:', formData.email)
+      
+      // Autenticar con Supabase
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (error) {
+        throw error
+      }
+
+      console.log('✅ Login successful:', data.user.id)
+      toast.success('¡Bienvenido! Redirigiendo al dashboard...')
+      
+      // Redirigir inmediatamente sin esperar contextos complejos
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 1000)
+
     } catch (error: any) {
-      console.error('Error signing in:', error)
+      console.error('❌ Login error:', error)
       toast.error(error.message || 'Error al iniciar sesión')
     } finally {
       setLoading(false)
@@ -64,7 +70,7 @@ function LoginForm() {
         <div className="bg-white py-8 px-4 shadow sm:rounded-lg sm:px-10">
           <form className="space-y-6" onSubmit={handleSubmit}>
             <div>
-              <label htmlFor="email" className="form-label">
+              <label htmlFor="email" className="block text-sm font-medium text-gray-700">
                 Email
               </label>
               <input
@@ -73,14 +79,15 @@ function LoginForm() {
                 type="email"
                 autoComplete="email"
                 required
-                className="form-input"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={formData.email}
                 onChange={handleInputChange}
+                placeholder="tu@empresa.com"
               />
             </div>
 
             <div>
-              <label htmlFor="password" className="form-label">
+              <label htmlFor="password" className="block text-sm font-medium text-gray-700">
                 Contraseña
               </label>
               <input
@@ -89,44 +96,22 @@ function LoginForm() {
                 type="password"
                 autoComplete="current-password"
                 required
-                className="form-input"
+                className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 value={formData.password}
                 onChange={handleInputChange}
+                placeholder="Tu contraseña"
               />
-            </div>
-
-            <div className="flex items-center justify-between">
-              <div className="flex items-center">
-                <input
-                  id="remember-me"
-                  name="remember-me"
-                  type="checkbox"
-                  className="h-4 w-4 text-primary-600 focus:ring-primary-500 border-gray-300 rounded"
-                />
-                <label htmlFor="remember-me" className="ml-2 block text-sm text-gray-900">
-                  Recordarme
-                </label>
-              </div>
-
-              <div className="text-sm">
-                <Link
-                  href="/auth/forgot-password"
-                  className="font-medium text-primary-600 hover:text-primary-500"
-                >
-                  ¿Olvidaste tu contraseña?
-                </Link>
-              </div>
             </div>
 
             <div>
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full btn-primary btn-lg"
+                className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {loading ? (
-                  <div className="flex items-center justify-center">
-                    <div className="spinner mr-2"></div>
+                  <div className="flex items-center">
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
                     Iniciando sesión...
                   </div>
                 ) : (
@@ -136,60 +121,41 @@ function LoginForm() {
             </div>
 
             <div className="text-center">
-              <p className="text-sm text-gray-600">
-                ¿No tienes una empresa?{' '}
-                <Link href="/auth/register" className="font-medium text-primary-600 hover:text-primary-500">
-                  Crear nueva empresa
+              <span className="text-sm text-gray-600">
+                ¿No tienes cuenta?{' '}
+                <Link
+                  href="/auth/register"
+                  className="font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Regístrate aquí
                 </Link>
+              </span>
+            </div>
+
+            {/* Demo credentials */}
+            <div className="mt-6 p-4 bg-blue-50 rounded-lg">
+              <h3 className="text-sm font-medium text-blue-900 mb-2">
+                Credenciales de Demo
+              </h3>
+              <p className="text-xs text-blue-700 mb-1">
+                <strong>Email:</strong> demo@demo.com
               </p>
+              <p className="text-xs text-blue-700">
+                <strong>Contraseña:</strong> demodemo
+              </p>
+              <button
+                type="button"
+                onClick={() => {
+                  setFormData({ email: 'demo@demo.com', password: 'demodemo' })
+                }}
+                className="mt-2 text-xs text-blue-600 hover:text-blue-800 underline"
+              >
+                Usar credenciales demo
+              </button>
             </div>
           </form>
         </div>
       </div>
-
-      {/* Modal de éxito del registro */}
-      <Modal
-        isOpen={showSuccessModal}
-        onClose={() => setShowSuccessModal(false)}
-        title="¡Empresa creada exitosamente!"
-      >
-        <div className="text-center">
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-green-100 mb-4">
-            <svg className="h-6 w-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-            </svg>
-          </div>
-          <h3 className="text-lg font-medium text-gray-900 mb-2">
-            ¡Felicidades!
-          </h3>
-          <p className="text-sm text-gray-500 mb-6">
-            Tu empresa ha sido creada correctamente. Ahora puedes iniciar sesión con las credenciales que acabas de crear.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <button
-              type="button"
-              className="btn-primary"
-              onClick={() => setShowSuccessModal(false)}
-            >
-              Entendido
-            </button>
-          </div>
-        </div>
-      </Modal>
     </div>
-  )
-}
-
-export default function LoginPage() {
-  return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-        <div className="sm:mx-auto sm:w-full sm:max-w-md">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
-        </div>
-      </div>
-    }>
-      <LoginForm />
-    </Suspense>
   )
 }

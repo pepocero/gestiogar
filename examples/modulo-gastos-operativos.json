@@ -1,0 +1,108 @@
+{
+  "name": "Gastos Operativos",
+  "slug": "gastos-operativos",
+  "version": "1.0.0",
+  "description": "Control de gastos y facturas de la empresa",
+  "icon": "Receipt",
+  "fields": [
+    {
+      "name": "concepto",
+      "label": "Concepto",
+      "type": "text",
+      "required": true,
+      "description": "Qué se está pagando"
+    },
+    {
+      "name": "categoria",
+      "label": "Categoría",
+      "type": "select",
+      "required": true,
+     "description": "Tipo de gasto",
+      "options": [
+        {"value": "combustible", "label": "Combustible"},
+        {"value": "herramientas", "label": "Herramientas"},
+        {"value": "repuestos", "label": "Repuestos"},
+        {"value": "mantenimiento", "label": "Mantenimiento"},
+        {"value": "oficina", "label": "Oficina"},
+        {"value": "marketing", "label": "Marketing"},
+        {"value": "seguros", "label": "Seguros"},
+        {"value": "otro", "label": "Otro"}
+      ]
+    },
+    {
+      "name": "importe",
+      "label": "Importe",
+      "type": "number",
+      "required": true,
+      "description": "Cantidad en euros"
+    },
+    {
+      "name": "fecha",
+      "label": "Fecha",
+      "type": "date",
+      "required": true,
+      "description": "Cuándo se realizó el gasto"
+    },
+    {
+      "name": "proveedor",
+      "label": "Proveedor",
+      "type": "text",
+      "required": false,
+      "description": "Quién emitió la factura"
+    },
+    {
+      "name": "numero_factura",
+      "label": "Número de factura",
+      "type": "text",
+      "required": false,
+      "description": "Referencia de la factura"
+    },
+    {
+      "name": "forma_pago",
+      "label": "Forma de pago",
+      "type": "select",
+      "required": true,
+      "description": "Cómo se pagó",
+      "options": [
+        {"value": "efectivo", "label": "Efectivo"},
+        {"value": "transferencia", "label": "Transferencia"},
+        {"value": "tarjeta", "label": "Tarjeta"},
+        {"value": "cheque", "label": "Cheque"}
+      ]
+    },
+    {
+      "name": "empleado",
+      "label": "Empleado responsable",
+      "type": "text",
+      "required": false,
+      "description": "Quién realizó el gasto"
+    },
+    {
+      "name": "vehiculo",
+      "label": "Vehículo relacionado",
+      "type": "text",
+      "required": false,
+      "description": "Si aplica a un vehículo específico"
+    },
+    {
+      "name": "factura_subida",
+      "label": "Factura digitalizada",
+      "type": "select",
+      "required": false,
+      "description": "Si se subió la factura",
+      "options": [
+        {"value": "si", "label": "Sí"},
+        {"value": "no", "label": "No"}
+      ]
+    },
+    {
+      "name": "observaciones",
+      "label": "Observaciones",
+      "type": "textarea",
+      "required": false,
+      "description": "Notas adicionales"
+    }
+  ],
+  "displayName": "Gastos",
+  "displayDescription": "Control de gastos operativos y facturas"
+}

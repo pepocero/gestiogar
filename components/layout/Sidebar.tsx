@@ -18,9 +18,15 @@ import {
   Package,
   Phone,
   BarChart3,
-  X
+  X,
+  Clock,
+  Truck,
+  Receipt,
+  Building,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useModules } from '@/contexts/ModulesContext'
+// import { useAdvancedModules } from '@/contexts/AdvancedModulesContext' // Temporalmente deshabilitado
 
 const navigation = [
   { name: 'Dashboard', href: '/dashboard', icon: Home },
@@ -45,6 +51,9 @@ interface SidebarProps {
 export function Sidebar({ onClose }: SidebarProps) {
   const pathname = usePathname()
   const { company, signOut } = useAuth()
+  const { modules } = useModules()
+  // Temporalmente deshabilitado - módulos avanzados
+  const advancedSidebarItems: any[] = []
 
   const handleSignOut = async () => {
     try {
@@ -98,6 +107,7 @@ export function Sidebar({ onClose }: SidebarProps) {
 
       {/* Navegación */}
       <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+        {/* Navegación principal */}
         {navigation.map((item) => {
           const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
           return (
@@ -122,6 +132,137 @@ export function Sidebar({ onClose }: SidebarProps) {
             </Link>
           )
         })}
+
+        {/* Módulos dinámicos básicos */}
+        {modules.length > 0 && (
+          <>
+            <div className="border-t border-gray-200 my-4"></div>
+            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Módulos
+            </div>
+            {modules.map((module) => {
+              const isActive = pathname === `/module/${module.slug}` || pathname.startsWith(`/module/${module.slug}/`)
+              
+              // Mapear iconos según el slug del módulo
+              const getIconComponent = (slug: string) => {
+                const iconMap: { [key: string]: any } = {
+                  'horarios-empleados': Clock,
+                  'vehiculos-servicio': Truck,
+                  'gastos-operativos': Receipt,
+                  'contactos-proveedores': Building,
+                  'inventario-herramientas': Wrench,
+                  'holidays-vacations': Calendar,
+                  'vehicle-management': Truck,
+                  'expense-tracker': Receipt,
+                  'gestion-inventario': Package,
+                }
+                return iconMap[slug] || Package
+              }
+              
+              const IconComponent = getIconComponent(module.slug)
+              
+              return (
+                <Link
+                  key={module.id}
+                  href={`/module/${module.slug}`}
+                  onClick={() => onClose && onClose()}
+                  className={clsx(
+                    'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                    isActive
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  )}
+                >
+                  <IconComponent
+                    className={clsx(
+                      'mr-3 h-5 w-5 flex-shrink-0',
+                      isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
+                    )} 
+                  />
+                  {module.name}
+                </Link>
+              )
+            })}
+          </>
+        )}
+
+        {/* Debug: Mostrar información si no hay módulos */}
+        {modules.length === 0 && company?.id && (
+          <>
+            <div className="border-t border-gray-200 my-4"></div>
+            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Módulos
+            </div>
+            <div className="px-3 py-2 text-xs text-gray-400">
+              No hay módulos instalados
+            </div>
+            <div className="px-3 py-1 text-xs text-gray-400">
+              <Link href="/debug-modules" className="text-blue-500 hover:text-blue-600">
+                Debug módulos
+              </Link>
+            </div>
+          </>
+        )}
+
+        {/* Módulos avanzados */}
+        {advancedSidebarItems.length > 0 && (
+          <>
+            <div className="border-t border-gray-200 my-4"></div>
+            <div className="px-3 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+              Módulos Avanzados
+            </div>
+            {advancedSidebarItems.map((item, index) => {
+              const isActive = pathname === item.href || pathname.startsWith(item.href + '/')
+              
+              // Mapear iconos según el nombre del icono del item
+              const getIconComponent = (iconName: string) => {
+                const iconMap: { [key: string]: any } = {
+                  'Wrench': Wrench,
+                  'Clock': Clock,
+                  'Truck': Truck,
+                  'Receipt': Receipt,
+                  'Building': Building,
+                  'Package': Package,
+                  'Users': Users,
+                  'Settings': Settings,
+                  'FileText': FileText,
+                  'BarChart3': BarChart3,
+                  'Phone': Phone,
+                }
+                return iconMap[iconName] || Package
+              }
+              
+              const IconComponent = getIconComponent(item.icon)
+              
+              return (
+                <Link
+                  key={`advanced-${index}`}
+                  href={item.href}
+                  onClick={() => onClose && onClose()}
+                  className={clsx(
+                    'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
+                    isActive
+                      ? 'bg-primary-100 text-primary-700'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  )}
+                >
+                  <IconComponent
+                    className={clsx(
+                      'mr-3 h-5 w-5 flex-shrink-0',
+                      isActive ? 'text-primary-500' : 'text-gray-400 group-hover:text-gray-500'
+                    )} 
+                  />
+                  {item.title}
+                  {item.badge && (
+                    <span className="ml-auto bg-primary-100 text-primary-600 text-xs px-2 py-1 rounded-full">
+                      {item.badge}
+                    </span>
+                  )}
+                </Link>
+              )
+            })}
+          </>
+        )}
       </nav>
 
       {/* Usuario y cerrar sesión */}

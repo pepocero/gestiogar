@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { Layout } from '@/components/layout/Layout'
+// Layout ya se aplica automáticamente en ProtectedLayout
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -469,18 +469,14 @@ export default function JobsPage() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="spinner"></div>
-        </div>
-      </Layout>
+      <div className="flex items-center justify-center h-64">
+        <div className="spinner"></div>
+      </div>
     )
   }
 
   return (
-    <ProtectedRoute>
-      <Layout>
-        <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -733,10 +729,9 @@ export default function JobsPage() {
             )}
           </CardBody>
         </Card>
-      </div>
 
-      {/* Modal para crear/editar trabajo */}
-      <Modal
+        {/* Modal para crear/editar trabajo */}
+        <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title={editingJob ? 'Editar Trabajo' : 'Nuevo Trabajo'}
@@ -906,8 +901,8 @@ export default function JobsPage() {
         </form>
       </Modal>
 
-      {/* View Job Modal */}
-      <Modal
+        {/* View Job Modal */}
+        <Modal
         isOpen={showViewModal}
         onClose={() => setShowViewModal(false)}
         title="Detalles del Trabajo"
@@ -1124,8 +1119,8 @@ export default function JobsPage() {
         )}
       </Modal>
 
-      {/* Delete Job Modal */}
-      <Modal
+        {/* Delete Job Modal */}
+        <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         title="Eliminar Trabajo"
@@ -1156,7 +1151,6 @@ export default function JobsPage() {
           </div>
         )}
       </Modal>
-      </Layout>
-    </ProtectedRoute>
+    </div>
   )
 }

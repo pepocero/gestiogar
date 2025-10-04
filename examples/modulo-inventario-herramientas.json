@@ -1,0 +1,108 @@
+{
+  "name": "Inventario de Herramientas",
+  "slug": "inventario-herramientas",
+  "version": "1.0.0",
+  "description": "Gestión de herramientas y equipos de trabajo",
+  "icon": "Wrench",
+  "fields": [
+    {
+      "name": "nombre",
+      "label": "Nombre de la herramienta",
+      "type": "text",
+      "required": true,
+      "description": "Nombre específico de la herramienta"
+    },
+    {
+      "name": "marca",
+      "label": "Marca",
+      "type": "text",
+      "required": true,
+      "description": "Marca o fabricante"
+    },
+    {
+      "name": "modelo",
+      "label": "Modelo",
+      "type": "text",
+      "required": false,
+      "description": "Modelo específico"
+    },
+    {
+      "name": "numero_serie",
+      "label": "Número de serie",
+      "type": "text",
+      "required": false,
+      "description": "Si aplica"
+    },
+    {
+      "name": "categoria",
+      "label": "Categoría",
+      "type": "select",
+      "required": true,
+      "description": "Tipo de herramienta",
+      "options": [
+        {"value": "manual", "label": "Manual"},
+        {"value": "electrico", "label": "Eléctrico"},
+        {"value": "diagnostico", "label": "Diagnóstico"},
+        {"value": "especializada", "label": "Especializada"}
+      ]
+    },
+    {
+      "name": "estado",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "description": "Estado actual",
+      "options": [
+        {"value": "excelente", "label": "Excelente"},
+        {"value": "bueno", "label": "Bueno"},
+        {"value": "regular", "label": "Regular"},
+        {"value": "reparar", "label": "Necesita reparación"},
+        {"value": "no_funciona", "label": "No funciona"}
+      ]
+    },
+    {
+      "name": "ubicacion",
+      "label": "Ubicación",
+      "type": "text",
+      "required": true,
+      "description": "Dónde está guardada"
+    },
+    {
+      "name": "fecha_compra",
+      "label": "Fecha de compra",
+      "type": "date",
+      "required": false,
+      "description": "Cuándo se adquirió"
+    },
+    {
+      "name": "precio",
+      "label": "Precio",
+      "type": "number",
+      "required": false,
+      "description": "Valor en euros"
+    },
+    {
+      "name": "proveedor",
+      "label": "Proveedor",
+      "type": "text",
+      "required": false,
+     "description": "Dónde se compró"
+    },
+    {
+      "name": "mantenimiento_proximo",
+      "label": "Próximo mantenimiento",
+      "type": "date",
+      "required": false,
+      "description": "Cuándo necesita mantenimiento"
+    },
+    {
+      "name": "observaciones",
+      "label": "Observaciones",
+      "type": "textarea",
+      "required": false,
+      "description": "Notas adicionales"
+    }
+  ],
+  "displayName": "Herramientas",
+  "displayDescription": "Gestión de inventario de herramientas y equipos"
+}
