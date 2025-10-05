@@ -476,7 +476,7 @@ export default function ModulePage() {
         <div className="flex space-x-3">
          <Button 
            onClick={updateModuleFromStore}
-           variant="outline"
+           variant="gray"
            className="bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100"
          >
            🔄 Actualizar Módulo
@@ -573,7 +573,7 @@ export default function ModulePage() {
                         </div>
                       </td>
                       <td className="px-4 py-4 whitespace-nowrap">
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="gray" className="text-xs">
                           {item.data.tecnico === 'todos' || item.data.tecnico === 'sin_asignar' ? 
                             (item.data.tecnico === 'todos' ? 'Todos' : 'Sin asignar') : 
                            (() => {
@@ -677,7 +677,7 @@ export default function ModulePage() {
                                 </div>
                                 <div className="flex space-x-2">
                                   {currentModule.slug === 'vehicle-management' ? (
-                                    <Badge variant="outline" className="text-xs">
+                                    <Badge variant="gray" className="text-xs">
                                       {item.data.placa || 'Sin placa'}
                                     </Badge>
                                   ) : (
@@ -710,7 +710,7 @@ export default function ModulePage() {
                                     <div className="space-y-3">
                                       <div className="flex items-center justify-between py-2 border-b border-gray-100">
                                         <span className="text-sm font-medium text-gray-600">Técnico:</span>
-                                        <Badge variant="outline" className="text-xs">
+                                        <Badge variant="gray" className="text-xs">
                                           {item.data.tecnico === 'todos' || item.data.tecnico === 'sin_asignar' ? 
                                             (item.data.tecnico === 'todos' ? 'Todos los técnicos' : 'Sin asignar') : 
                                            (() => {
@@ -813,7 +813,7 @@ export default function ModulePage() {
                                           </div>
                                           <div className="flex items-center justify-between py-2">
                                             <span className="text-sm font-medium text-gray-600">Combustible:</span>
-                                            <Badge variant="outline" className="text-xs">
+                                            <Badge variant="gray" className="text-xs">
                                               {item.data.tipo_combustible === 'gasolina' ? 'Gasolina' :
                                                item.data.tipo_combustible === 'diesel' ? 'Diésel' :
                                                item.data.tipo_combustible === 'electrico' ? 'Eléctrico' :
@@ -927,7 +927,7 @@ export default function ModulePage() {
                   </h3>
                   <div className="flex items-center space-x-2 mt-1">
                     {currentModule.slug === 'vehicle-management' ? (
-                      <Badge variant="outline" className="text-xs">
+                      <Badge variant="gray" className="text-xs">
                         {selectedItem.data.placa || 'Sin placa'}
                       </Badge>
                     ) : (
@@ -943,7 +943,7 @@ export default function ModulePage() {
                          selectedItem.data.tipo || '-'}
                       </Badge>
                     )}
-                    <Badge variant="outline" className="text-xs">
+                    <Badge variant="gray" className="text-xs">
                       {selectedItem.data.tecnico === 'todos' || selectedItem.data.tecnico === 'sin_asignar' ? 
                         (selectedItem.data.tecnico === 'todos' ? 'Todos los técnicos' : 'Sin asignar') : 
                        (() => {
@@ -987,7 +987,7 @@ export default function ModulePage() {
                       </div>
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Combustible:</span>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="gray" className="text-xs">
                           {selectedItem.data.tipo_combustible === 'gasolina' ? 'Gasolina' :
                            selectedItem.data.tipo_combustible === 'diesel' ? 'Diésel' :
                            selectedItem.data.tipo_combustible === 'electrico' ? 'Eléctrico' :
@@ -1007,7 +1007,7 @@ export default function ModulePage() {
                     <div className="space-y-2">
                       <div className="flex justify-between">
                         <span className="text-sm text-gray-600">Técnico:</span>
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="gray" className="text-xs">
                           {selectedItem.data.tecnico === 'todos' || selectedItem.data.tecnico === 'sin_asignar' ? 
                             (selectedItem.data.tecnico === 'todos' ? 'Todos los técnicos' : 'Sin asignar') : 
                            (() => {
@@ -1099,7 +1099,7 @@ export default function ModulePage() {
             {/* Botones de acción */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
               <Button
-                variant="outline"
+                variant="gray"
                 onClick={() => setShowViewModal(false)}
               >
                 Cerrar
