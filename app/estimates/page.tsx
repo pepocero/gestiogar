@@ -254,7 +254,7 @@ export default function EstimatesPage() {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
     
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))

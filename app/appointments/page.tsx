@@ -155,7 +155,7 @@ export default function AppointmentsPage() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value, type } = e.target
     
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: type === 'number' ? parseFloat(value) || 0 : value
     }))
@@ -381,7 +381,7 @@ export default function AppointmentsPage() {
     const startDate = new Date(slotInfo.start)
     const endDate = new Date(slotInfo.end)
     
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       scheduled_date: startDate.toISOString().split('T')[0],
       scheduled_time: startDate.toTimeString().slice(0, 5),

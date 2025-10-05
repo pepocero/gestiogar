@@ -663,7 +663,7 @@ export default function ModulesPage() {
                           </span>
                           <span className="font-medium text-green-600">{moduleData.price}</span>
                         </div>
-                        <Badge variant="secondary" className="text-xs">
+                        <Badge variant="gray" className="text-xs">
                           {moduleData.category}
                         </Badge>
                       </div>

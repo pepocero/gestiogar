@@ -598,9 +598,9 @@ export default function ModulePage() {
                         <>
                           <td className="px-4 py-4 whitespace-nowrap">
                             <Badge variant={
-                              item.data.tipo === 'vacaciones' ? 'primary' : 
+                              item.data.tipo === 'vacaciones' ? 'info' : 
                               item.data.tipo === 'festivo' ? 'success' : 
-                              item.data.tipo === 'local' ? 'warning' : 'secondary'
+                              item.data.tipo === 'local' ? 'warning' : 'gray'
                             } className="text-xs">
                               {item.data.tipo === 'vacaciones' ? 'Vacaciones' :
                                item.data.tipo === 'festivo' ? 'Festivo Nacional' :
