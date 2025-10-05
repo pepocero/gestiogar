@@ -476,7 +476,7 @@ export default function ModulePage() {
         <div className="flex space-x-3">
          <Button 
            onClick={updateModuleFromStore}
-           variant="gray"
+           variant="outline"
            className="bg-blue-50 border-blue-200 text-blue-800 hover:bg-blue-100"
          >
            🔄 Actualizar Módulo
