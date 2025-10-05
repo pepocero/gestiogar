@@ -382,7 +382,7 @@ export default function ModulePage() {
                 
                 // Si cambia el tipo y no es vacaciones, limpiar fecha_fin
                 if (fieldName === 'tipo' && newValue !== 'vacaciones') {
-                  setFormData(prev => ({ ...prev, fecha_fin: '' }))
+                  setFormData((prev: any) => ({ ...prev, fecha_fin: '' }))
                 }
               }}
               required={field.required}
