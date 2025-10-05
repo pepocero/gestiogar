@@ -5,9 +5,12 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui'
 import { Modal, Input, Badge } from '@/components/ui'
 import { Package, Plus, Settings, Eye, Edit, Trash2 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function MaterialsPage() {
+  const { company } = useAuth()
   const [materials, setMaterials] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -47,34 +50,26 @@ export default function MaterialsPage() {
   const loadMaterials = async () => {
     try {
       setLoading(true)
-      // Simular carga de datos
-      const mockData = [
-        {
-          id: 1,
-          name: 'Tornillos M8',
-          description: 'Tornillos metálicos galvanizados',
-          category: 'Ferretería',
-          unit_price: 0.05,
-          stock_quantity: 1000,
-          min_stock: 100,
-          supplier: 'Ferretería López',
-          sku: 'TOR-M8-001',
-          low_stock: false
-        },
-        {
-          id: 2,
-          name: 'Cable eléctrico',
-          description: 'Cable de cobre flexible',
-          category: 'Electricidad',
-          unit_price: 2.50,
-          stock_quantity: 50,
-          min_stock: 25,
-          supplier: 'Electrosan',
-          sku: 'CAB-EL-001',
-          low_stock: true
-        }
-      ]
-      setMaterials(mockData)
+      
+      if (!company) {
+        console.error('No company found')
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('materials')
+        .select(`
+          *,
+          suppliers(name)
+        `)
+        .eq('company_id', company.id)
+        .order('name', { ascending: true })
+
+      if (error) {
+        throw error
+      }
+
+      setMaterials(data || [])
     } catch (error) {
       console.error('Error loading materials:', error)
       toast.error('Error cargando materiales')

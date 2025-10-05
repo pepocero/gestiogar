@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/Button'
 import { Badge } from '@/components/ui/Badge'
 import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
-import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, MessageSquare, User, Wrench, Calendar, ArrowUpRight, ArrowDownLeft, Reply } from 'lucide-react'
+import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, MessageSquare, User, Wrench, Calendar, ArrowUpRight, ArrowDownLeft, Reply, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
@@ -486,6 +486,33 @@ export default function CommunicationsPage() {
     })
     setShowCreateModal(true)
   }
+
+  const handleChangeStatus = async (conversation: Conversation, newStatus: string) => {
+    if (!company?.id) {
+      toast.error('No se pudo obtener la información de la empresa')
+      return
+    }
+
+    try {
+      const { error } = await supabase
+        .from('conversations')
+        .update({ status: newStatus })
+        .eq('id', conversation.id)
+        .eq('company_id', company.id)
+
+      if (error) {
+        console.error('Error updating conversation status:', error)
+        toast.error('Error al cambiar el estado de la conversación')
+        return
+      }
+
+      toast.success(`Conversación marcada como ${newStatus === 'active' ? 'Activa' : newStatus === 'closed' ? 'Cerrada' : 'Archivada'}`)
+      loadConversations()
+    } catch (error) {
+      console.error('Error updating conversation status:', error)
+      toast.error('Error inesperado al cambiar el estado')
+    }
+  }
   return (
     <div className="space-y-6">
           {/* Header */}
@@ -682,6 +709,43 @@ export default function CommunicationsPage() {
                                   >
                                     <Reply className="h-4 w-4" />
                                   </Button>
+                                  <div className="relative group">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      title="Cambiar estado"
+                                    >
+                                      <Settings className="h-4 w-4" />
+                                    </Button>
+                                    <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-10">
+                                      <div className="py-1">
+                                        {conversation.status !== 'active' && (
+                                          <button
+                                            onClick={() => handleChangeStatus(conversation, 'active')}
+                                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-green-50 hover:text-green-700"
+                                          >
+                                            Marcar como Activa
+                                          </button>
+                                        )}
+                                        {conversation.status !== 'closed' && (
+                                          <button
+                                            onClick={() => handleChangeStatus(conversation, 'closed')}
+                                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                          >
+                                            Marcar como Cerrada
+                                          </button>
+                                        )}
+                                        {conversation.status !== 'archived' && (
+                                          <button
+                                            onClick={() => handleChangeStatus(conversation, 'archived')}
+                                            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-yellow-50 hover:text-yellow-700"
+                                          >
+                                            Archivar
+                                          </button>
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
                               </div>
                             </div>

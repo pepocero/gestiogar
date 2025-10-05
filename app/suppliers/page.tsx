@@ -5,9 +5,12 @@ import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui'
 import { Modal, Input } from '@/components/ui'
 import { Truck, Plus, Settings, Eye, Edit, Trash2 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function SuppliersPage() {
+  const { company } = useAuth()
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -47,36 +50,23 @@ export default function SuppliersPage() {
   const loadSuppliers = async () => {
     try {
       setLoading(true)
-      // Simular carga de datos
-      const mockData = [
-        {
-          id: 1,
-          name: 'Proveedor López S.L.',
-          contact_person: 'José López',
-          email: 'info@proveedorlopez.com',
-          phone: '+34 91 123 4567',
-          address: 'Calle Mayor 123, Madrid',
-          website: 'www.proveedorlopez.com',
-          payment_terms: '30',
-          is_active: true,
-          materials_count: 25,
-          last_order: '2024-01-15'
-        },
-        {
-          id: 2,
-          name: 'Materiales García',
-          contact_person: 'María García',
-          email: 'ventas@materialesgarcia.es',
-          phone: '+34 93 765 4321',
-          address: 'Avenida Principal 45, Barcelona',
-          website: 'www.materialesgarcia.es',
-          payment_terms: '15',
-          is_active: true,
-          materials_count: 18,
-          last_order: '2024-01-10'
-        }
-          ]
-      setSuppliers(mockData)
+      
+      if (!company) {
+        console.error('No company found')
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('suppliers')
+        .select('*')
+        .eq('company_id', company.id)
+        .order('name', { ascending: true })
+
+      if (error) {
+        throw error
+      }
+
+      setSuppliers(data || [])
     } catch (error) {
       console.error('Error loading suppliers:', error)
       toast.error('Error cargando proveedores')

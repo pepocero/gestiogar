@@ -4,10 +4,14 @@ import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui'
 import { Modal, Input, Badge } from '@/components/ui'
-import { Building2, Plus, Settings, Eye, Edit, Trash2 } from 'lucide-react'
+import { Building2, Plus, Settings, Eye, Edit, Trash2, Upload, X } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
+import { supabase } from '@/lib/supabase'
+import { ImageEditor } from '@/components/ui/ImageEditor'
 import toast from 'react-hot-toast'
 
 export default function InsurancePage() {
+  const { company } = useAuth()
   const [companies, setCompanies] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -15,6 +19,15 @@ export default function InsurancePage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [editingCompany, setEditingCompany] = useState<any>(null)
   const [selectedCompany, setSelectedCompany] = useState<any>(null)
+  
+  // Estados para manejo de archivos
+  const [logoFile, setLogoFile] = useState<File | null>(null)
+  const [logoPreview, setLogoPreview] = useState<string | null>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
+  
+  // Estados para editor de imágenes
+  const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const [showImageEditor, setShowImageEditor] = useState(false)
 
   const [form, setForm] = useState({
     name: '',
@@ -22,10 +35,9 @@ export default function InsurancePage() {
     email: '',
     phone: '',
     address: '',
-    policies: '',
+    portal_url: '',
     billing_terms: 30,
-    is_active: true,
-    logo_url: ''
+    is_active: true
   })
 
   const resetForm = () => {
@@ -35,11 +47,12 @@ export default function InsurancePage() {
       email: '',
       phone: '',
       address: '',
-      policies: '',
+      portal_url: '',
       billing_terms: 30,
-      is_active: true,
-      logo_url: ''
+      is_active: true
     })
+    setLogoFile(null)
+    setLogoPreview(null)
   }
 
   useEffect(() => {
@@ -49,33 +62,148 @@ export default function InsurancePage() {
   const loadCompanies = async () => {
     try {
       setLoading(true)
-      // Simular carga de datos
-      const mockData = [
-        {
-          id: 1,
-          name: 'MAPFRE',
-          contact_person: 'Juan Pérez',
-          email: 'contacto@mapfre.es',
-          phone: '+34 91 123 4567',
-          is_active: true,
-          bills_count: 15
-        },
-        {
-          id: 2,
-          name: 'AXA',
-          contact_person: 'María García',
-          email: 'contacto@axa.es',
-          phone: '+34 93 765 4321',
-          is_active: true,
-          bills_count: 8
-        }
-      ]
-      setCompanies(mockData)
+      
+      if (!company) {
+        console.error('No company found')
+        return
+      }
+
+      const { data, error } = await supabase
+        .from('insurance_companies')
+        .select('*')
+        .eq('company_id', company.id)
+        .order('name', { ascending: true })
+
+      if (error) {
+        throw error
+      }
+
+      setCompanies(data || [])
     } catch (error) {
       console.error('Error loading companies:', error)
       toast.error('Error cargando aseguradoras')
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Función para manejar la selección de logo
+  const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      // Validar tipo de archivo
+      if (!file.type.startsWith('image/')) {
+        toast.error('Por favor selecciona un archivo de imagen válido')
+        return
+      }
+      
+      // Validar tamaño (máximo 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('La imagen debe ser menor a 2MB')
+        return
+      }
+      
+      // Abrir editor de imagen
+      setSelectedImageFile(file)
+      setShowImageEditor(true)
+    }
+  }
+
+  const handleImageEditorSave = (croppedImageBlob: Blob) => {
+    // Convertir blob a File
+    const croppedFile = new File([croppedImageBlob], 'insurance-logo.jpg', {
+      type: 'image/jpeg'
+    })
+    
+    setLogoFile(croppedFile)
+    
+    // Crear preview
+    const reader = new FileReader()
+    reader.onload = (e) => {
+      setLogoPreview(e.target?.result as string)
+    }
+    reader.readAsDataURL(croppedFile)
+    
+    setShowImageEditor(false)
+    setSelectedImageFile(null)
+  }
+
+  // Función para subir logo a Supabase Storage
+  const uploadLogo = async (companyId: string, companyName: string): Promise<string | null> => {
+    if (!logoFile || !company?.id) return null
+
+    try {
+      setUploadingLogo(true)
+      
+      // Crear nombre con formato: Empresa_NombreAseguradora.[extension]
+      const fileExt = logoFile.name.split('.').pop()
+      const companyNameClean = company.name?.replace(/[^a-zA-Z0-9]/g, '') || 'Empresa'
+      const insuranceNameClean = companyName.replace(/[^a-zA-Z0-9]/g, '') || 'Aseguradora'
+      const fileName = `${companyNameClean}_${insuranceNameClean}.${fileExt}`
+      const filePath = `logo/${company.id}/${fileName}`
+
+      // Subir archivo a Supabase Storage (upsert: true para sobrescribir si existe)
+      const { data, error } = await supabase.storage
+        .from('profile-photos')
+        .upload(filePath, logoFile, {
+          cacheControl: '3600',
+          upsert: true // Sobrescribe el archivo si ya existe
+        })
+
+      if (error) {
+        console.error('Error uploading logo:', error)
+        toast.error('Error al subir el logo')
+        return null
+      }
+
+      // Obtener URL firmada (con token) que expira en 1 año
+      const { data: signedUrlData } = await supabase.storage
+        .from('profile-photos')
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365) // 1 año
+
+      if (signedUrlData) {
+        console.log('URL firmada generada:', signedUrlData.signedUrl)
+        return signedUrlData.signedUrl
+      }
+      
+      return null
+    } catch (error) {
+      console.error('Error uploading logo:', error)
+      toast.error('Error al subir el logo')
+      return null
+    } finally {
+      setUploadingLogo(false)
+    }
+  }
+
+  // Función para eliminar logo del storage
+  const deleteLogoFromStorage = async (logoUrl: string) => {
+    try {
+      let filePath = ''
+      
+      if (logoUrl.includes('/storage/v1/object/public/profile-photos/')) {
+        const urlParts = logoUrl.split('/storage/v1/object/public/profile-photos/')
+        filePath = urlParts[1] || ''
+      } else if (logoUrl.includes('/storage/v1/object/sign/profile-photos/')) {
+        const urlParts = logoUrl.split('/storage/v1/object/sign/profile-photos/')
+        filePath = urlParts[1] || ''
+      }
+
+      if (filePath) {
+        const { error } = await supabase.storage
+          .from('profile-photos')
+          .remove([filePath])
+
+        if (error) {
+          console.error('Error eliminando logo:', error)
+        } else {
+          console.log('Logo eliminado correctamente')
+        }
+      } else {
+        console.error('No se pudo extraer el path del archivo de la URL:', logoUrl)
+      }
+    } catch (error) {
+      console.error('Error eliminando logo del storage:', error)
     }
   }
 
@@ -91,29 +219,103 @@ export default function InsurancePage() {
     e.preventDefault()
     
     try {
-      // Simular operación
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
+      if (!company) {
+        toast.error('No se encontró información de la empresa')
+        return
+      }
+
       if (editingCompany) {
-        const updatedCompanies = companies.map(comp => 
-          comp.id === editingCompany.id ? { ...comp, ...form } : comp
-        )
-        setCompanies(updatedCompanies)
+        // Actualizar aseguradora existente
+        const updateData: any = {
+          name: form.name,
+          contact_person: form.contact_person,
+          email: form.email,
+          phone: form.phone,
+          address: form.address,
+          portal_url: form.portal_url,
+          billing_terms: form.billing_terms,
+          is_active: form.is_active
+        }
+
+        // Si hay un nuevo logo, subirlo
+        if (logoFile) {
+          console.log('Subiendo nuevo logo para aseguradora:', editingCompany.id)
+          
+          // Eliminar el logo anterior si existe
+          if (editingCompany.logo_url) {
+            await deleteLogoFromStorage(editingCompany.logo_url)
+          }
+          
+          const logoUrl = await uploadLogo(editingCompany.id, form.name)
+          console.log('URL de logo obtenida:', logoUrl)
+          if (logoUrl) {
+            updateData.logo_url = logoUrl
+          }
+        }
+
+        const { error } = await supabase
+          .from('insurance_companies')
+          .update(updateData)
+          .eq('id', editingCompany.id)
+          .eq('company_id', company.id)
+
+        if (error) {
+          throw error
+        }
+
         toast.success('Aseguradora actualizada correctamente')
       } else {
-        const newCompany = {
-          id: Date.now(),
-          ...form,
-          bills_count: 0
+        // Crear nueva aseguradora
+        const { data, error } = await supabase
+          .from('insurance_companies')
+          .insert({
+            company_id: company.id,
+            name: form.name,
+            contact_person: form.contact_person,
+            email: form.email,
+            phone: form.phone,
+            address: form.address,
+            portal_url: form.portal_url,
+            billing_terms: form.billing_terms,
+            is_active: form.is_active
+          })
+          .select()
+
+        if (error) {
+          throw error
         }
-        setCompanies([...companies, newCompany])
+
+        // Si hay un logo, subirlo
+        if (logoFile && data && data[0]) {
+          console.log('Subiendo logo para nueva aseguradora:', data[0].id)
+          const logoUrl = await uploadLogo(data[0].id, form.name)
+          console.log('URL de logo obtenida:', logoUrl)
+          if (logoUrl) {
+            // Actualizar la aseguradora con la URL del logo
+            const { error: updateError } = await supabase
+              .from('insurance_companies')
+              .update({ logo_url: logoUrl })
+              .eq('id', data[0].id)
+
+            if (updateError) {
+              console.error('Error actualizando URL de logo:', updateError)
+            } else {
+              console.log('URL de logo actualizada correctamente')
+            }
+          }
+        }
+
         toast.success('Aseguradora creada correctamente')
       }
+      
+      // Recargar datos
+      await loadCompanies()
       
       setShowModal(false)
       setEditingCompany(null)
       resetForm()
     } catch (error) {
+      console.error('Error guardando aseguradora:', error)
       toast.error('Error guardando aseguradora')
     }
   }
@@ -132,11 +334,12 @@ export default function InsurancePage() {
       email: company.email,
       phone: company.phone,
       address: company.address || '',
-      policies: company.policies || '',
+      portal_url: company.portal_url || '',
       billing_terms: company.billing_terms || 30,
-      is_active: company.is_active,
-      logo_url: company.logo_url || ''
+      is_active: company.is_active
     })
+    setLogoFile(null)
+    setLogoPreview(company.logo_url || null)
     setShowModal(true)
   }
 
@@ -216,8 +419,21 @@ export default function InsurancePage() {
               <div className="p-6">
                 <div className="flex items-start justify-between mb-4">
                   <div className="flex items-center">
-                    <div className="p-2 bg-blue-100 rounded-lg">
-                      <Building2 className="h-6 w-6 text-blue-600" />
+                    <div className="w-12 h-12 rounded-lg overflow-hidden border border-gray-200">
+                      {company.logo_url ? (
+                        <img
+                          src={company.logo_url}
+                          alt={`Logo de ${company.name}`}
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            e.currentTarget.style.display = 'none'
+                            e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                          }}
+                        />
+                      ) : null}
+                      <div className={`w-full h-full bg-blue-100 flex items-center justify-center ${company.logo_url ? 'hidden' : ''}`}>
+                        <Building2 className="h-6 w-6 text-blue-600" />
+                      </div>
                     </div>
                     <div className="ml-3">
                       <h3 className="text-lg font-semibold text-gray-900">
@@ -320,6 +536,79 @@ export default function InsurancePage() {
             onChange={handleInputChange}
           />
 
+          <Input
+            label="Portal URL"
+            name="portal_url"
+            value={form.portal_url}
+            onChange={handleInputChange}
+            placeholder="https://portal.aseguradora.com"
+          />
+
+          {/* Campo de logo */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Logo de la Aseguradora
+            </label>
+            
+            {/* Preview del logo */}
+            {(logoPreview || editingCompany?.logo_url) && (
+              <div className="mb-4">
+                <div className="relative inline-block">
+                  <img
+                    src={logoPreview || editingCompany?.logo_url} 
+                    alt="Preview del logo"
+                    className="w-20 h-20 object-cover rounded-lg border border-gray-300"
+                    onError={(e) => {
+                      console.error('Error cargando imagen:', logoPreview || editingCompany?.logo_url)
+                      e.currentTarget.style.display = 'none'
+                    }}
+                    onLoad={() => console.log('Imagen cargada correctamente:', logoPreview || editingCompany?.logo_url)}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (logoPreview) {
+                        // Si hay una nueva imagen seleccionada, solo eliminar del estado local
+                        setLogoPreview(null)
+                        setLogoFile(null)
+                      } else if (editingCompany?.logo_url) {
+                        // Si hay una imagen existente, eliminar del storage y base de datos
+                        deleteLogoFromStorage(editingCompany.logo_url)
+                        setLogoPreview(null)
+                      }
+                    }}
+                    className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            <div className="flex items-center space-x-3">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleLogoSelect}
+                className="hidden"
+                id="logo-input"
+              />
+              <label
+                htmlFor="logo-input"
+                className="flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 cursor-pointer"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                {logoFile ? 'Cambiar logo' : 'Seleccionar logo'}
+              </label>
+              {uploadingLogo && (
+                <span className="text-sm text-gray-500">Subiendo...</span>
+              )}
+            </div>
+            <p className="mt-1 text-xs text-gray-500">
+              Formatos: JPG, PNG, GIF. Máximo 2MB
+            </p>
+          </div>
+
           <div className="flex items-center">
             <input
               type="checkbox"
@@ -357,27 +646,87 @@ export default function InsurancePage() {
         size="lg"
       >
         {selectedCompany && (
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Empresa</label>
-                <p className="text-sm text-gray-900">{selectedCompany.name}</p>
+          <div className="space-y-6">
+            {/* Header con logo y nombre */}
+            <div className="flex items-center space-x-4 pb-4 border-b border-gray-200">
+              <div className="w-16 h-16 rounded-lg overflow-hidden border border-gray-200">
+                {selectedCompany.logo_url ? (
+                  <img
+                    src={selectedCompany.logo_url}
+                    alt={`Logo de ${selectedCompany.name}`}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none'
+                      e.currentTarget.nextElementSibling?.classList.remove('hidden')
+                    }}
+                  />
+                ) : null}
+                <div className={`w-full h-full bg-blue-100 flex items-center justify-center ${selectedCompany.logo_url ? 'hidden' : ''}`}>
+                  <Building2 className="h-8 w-8 text-blue-600" />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Contacto</label>
-                <p className="text-sm text-gray-900">{selectedCompany.contact_person}</p>
+              <div className="flex-1">
+                <h2 className="text-xl font-semibold text-gray-900">{selectedCompany.name}</h2>
+                <p className="text-sm text-gray-500">{selectedCompany.contact_person}</p>
+                <Badge variant={selectedCompany.is_active ? 'success' : 'gray'} className="mt-1">
+                  {selectedCompany.is_active ? 'Activa' : 'Inactiva'}
+                </Badge>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email</label>
-                <p className="text-sm text-gray-900">{selectedCompany.email}</p>
+            </div>
+
+            {/* Información de contacto */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <p className="text-sm text-gray-900">{selectedCompany.email || 'No especificado'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Teléfono</label>
+                  <p className="text-sm text-gray-900">{selectedCompany.phone || 'No especificado'}</p>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Teléfono</label>
-                <p className="text-sm text-gray-900">{selectedCompany.phone}</p>
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Dirección</label>
+                  <p className="text-sm text-gray-900">{selectedCompany.address || 'No especificada'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Portal URL</label>
+                  <p className="text-sm text-gray-900">
+                    {selectedCompany.portal_url ? (
+                      <a 
+                        href={selectedCompany.portal_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:text-blue-800 underline"
+                      >
+                        {selectedCompany.portal_url}
+                      </a>
+                    ) : 'No especificado'}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            {/* Información adicional */}
+            <div className="bg-gray-50 rounded-lg p-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Términos de Facturación</label>
+                  <p className="text-sm text-gray-900">{selectedCompany.billing_terms || 30} días</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Fecha de Creación</label>
+                  <p className="text-sm text-gray-900">
+                    {selectedCompany.created_at ? new Date(selectedCompany.created_at).toLocaleDateString('es-ES') : 'No disponible'}
+                  </p>
+                </div>
               </div>
             </div>
             
-            <div className="pt-4 border-t">
+            {/* Botones de acción */}
+            <div className="pt-4 border-t border-gray-200">
               <div className="flex space-x-3">
                 <Button
                   onClick={() => handleEdit(selectedCompany)}
@@ -432,6 +781,19 @@ export default function InsurancePage() {
           </div>
         </div>
       </Modal>
+
+      {/* Editor de imágenes */}
+      {showImageEditor && selectedImageFile && (
+        <ImageEditor
+          isOpen={showImageEditor}
+          onClose={() => {
+            setShowImageEditor(false)
+            setSelectedImageFile(null)
+          }}
+          onSave={handleImageEditorSave}
+          imageFile={selectedImageFile}
+        />
+      )}
     </div>
   )
 }

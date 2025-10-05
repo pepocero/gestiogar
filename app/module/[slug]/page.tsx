@@ -219,7 +219,7 @@ export default function ModulePage() {
       
       // Si no hay configuración actualizada disponible, mostrar mensaje
       if (!latestUpdate) {
-        toast.info('ℹ️ No hay actualizaciones disponibles para este módulo.')
+        toast('ℹ️ No hay actualizaciones disponibles para este módulo.')
         logger.info('No updates available for this module')
         return
       }

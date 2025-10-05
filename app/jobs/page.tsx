@@ -780,13 +780,21 @@ export default function JobsPage() {
             </div>
 
             <div>
-              <Input
-                label="Categoría"
+              <label className="form-label">Categoría</label>
+              <select
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                placeholder="Fontanería, Electricidad, etc."
-              />
+                className="form-input"
+              >
+                <option value="">Seleccionar categoría</option>
+                <option value="electricidad">Electricidad</option>
+                <option value="fontaneria">Fontanería</option>
+                <option value="carpinteria">Carpintería</option>
+                <option value="pintura">Pintura</option>
+                <option value="albanileria">Albañilería</option>
+                <option value="general">General</option>
+              </select>
             </div>
 
             <div>
