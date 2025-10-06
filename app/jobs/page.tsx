@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
-import { Layout } from '@/components/layout/Layout'
+// Layout ya se aplica automáticamente en ProtectedLayout
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -250,7 +250,7 @@ export default function JobsPage() {
     const { name, value, type } = e.target
     const checked = (e.target as HTMLInputElement).checked
     
-    setFormData(prev => ({
+    setFormData((prev: any) => ({
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }))
@@ -469,18 +469,14 @@ export default function JobsPage() {
 
   if (loading) {
     return (
-      <Layout>
-        <div className="flex items-center justify-center h-64">
-          <div className="spinner"></div>
-        </div>
-      </Layout>
+      <div className="flex items-center justify-center h-64">
+        <div className="spinner"></div>
+      </div>
     )
   }
 
   return (
-    <ProtectedRoute>
-      <Layout>
-        <div className="space-y-6">
+    <div className="space-y-6">
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>
@@ -733,10 +729,9 @@ export default function JobsPage() {
             )}
           </CardBody>
         </Card>
-      </div>
 
-      {/* Modal para crear/editar trabajo */}
-      <Modal
+        {/* Modal para crear/editar trabajo */}
+        <Modal
         isOpen={showModal}
         onClose={() => setShowModal(false)}
         title={editingJob ? 'Editar Trabajo' : 'Nuevo Trabajo'}
@@ -785,13 +780,21 @@ export default function JobsPage() {
             </div>
 
             <div>
-              <Input
-                label="Categoría"
+              <label className="form-label">Categoría</label>
+              <select
                 name="category"
                 value={formData.category}
                 onChange={handleInputChange}
-                placeholder="Fontanería, Electricidad, etc."
-              />
+                className="form-input"
+              >
+                <option value="">Seleccionar categoría</option>
+                <option value="electricidad">Electricidad</option>
+                <option value="fontaneria">Fontanería</option>
+                <option value="carpinteria">Carpintería</option>
+                <option value="pintura">Pintura</option>
+                <option value="albanileria">Albañilería</option>
+                <option value="general">General</option>
+              </select>
             </div>
 
             <div>
@@ -906,8 +909,8 @@ export default function JobsPage() {
         </form>
       </Modal>
 
-      {/* View Job Modal */}
-      <Modal
+        {/* View Job Modal */}
+        <Modal
         isOpen={showViewModal}
         onClose={() => setShowViewModal(false)}
         title="Detalles del Trabajo"
@@ -1124,8 +1127,8 @@ export default function JobsPage() {
         )}
       </Modal>
 
-      {/* Delete Job Modal */}
-      <Modal
+        {/* Delete Job Modal */}
+        <Modal
         isOpen={showDeleteModal}
         onClose={() => setShowDeleteModal(false)}
         title="Eliminar Trabajo"
@@ -1156,7 +1159,6 @@ export default function JobsPage() {
           </div>
         )}
       </Modal>
-      </Layout>
-    </ProtectedRoute>
+    </div>
   )
 }

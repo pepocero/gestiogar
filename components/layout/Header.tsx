@@ -2,6 +2,7 @@
 
 import React, { useState, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
+import { useSidebar } from '@/contexts/SidebarContext'
 import { Bell, Search, Menu, User, Settings, LogOut, Camera, X } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
@@ -14,7 +15,8 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const { profile, company, logout } = useAuth()
+  const { profile, company, signOut } = useAuth()
+  const { sidebarOpen, isDesktop } = useSidebar()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   const [profilePhoto, setProfilePhoto] = useState<File | null>(null)
@@ -241,7 +243,7 @@ export function Header({ onMenuClick }: HeaderProps) {
 
   const handleLogout = async () => {
     try {
-      await logout()
+      await signOut()
       toast.success('Sesión cerrada exitosamente')
       // Redirigir a la página de bienvenida después de cerrar sesión
       window.location.href = '/'
@@ -275,9 +277,12 @@ export function Header({ onMenuClick }: HeaderProps) {
           
           {/* Breadcrumb o título de página */}
           <div className="ml-4">
-            <h1 className="text-xl font-semibold text-gray-900">
-              {company?.name || 'GestioGar'}
-            </h1>
+            {/* Mostrar nombre de empresa solo cuando el sidebar esté colapsado */}
+            {(!isDesktop || !sidebarOpen) && (
+              <h1 className="text-xl font-semibold text-gray-900">
+                {company?.name || 'Gestiogar'}
+              </h1>
+            )}
           </div>
         </div>
 

@@ -1,0 +1,37 @@
+{
+  "name": "Módulo de Prueba",
+  "slug": "modulo-prueba",
+  "version": "1.0.0",
+  "description": "Un módulo simple para probar el sistema",
+  "icon": "Package",
+  "fields": [
+    {
+      "name": "titulo",
+      "label": "Título",
+      "type": "text",
+      "required": true,
+      "description": "Título del elemento"
+    },
+    {
+      "name": "descripcion",
+      "label": "Descripción",
+      "type": "textarea",
+      "required": false,
+      "description": "Descripción detallada"
+    },
+    {
+      "name": "estado",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "description": "Estado actual",
+      "options": [
+        {"value": "activo", "label": "Activo"},
+        {"value": "inactivo", "label": "Inactivo"},
+        {"value": "pendiente", "label": "Pendiente"}
+      ]
+    }
+  ],
+  "displayName": "Pruebas",
+  "displayDescription": "Módulo de prueba simple"
+}

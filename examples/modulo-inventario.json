@@ -1,0 +1,61 @@
+{
+  "name": "Gestión de Inventario",
+  "slug": "gestion-inventario",
+  "version": "1.0.0",
+  "description": "Módulo para gestionar inventario de herramientas y materiales",
+  "author": "Gestiogar Team",
+  "icon": "Package",
+  "category": "inventario",
+  "fields": [
+    {
+      "name": "nombre",
+      "label": "Nombre del Item",
+      "type": "text",
+      "required": true
+    },
+    {
+      "name": "descripcion",
+      "label": "Descripción",
+      "type": "textarea",
+      "required": false
+    },
+    {
+      "name": "cantidad",
+      "label": "Cantidad",
+      "type": "number",
+      "required": true
+    },
+    {
+      "name": "categoria",
+      "label": "Categoría",
+      "type": "select",
+      "required": true,
+      "options": [
+        {"value": "herramientas", "label": "Herramientas"},
+        {"value": "materiales", "label": "Materiales"},
+        {"value": "equipos", "label": "Equipos"},
+        {"value": "consumibles", "label": "Consumibles"}
+      ]
+    },
+    {
+      "name": "precio_unitario",
+      "label": "Precio Unitario",
+      "type": "number",
+      "required": false
+    },
+    {
+      "name": "ubicacion",
+      "label": "Ubicación",
+      "type": "text",
+      "required": false
+    },
+    {
+      "name": "activo",
+      "label": "Item Activo",
+      "type": "boolean",
+      "required": false
+    }
+  ],
+  "displayName": "Inventario",
+  "displayDescription": "Gestiona tu inventario de herramientas y materiales"
+}

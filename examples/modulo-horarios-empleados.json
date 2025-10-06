@@ -1,0 +1,103 @@
+{
+  "name": "Horarios de Empleados",
+  "slug": "horarios-empleados",
+  "version": "1.0.0",
+  "description": "Control de horarios y asistencia del personal",
+  "icon": "Clock",
+  "fields": [
+    {
+      "name": "empleado",
+      "label": "Empleado",
+      "type": "text",
+      "required": true,
+      "description": "Nombre del empleado"
+    },
+    {
+      "name": "puesto",
+      "label": "Puesto",
+      "type": "select",
+      "required": true,
+      "description": "Cargo en la empresa",
+      "options": [
+        {"value": "tecnico", "label": "Técnico"},
+        {"value": "supervisor", "label": "Supervisor"},
+        {"value": "administrativo", "label": "Administrativo"},
+        {"value": "recepcion", "label": "Recepcionista"},
+        {"value": "gerente", "label": "Gerente"}
+      ]
+    },
+    {
+      "name": "fecha",
+      "label": "Fecha",
+      "type": "date",
+      "required": true,
+      "description": "Día del registro"
+    },
+    {
+      "name": "hora_entrada",
+      "label": "Hora de entrada",
+      "type": "time",
+      "required": true,
+      "description": "Horario de llegada"
+    },
+    {
+      "name": "hora_salida",
+      "label": "Hora de salida",
+      "type": "time",
+      "required": false,
+      "description": "Horario de salida"
+    },
+    {
+      "name": "descansos",
+      "label": "Descansos",
+      "type": "number",
+      "required": false,
+      "description": "Minutos de descanso"
+    },
+    {
+      "name": "horas_trabajadas",
+      "label": "Horas trabajadas",
+      "type": "number",
+      "required": false,
+      "description": "Horas efectivas trabajadas"
+    },
+    {
+      "name": "tipo_jornada",
+      "label": "Tipo de jornada",
+      "type": "select",
+      "required": true,
+      "description": "Clasificación de la jornada",
+      "options": [
+        {"value": "completa", "label": "Jornada completa"},
+        {"value": "media", "label": "Media jornada"},
+        {"value": "extra", "label": "Horas extra"},
+        {"value": "vacaciones", "label": "Vacaciones"},
+        {"value": "baja", "label": "Baja médica"},
+        {"value": "permiso", "label": "Permiso"}
+      ]
+    },
+    {
+      "name": "servicios_realizados",
+      "label": "Servicios realizados",
+      "type": "number",
+      "required": false,
+      "description": "Cantidad de servicios en la jornada"
+    },
+    {
+      "name": "ubicacion_trabajo",
+      "label": "Ubicación de trabajo",
+      "type": "text",
+      "required": false,
+      "description": "Dónde trabajó principalmente"
+    },
+    {
+      "name": "observaciones",
+      "label": "Observaciones",
+      "type": "textarea",
+      "required": false,
+      "description": "Notas sobre la jornada"
+    }
+  ],
+  "displayName": "Horarios",
+  "displayDescription": "Control de asistencia y horarios del personal"
+}

@@ -136,71 +136,81 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
   try {
     console.log('Loading user profile for:', userId)
     
-    // Primero intentar con el cliente normal (con RLS)
-    let { data: user, error: userError } = await supabase
+    // OPTIMIZACIÓN: Usar join para evitar múltiples consultas
+    // Esto evita el timeout causado por la función user_company_id()
+    const { data: result, error } = await supabaseAdmin
       .from('users')
-      .select('*')
+      .select(`
+        *,
+        company:companies(*)
+      `)
       .eq('id', userId)
       .single()
 
-    if (userError) {
-      console.error('Error fetching user with normal client:', userError)
+    // Si falla con admin, intentar con cliente normal pero más rápido
+    if (error) {
+      console.log('Admin query failed, trying normal client...')
       
-      // Si falla con el cliente normal, intentar con service role
-      const { data: userAdmin, error: userAdminError } = await supabaseAdmin
+      const { data: user, error: userError } = await supabase
         .from('users')
         .select('*')
         .eq('id', userId)
         .single()
 
-      if (userAdminError) {
-        console.error('Error fetching user with admin client:', userAdminError)
-        
-        // Si el usuario no existe, esperar un poco y reintentar
-        console.log('User not found, waiting and retrying...')
-        await new Promise(resolve => setTimeout(resolve, 2000))
-        
-        const { data: retryUser, error: retryError } = await supabaseAdmin
-          .from('users')
-          .select('*')
-          .eq('id', userId)
-          .single()
-          
-        if (retryError) {
-          console.error('Retry failed:', retryError)
-          return null
-        }
-        
-        user = retryUser
-      } else {
-        user = userAdmin
+      if (userError) {
+        console.error('Both queries failed:', userError)
+        return null
+      }
+
+      // Solo obtener company si user.company_id existe
+      if (!user.company_id) {
+        console.log('User has no company_id, incomplete profile')
+        return null
+      }
+
+      const { data: company, error: companyError } = await supabaseAdmin
+        .from('companies')
+        .select('*')
+        .eq('id', user.company_id)
+        .single()
+
+      if (companyError) {
+        console.error('Error fetching company:', companyError)
+        return null
+      }
+
+      return {
+        ...user,
+        company: company
       }
     }
 
-    if (!user) {
-      return null
-    }
+    // Si el join funcionó, usar los datos
+    const user = result
+    const company = (result as any).company
 
-    // Si el usuario no tiene company_id, devolver null (usuario incompleto)
     if (!user.company_id) {
-      console.log('User has no company_id, this is an incomplete user profile')
+      console.log('User has no company_id, incomplete profile')
       return null
     }
 
-    // Obtener la empresa
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
-      .select('*')
-      .eq('id', user.company_id)
-      .single()
-
-    if (companyError) {
-      console.error('Error fetching company:', companyError)
+    if (!company) {
+      console.error('Company not found in join result')
       return null
     }
 
     return {
-      ...user,
+      id: user.id,
+      company_id: user.company_id,
+      email: user.email,
+      first_name: user.first_name,
+      last_name: user.last_name,
+      role: user.role,
+      phone: user.phone,
+      avatar_url: user.avatar_url,
+      is_active: user.is_active,
+      created_at: user.created_at,
+      updated_at: user.updated_at,
       company: company
     }
   } catch (error) {

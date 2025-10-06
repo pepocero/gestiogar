@@ -2,12 +2,16 @@ import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
+import { ModulesProvider } from '@/contexts/ModulesContext'
+import { AdvancedModulesProvider } from '@/contexts/AdvancedModulesContext'
+import { ProtectedLayout } from '@/components/ProtectedLayout'
+import { SupabaseInitializer } from '@/components/SupabaseInitializer'
 import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'GestioGar - Gestión de Reparaciones del Hogar',
+  title: 'Gestiogar - Gestión de Reparaciones del Hogar',
   description: 'Sistema multitenant para empresas de reparaciones del hogar que trabajan con aseguradoras',
   icons: [
     {
@@ -34,19 +38,25 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.png" />
       </head>
       <body className={inter.className}>
-        <AuthProvider>
-          {children}
-          <Toaster 
-            position="top-right"
-            toastOptions={{
-              duration: 4000,
-              style: {
-                background: '#363636',
-                color: '#fff',
-              },
-            }}
-          />
-        </AuthProvider>
+        <SupabaseInitializer>
+          <AuthProvider>
+            <ModulesProvider>
+              <ProtectedLayout>
+                {children}
+              </ProtectedLayout>
+              <Toaster 
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#363636',
+                    color: '#fff',
+                  },
+                }}
+              />
+            </ModulesProvider>
+          </AuthProvider>
+        </SupabaseInitializer>
       </body>
     </html>
   )

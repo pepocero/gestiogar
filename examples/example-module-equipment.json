@@ -1,0 +1,113 @@
+{
+  "name": "Inventario de Equipos",
+  "version": "1.0.0",
+  "implementation_date": "2024-04-12",
+  "description": "Controla el inventario de equipos, herramientas y maquinaria",
+  "author": "Equipo Gestiogar",
+  "license": "MIT",
+  "config": {
+    "title": "Equipos e Inventario",
+    "description": "Administra el inventario completo de equipos, herramientas y maquinaria de tu empresa",
+    "icon": "Wrench",
+    "fields": [
+      {
+        "name": "nombre_equipo",
+        "label": "Nombre del Equipo",
+        "type": "text",
+        "required": true,
+        "description": "Nombre o modelo del equipo"
+      },
+      {
+        "name": "categoria",
+        "label": "Categoría",
+        "type": "text",
+        "required": true,
+        "description": "Tipo de equipo: Herramienta, Maquinaria, Vehículo, etc."
+      },
+      {
+        "name": "marca",
+        "label": "Marca",
+        "type": "text",
+        "required": false,
+        "description": "Marca del equipo"
+      },
+      {
+        "name": "modelo",
+        "label": "Modelo",
+        "type": "text",
+        "required": false,
+        "description": "Modelo específico del equipo"
+      },
+      {
+        "name": "numero_serie",
+        "label": "Número de Serie",
+        "type": "text",
+        "required": false,
+        "description": "Número de serie único del equipo"
+      },
+      {
+        "name": "fecha_adquisicion",
+        "label": "Fecha de Adquisición",
+        "type": "date",
+        "required": false,
+        "description": "Fecha en que se adquirió el equipo"
+      },
+      {
+        "name": "estado",
+        "label": "Estado",
+        "type": "text",
+        "required": true,
+        "description": "Estado: Disponible, En uso, Mantenimiento, Reparación, Retirado"
+      },
+      {
+        "name": "ubicacion",
+        "label": "Ubicación/Depósito",
+        "type": "text",
+        "required": false,
+        "description": "Dónde se guarda normalmente el equipo"
+      },
+      {
+        "name": "responsable",
+        "label": "Técnico Responsable",
+        "type": "text",
+        "required": false,
+        "description": "Técnico asignado al cuidado del equipo"
+      },
+      {
+        "name": "fecha_ultimo_mantenimiento",
+        "label": "Último Mantenimiento",
+        "type": "date",
+        "required": false,
+        "description": "Fecha del último mantenimiento realizado"
+      },
+      {
+        "name": "fecha_proximo_mantenimiento",
+        "label": "Próximo Mantenimiento",
+        "type": "date",
+        "required": false,
+        "description": "Fecha programada para el próximo mantenimiento"
+      },
+      {
+        "name": "observaciones",
+        "label": "Observaciones",
+        "type": "textarea",
+        "required": false,
+        "description": "Notas especiales sobre el mantenimiento o estado del equipo"
+      },
+      {
+        "name": "valor",
+        "label": "Valor (€)",
+        "type": "number",
+        "required": false,
+        "description": "Valor de adquisición o actual del equipo"
+      },
+      {
+        "name": "activo",
+        "label": "Equipo Activo",
+        "type": "boolean",
+        "required": false,
+        "description": "Marca si el equipo está activo en tu empresa"
+      }
+    ]
+  }
+}
