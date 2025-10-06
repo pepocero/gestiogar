@@ -723,9 +723,9 @@ export default function ModulePage() {
                                         <div className="flex items-center justify-between py-2">
                                           <span className="text-sm font-medium text-gray-600">Tipo:</span>
                                           <Badge variant={
-                                            item.data.tipo === 'vacaciones' ? 'primary' : 
+                                            item.data.tipo === 'vacaciones' ? 'info' : 
                                             item.data.tipo === 'festivo' ? 'success' : 
-                                            item.data.tipo === 'local' ? 'warning' : 'secondary'
+                                            item.data.tipo === 'local' ? 'warning' : 'gray'
                                           } className="text-xs">
                                             {item.data.tipo === 'vacaciones' ? 'Vacaciones' :
                                              item.data.tipo === 'festivo' ? 'Festivo Nacional' :
@@ -765,7 +765,7 @@ export default function ModulePage() {
                                         {field.type === 'boolean' ? (
                                           <div className="flex items-center justify-between py-2">
                                             <span className="text-sm font-medium text-gray-600">{field.label}:</span>
-                                            <Badge variant={item.data[field.name] ? 'success' : 'secondary'} className="text-xs">
+                                            <Badge variant={item.data[field.name] ? 'success' : 'gray'} className="text-xs">
                                               {item.data[field.name] ? 'Sí' : 'No'}
                                             </Badge>
                                           </div>
@@ -932,9 +932,9 @@ export default function ModulePage() {
                       </Badge>
                     ) : (
                       <Badge variant={
-                        selectedItem.data.tipo === 'vacaciones' ? 'primary' : 
+                        selectedItem.data.tipo === 'vacaciones' ? 'info' : 
                         selectedItem.data.tipo === 'festivo' ? 'success' : 
-                        selectedItem.data.tipo === 'local' ? 'warning' : 'secondary'
+                        selectedItem.data.tipo === 'local' ? 'warning' : 'gray'
                       } className="text-xs">
                         {selectedItem.data.tipo === 'vacaciones' ? 'Vacaciones' :
                          selectedItem.data.tipo === 'festivo' ? 'Festivo Nacional' :
