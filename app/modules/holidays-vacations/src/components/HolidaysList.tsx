@@ -18,7 +18,7 @@ export function HolidaysList() {
   const [filterType, setFilterType] = useState<string>('all')
   
   const getTipoColor = (tipo: string) => {
-    const colors = {
+    const colors: { [key: string]: string } = {
       festivo_nacional: 'blue',
       festivo_local: 'green',
       festivo_empresa: 'purple',
@@ -28,7 +28,7 @@ export function HolidaysList() {
   }
   
   const getTipoLabel = (tipo: string) => {
-    const labels = {
+    const labels: { [key: string]: string } = {
       festivo_nacional: 'Nacional',
       festivo_local: 'Local',
       festivo_empresa: 'Empresa',
