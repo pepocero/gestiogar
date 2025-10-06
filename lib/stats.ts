@@ -156,7 +156,7 @@ export async function getRecentActivity(): Promise<any[]> {
 
     // Combinar resultados y ordenar por fecha
     const activities = [
-      ...(jobsResult.data || []).map(job => ({
+      ...(jobsResult.data || []).map((job: any) => ({
         id: job.id,
         type: 'job',
         title: job.title,
@@ -165,7 +165,7 @@ export async function getRecentActivity(): Promise<any[]> {
         client: job.client ? `${job.client.first_name} ${job.client.last_name}` : 'Sin cliente',
         created_at: job.created_at
       })),
-      ...(estimatesResult.data || []).map(estimate => ({
+      ...(estimatesResult.data || []).map((estimate: any) => ({
         id: estimate.id,
         type: 'estimate',
         title: estimate.title,
@@ -174,7 +174,7 @@ export async function getRecentActivity(): Promise<any[]> {
         client: estimate.client ? `${estimate.client.first_name} ${estimate.client.last_name}` : 'Sin cliente',
         created_at: estimate.created_at
       })),
-      ...(invoicesResult.data || []).map(invoice => ({
+      ...(invoicesResult.data || []).map((invoice: any) => ({
         id: invoice.id,
         type: 'invoice',
         title: `Factura ${invoice.invoice_number}`,
