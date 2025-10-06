@@ -1099,7 +1099,7 @@ export default function ModulePage() {
             {/* Botones de acción */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
               <Button
-                variant="gray"
+                variant="outline"
                 onClick={() => setShowViewModal(false)}
               >
                 Cerrar
