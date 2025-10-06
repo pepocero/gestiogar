@@ -1,0 +1,38 @@
+﻿
+> gestiogar@0.1.0 build
+> next build
+
+  Ôû▓ Next.js 14.2.33
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+node.exe : Failed to compile.
+En línea: 1 Carácter: 1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Failed to compile.:String) [], Re 
+   moteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+
+./app/modules/holidays-vacations/src/index.ts:15:5
+Type error: Type 'typeof VacationsService' is not assignable to type 
+'ModuleService'.
+  Types of property 'create' are incompatible.
+    Type '(vacation: VacationFormData, employeeId: string, employeeName: 
+string) => Promise<VacationRequest>' is not assignable to type '(data: any) => 
+Promise<any>'.
+      Target signature provides too few arguments. Expected 3 or more, but got 
+1.
+
+[0m [90m 13 |[39m   services[33m:[39m {[0m
+[0m [90m 14 |[39m     holiday[33m:[39m 
+[33mHolidaysService[39m[33m,[39m[0m
+[0m[31m[1m>[22m[39m[90m 15 |[39m     vacation[33m:[39m 
+[33mVacationsService[39m[0m
+[0m [90m    |[39m     [31m[1m^[22m[39m[0m
+[0m [90m 16 |[39m   }[33m,[39m[0m
+[0m [90m 17 |[39m   [0m
+[0m [90m 18 |[39m   [90m// Hooks disponibles[39m[0m
+Next.js build worker exited with code: 1 and signal: null

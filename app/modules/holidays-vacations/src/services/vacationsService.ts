@@ -140,7 +140,7 @@ export class VacationsService {
       .select('dias_solicitados')
       .eq('estado', 'aprobada')
     
-    const totalDays = requestsData?.reduce((sum, req) => sum + req.dias_solicitados, 0) || 0
+    const totalDays = requestsData?.reduce((sum: number, req: any) => sum + req.dias_solicitados, 0) || 0
     const averageDays = requestsData?.length ? totalDays / requestsData.length : 0
     
     return {

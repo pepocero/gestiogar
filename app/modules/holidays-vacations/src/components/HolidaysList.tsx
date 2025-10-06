@@ -4,6 +4,7 @@ import { Card, Button, Table, Badge, Modal } from '@/components/ui'
 import { Plus, Edit, Trash2, Calendar, Filter } from 'lucide-react'
 import { useHolidays } from '../hooks/useHolidays'
 import { HolidayForm } from './HolidayForm'
+import toast from 'react-hot-toast'
 
 export function HolidaysList() {
   const {
@@ -17,12 +18,12 @@ export function HolidaysList() {
   const [editingId, setEditingId] = useState<string | null>(null)
   const [filterType, setFilterType] = useState<string>('all')
   
-  const getTipoColor = (tipo: string) => {
-    const colors: { [key: string]: string } = {
-      festivo_nacional: 'blue',
-      festivo_local: 'green',
-      festivo_empresa: 'purple',
-      puente: 'orange'
+  const getTipoColor = (tipo: string): 'success' | 'warning' | 'danger' | 'info' | 'gray' => {
+    const colors: { [key: string]: 'success' | 'warning' | 'danger' | 'info' | 'gray' } = {
+      festivo_nacional: 'info',
+      festivo_local: 'success',
+      festivo_empresa: 'warning',
+      puente: 'info'
     }
     return colors[tipo] || 'gray'
   }
@@ -106,17 +107,17 @@ export function HolidaysList() {
                     })}
                   </td>
                   <td>
-                    <Badge color={getTipoColor(holiday.tipo)}>
+                    <Badge variant={getTipoColor(holiday.tipo)}>
                       {getTipoLabel(holiday.tipo)}
                     </Badge>
                   </td>
                   <td>
-                    <Badge variant={holiday.repetir_anual ? 'success' : 'secondary'}>
+                    <Badge variant={holiday.repetir_anual ? 'success' : 'gray'}>
                       {holiday.repetir_anual ? 'Sí' : 'No'}
                     </Badge>
                   </td>
                   <td>
-                    <Badge variant={holiday.aplica_todos ? 'success' : 'secondary'}>
+                    <Badge variant={holiday.aplica_todos ? 'success' : 'gray'}>
                       {holiday.aplica_todos ? 'Sí' : 'No'}
                     </Badge>
                   </td>
