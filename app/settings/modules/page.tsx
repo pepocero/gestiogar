@@ -553,8 +553,8 @@ export default function ModulesPage() {
                         <p className="text-sm text-gray-500">v{module.version}</p>
                       </div>
                     </div>
-                    <Badge 
-                      variant={module.is_active ? 'success' : 'secondary'}
+                    <Badge
+                      variant={module.is_active ? 'success' : 'gray'}
                       className="text-xs"
                     >
                       {module.is_active ? 'Activo' : 'Inactivo'}
@@ -692,6 +692,7 @@ export default function ModulesPage() {
                           onClick={() => {
                             setSelectedModule({
                               id: moduleData.id,
+                              slug: moduleData.id,
                               name: moduleData.name,
                               version: moduleData.version,
                               description: moduleData.description,
@@ -794,7 +795,7 @@ export default function ModulesPage() {
               <div>
                 <label className="text-sm font-medium text-gray-700">Estado</label>
                 <Badge 
-                  variant={selectedModule.is_active ? 'success' : 'secondary'}
+                  variant={selectedModule.is_active ? 'success' : 'gray'}
                   className="ml-2"
                 >
                   {selectedModule.is_active ? 'Activo' : 'Inactivo'}

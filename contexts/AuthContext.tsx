@@ -15,6 +15,7 @@ interface UserProfile {
   company_id?: string
   profile_photo_url?: string
   job_title?: string
+  role?: string
 }
 
 interface Company {
@@ -25,6 +26,8 @@ interface Company {
   phone?: string
   email?: string
   logo_url?: string
+  website?: string
+  tax_id?: string
 }
 
 interface AuthContextType {

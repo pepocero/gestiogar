@@ -92,7 +92,7 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
     }
 
     // Calcular ingresos mensuales
-    const monthlyRevenue = revenueResult.data?.reduce((sum, invoice) => {
+    const monthlyRevenue = revenueResult.data?.reduce((sum: number, invoice: any) => {
       return sum + (invoice.total_amount || 0)
     }, 0) || 0
 

@@ -25,7 +25,7 @@ export function SupabaseInitializer({ children, showMonitor = false }: SupabaseI
       const diagnosis = diagnoseSupabaseInstances()
       
       // Verificar si hay problemas
-      if (!diagnosis.isInitialized || diagnosis.authListeners > 1) {
+      if (diagnosis && (!diagnosis.isInitialized || diagnosis.authListeners > 1)) {
         console.warn('⚠️ Posibles problemas detectados:', diagnosis)
       }
     }

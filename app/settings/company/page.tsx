@@ -372,9 +372,11 @@ export default function CompanySettingsPage() {
           {/* Modal para editor de imágenes */}
           {showImageEditor && selectedImageFile && (
             <ImageEditor
-              file={selectedImageFile}
+              isOpen={showImageEditor}
+              imageFile={selectedImageFile}
               onSave={(editedFile) => {
-                setLogoFile(editedFile)
+                const file = new File([editedFile], 'logo.png', { type: 'image/png' })
+                setLogoFile(file)
                 setLogoPreview(URL.createObjectURL(editedFile))
                 setShowImageEditor(false)
               }}

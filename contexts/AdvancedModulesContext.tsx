@@ -1,10 +1,21 @@
 'use client'
 
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { ModuleManager } from '@/lib/modules/moduleManager'
-import { initializeDemoModule } from '@/lib/modules/initDemoModule'
-import { Module, ModuleManifest } from '@/types/modules/module'
-import { useAuth } from '@/contexts/AuthContext'
+import React, { createContext, useContext, useState, ReactNode } from 'react'
+
+// Tipos simplificados para compatibilidad
+interface Module {
+  name: string
+  version: string
+  [key: string]: any
+}
+
+interface ModuleManifest {
+  name: string
+  version: string
+  description?: string
+  author?: string
+  [key: string]: any
+}
 
 interface AdvancedModulesContextType {
   modules: Module[]
@@ -28,82 +39,32 @@ interface AdvancedModulesContextType {
 const AdvancedModulesContext = createContext<AdvancedModulesContextType | undefined>(undefined)
 
 export function AdvancedModulesProvider({ children }: { children: ReactNode }) {
-  const { company } = useAuth()
-  const [modules, setModules] = useState<Module[]>([])
-  const [manifests, setManifests] = useState<ModuleManifest[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [sidebarItems, setSidebarItems] = useState<any[]>([])
-  const [dashboardWidgets, setDashboardWidgets] = useState<any[]>([])
-  const [headerActions, setHeaderActions] = useState<any[]>([])
-
-  const loadAdvancedModules = async () => {
-    if (!company?.id) {
-      setModules([])
-      setManifests([])
-      setLoading(false)
-      return
-    }
-
-    try {
-      setLoading(true)
-      setError(null)
-      
-      console.log('🔥 Inicializando sistema avanzado de módulos...')
-      
-      // TEMPORALMENTE DESHABILITADO para debugging
-      // await initializeDemoModule()
-      // await ModuleManager.initializeModulesFromDatabase()
-      
-      console.log('Sistema avanzado de módulos temporalmente deshabilitado')
-      
-      // TEMPORALMENTE DESHABILITADO - configuraciones por defecto
-      setManifests([])
-      setSidebarItems([])
-      setDashboardWidgets([])
-      setHeaderActions([])
-      setModules([])
-      
-      console.log('✅ Sistema avanzado de módulos temporalmente deshabilitado')
-      
-    } catch (error: any) {
-      console.error('❌ Error inicializando sistema avanzado de módulos:', error)
-      setError(error?.message || 'Error inicializando módulos')
-      
-      // Si hay error, limpiar datos
-      setModules([])
-      setManifests([])
-      setSidebarItems([])
-      setDashboardWidgets([])
-      setHeaderActions([])
-    } finally {
-      setLoading(false)
-    }
-  }
+  const [modules] = useState<Module[]>([])
+  const [manifests] = useState<ModuleManifest[]>([])
+  const [loading] = useState(false)
+  const [error] = useState<string | null>(null)
+  const [sidebarItems] = useState<any[]>([])
+  const [dashboardWidgets] = useState<any[]>([])
+  const [headerActions] = useState<any[]>([])
 
   const refreshModules = async () => {
-    await loadAdvancedModules()
+    // No-op: sistema legacy deshabilitado
   }
 
   const getModuleManifest = (slug: string): ModuleManifest | null => {
-    return ModuleManager.getModuleManifest(slug)
+    return null
   }
 
   const executeModuleHook = async (slug: string, hookName: string, data?: any): Promise<any> => {
-    try {
-      return await ModuleManager.executeModuleHook(slug, hookName, data)
-    } catch (error) {
-      console.error(`Error ejecutando hook ${hookName} del módulo ${slug}:`, error)
-      return null
-    }
+    return null
   }
 
-  useEffect(() => {
-    loadAdvancedModules()
-  }, [company?.id])
-
-  // Cargar estadísticas del sistema
-  const stats = ModuleManager.getStats()
+  const stats = {
+    totalModules: 0,
+    loadedModules: 0,
+    totalHooks: 0,
+    modulesByCategory: {}
+  }
 
   const value: AdvancedModulesContextType = {
     modules,
@@ -140,14 +101,8 @@ export function useModuleSidebarItems() {
   return sidebarItems
 }
 
-// Hook para obtener widgets del dashboard específicamente
+// Hook para obtener widgets del dashboard
 export function useModuleDashboardWidgets() {
   const { dashboardWidgets } = useAdvancedModules()
   return dashboardWidgets
-}
-
-// Hook para obtener acciones del header específicamente
-export function useModuleHeaderActions() {
-  const { headerActions } = useAdvancedModules()
-  return headerActions
 }
