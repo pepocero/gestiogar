@@ -26,6 +26,7 @@ setFormData(prev => ({
   [name]: value
 }))
 
+
 // ✅ DESPUÉS (Corregido)
 setFormData((prev: any) => ({
   ...prev,
