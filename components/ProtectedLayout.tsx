@@ -4,6 +4,7 @@ import React from 'react'
 import { usePathname } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { Layout } from '@/components/layout/Layout'
+import { SessionGuard } from '@/components/auth/SessionGuard'
 
 interface ProtectedLayoutProps {
   children: React.ReactNode
@@ -37,10 +38,15 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
     )
   }
   
-  // Para rutas protegidas, mostrar el layout con sidebar
+  // Para rutas protegidas, mostrar el layout con sidebar y verificación de sesión
+  // Se fuerza el remount del contenido por ruta para evitar estados de carga atrapados
   return (
-    <Layout>
-      {children}
-    </Layout>
+    <SessionGuard>
+      <Layout>
+        <div key={pathname}>
+          {children}
+        </div>
+      </Layout>
+    </SessionGuard>
   )
 }

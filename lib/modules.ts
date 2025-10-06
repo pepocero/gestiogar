@@ -1,5 +1,6 @@
 import { supabase } from './supabase'
 import { Module, ModuleData } from '@/types/module'
+import { conditionalLog } from './performance'
 
 export async function getTechnicians(): Promise<any[]> {
   const { data, error } = await supabase
@@ -17,7 +18,7 @@ export async function getTechnicians(): Promise<any[]> {
 }
 
 export async function getModules(): Promise<Module[]> {
-  console.log('🔍 getModules: Starting module fetch...')
+  conditionalLog('debug', '🔍 getModules: Starting module fetch...')
   
   const { data, error } = await supabase
     .from('modules')
@@ -36,13 +37,13 @@ export async function getModules(): Promise<Module[]> {
     
     // Si es error de tabla no encontrada, devolver array vacío en lugar de lanzar error
     if (error.code === 'PGRST205' || error.message?.includes('Could not find the table')) {
-      console.log('📋 getModules: Modules table not found, returning empty array')
+      conditionalLog('debug', '📋 getModules: Modules table not found, returning empty array')
       return []
     }
     throw error
   }
 
-  console.log('✅ getModules: Successfully fetched modules:', data)
+  conditionalLog('debug', '✅ getModules: Successfully fetched modules:', data)
   return data || []
 }
 

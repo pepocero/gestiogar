@@ -5,6 +5,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 import { ModulesProvider } from '@/contexts/ModulesContext'
 import { AdvancedModulesProvider } from '@/contexts/AdvancedModulesContext'
 import { ProtectedLayout } from '@/components/ProtectedLayout'
+import { SupabaseInitializer } from '@/components/SupabaseInitializer'
 import { Toaster } from 'react-hot-toast'
 
 const inter = Inter({ subsets: ['latin'] })
@@ -37,23 +38,25 @@ export default function RootLayout({
         <link rel="apple-touch-icon" href="/favicon.png" />
       </head>
       <body className={inter.className}>
-        <AuthProvider>
-          <ModulesProvider>
-            <ProtectedLayout>
-              {children}
-            </ProtectedLayout>
-            <Toaster 
-              position="top-right"
-              toastOptions={{
-                duration: 4000,
-                style: {
-                  background: '#363636',
-                  color: '#fff',
-                },
-              }}
-            />
-          </ModulesProvider>
-        </AuthProvider>
+        <SupabaseInitializer>
+          <AuthProvider>
+            <ModulesProvider>
+              <ProtectedLayout>
+                {children}
+              </ProtectedLayout>
+              <Toaster 
+                position="top-right"
+                toastOptions={{
+                  duration: 4000,
+                  style: {
+                    background: '#363636',
+                    color: '#fff',
+                  },
+                }}
+              />
+            </ModulesProvider>
+          </AuthProvider>
+        </SupabaseInitializer>
       </body>
     </html>
   )

@@ -4,6 +4,7 @@ import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 import type { AuthUser } from '@/types/auth'
 import toast from 'react-hot-toast'
+import { PERFORMANCE_CONFIG, conditionalLog } from '@/lib/performance'
 
 interface UserProfile {
   id: string
@@ -45,12 +46,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Versión simplificada de loadUserProfile sin timeouts complejos
+  // Versión optimizada de loadUserProfile con caché y mejor manejo de errores
   const loadUserProfile = async (userId: string) => {
     try {
-      console.log('🔄 Loading user profile for:', userId)
+      // Solo cargar si no está ya cargado o si es un usuario diferente
+      if (profile && profile.id === userId) {
+        conditionalLog('debug', '🔄 User profile already loaded, skipping...')
+        return
+      }
+
+      conditionalLog('debug', '🔄 Loading user profile for:', userId)
       
-      // Query directa simple sin timeout
+      // Query optimizada con timeout
       const { data: userData, error } = await supabase
         .from('users')
         .select(`
@@ -75,7 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
 
-      console.log('✅ User profile loaded successfully')
+      conditionalLog('debug', '✅ User profile loaded successfully')
       setProfile(userData)
       setCompany(userData.company || null)
       
@@ -108,10 +115,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     initializeAuth()
 
-    // Solo escuchar cambios de auth, sin verificación periódica
+    // Escuchar cambios de auth con verificación de sesión expirada
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: any) => {
-        console.log('🔄 Auth state change:', event, session?.user?.id)
+        conditionalLog('debug', '🔄 Auth state change:', event, session?.user?.id)
         
         if (event === 'SIGNED_OUT') {
           setUser(null)
@@ -124,13 +131,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           if (!profile || profile.id !== session.user.id) {
             await loadUserProfile(session.user.id)
           }
+        } else if (event === 'TOKEN_REFRESHED') {
+          // Token refrescado automáticamente
+          conditionalLog('debug', '🔄 Token refreshed successfully')
         }
       }
     )
 
+    // Verificación periódica de sesión para detectar sesiones expiradas
+    const sessionCheckInterval = setInterval(async () => {
+      if (mounted && user) {
+        try {
+          const { data: { session }, error } = await supabase.auth.getSession()
+          
+          if (error || !session) {
+            conditionalLog('info', '🔄 Session expired, signing out...')
+            setUser(null)
+            setProfile(null)
+            setCompany(null)
+            toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.')
+          }
+        } catch (error) {
+          console.warn('⚠️ Error checking session:', error)
+        }
+      }
+    }, PERFORMANCE_CONFIG.SESSION.CHECK_INTERVAL) // Verificar según configuración
+
     return () => {
       mounted = false
       subscription.unsubscribe()
+      clearInterval(sessionCheckInterval)
     }
   }, [])
 

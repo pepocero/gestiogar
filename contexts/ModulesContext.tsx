@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 import { Module } from '@/types/module'
 import { getModules } from '@/lib/modules'
 import { useAuth } from './AuthContext'
+import { conditionalLog } from '@/lib/performance'
 
 interface ModulesContextType {
   modules: Module[]
@@ -20,7 +21,7 @@ export function ModulesProvider({ children }: { children: ReactNode }) {
 
   const loadModules = async () => {
     if (!company?.id) {
-      console.log('🔍 No company ID available, skipping module load')
+      conditionalLog('debug', '🔍 No company ID available, skipping module load')
       setModules([])
       setLoading(false)
       return
@@ -28,13 +29,13 @@ export function ModulesProvider({ children }: { children: ReactNode }) {
 
     try {
       setLoading(true)
-      console.log('🔄 Loading modules for company:', company.id)
+      conditionalLog('debug', '🔄 Loading modules for company:', company.id)
       
       const data = await getModules()
-      console.log('📦 Raw modules data:', data)
+      conditionalLog('debug', '📦 Raw modules data:', data)
       
       const activeModules = data.filter(module => module.is_active)
-      console.log('✅ Active modules:', activeModules)
+      conditionalLog('debug', '✅ Active modules:', activeModules)
       
       setModules(activeModules)
     } catch (error: any) {
@@ -42,7 +43,7 @@ export function ModulesProvider({ children }: { children: ReactNode }) {
       
       // Si las tablas no existen, simplemente devolver lista vacía
       if (error?.code === 'PGRST205' || error?.message?.includes('Could not find the table')) {
-        console.log('📋 Modules tables not created yet, returning empty list')
+        conditionalLog('debug', '📋 Modules tables not created yet, returning empty list')
         setModules([])
       } else {
         console.error('❌ Unexpected error loading modules:', error)

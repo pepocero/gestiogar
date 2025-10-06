@@ -8,6 +8,7 @@ const supabaseServiceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXB
 declare global {
   var __supabase: any | undefined
   var __supabaseAdmin: any | undefined
+  var __supabaseInitialized: boolean | undefined
 }
 
 // Función para crear el cliente con configuración optimizada
@@ -21,22 +22,63 @@ function createSupabaseClient(url: string, key: string, options: any) {
       storageKey: 'supabase.auth.token',
       flowType: 'pkce',
       // Evitar múltiples instancias
-      debug: false
+      debug: false,
+      // Configuración adicional para estabilidad
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true
     }
   })
 }
 
-export const supabase = globalThis.__supabase ?? (globalThis.__supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
-  auth: {
-    persistSession: true,
-    autoRefreshToken: true,
-    detectSessionInUrl: true
+// Función para inicializar Supabase solo una vez
+function initializeSupabase() {
+  if (typeof window === 'undefined') {
+    // En el servidor, crear instancias nuevas
+    return {
+      supabase: createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+        auth: {
+          persistSession: true,
+          autoRefreshToken: true,
+          detectSessionInUrl: true
+        }
+      }),
+      supabaseAdmin: createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+        auth: {
+          persistSession: false,
+          autoRefreshToken: false
+        }
+      })
+    }
   }
-}))
 
-export const supabaseAdmin = globalThis.__supabaseAdmin ?? (globalThis.__supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
-  auth: {
-    persistSession: false,
-    autoRefreshToken: false
+  // En el cliente, usar singleton pattern
+  if (!globalThis.__supabaseInitialized) {
+    globalThis.__supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true
+      }
+    })
+    
+    globalThis.__supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false
+      }
+    })
+    
+    globalThis.__supabaseInitialized = true
   }
-}))
+
+  return {
+    supabase: globalThis.__supabase,
+    supabaseAdmin: globalThis.__supabaseAdmin
+  }
+}
+
+// Inicializar y exportar las instancias
+const { supabase, supabaseAdmin } = initializeSupabase()
+
+export { supabase, supabaseAdmin }

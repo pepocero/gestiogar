@@ -6,7 +6,10 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "cleanup": "node scripts/cleanup.js",
+    "cleanup:win": "powershell -ExecutionPolicy Bypass -File scripts/cleanup.ps1",
+    "diagnose": "node -e \"const { diagnoseSupabaseInstances } = require('./lib/supabase-diagnostics'); diagnoseSupabaseInstances();\""
   },
   "dependencies": {
     "@headlessui/react": "^1.7.17",
