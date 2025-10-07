@@ -2,6 +2,8 @@
 
 Gestiogar es una aplicación web multitenant desarrollada para empresas de reparaciones del hogar que trabajan con aseguradoras. Permite gestionar presupuestos, trabajos, técnicos, clientes y aseguradoras de forma eficiente.
 
+> 🚀 Desplegado en Cloudflare Pages con exportación estática de Next.js
+
 ## Características Principales
 
 ### 🏢 Multitenant
