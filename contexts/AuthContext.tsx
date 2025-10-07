@@ -141,29 +141,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     )
 
-    // Verificación periódica de sesión para detectar sesiones expiradas
-    const sessionCheckInterval = setInterval(async () => {
-      if (mounted && user) {
-        try {
-          const { data: { session }, error } = await supabase.auth.getSession()
-          
-          if (error || !session) {
-            conditionalLog('info', '🔄 Session expired, signing out...')
-            setUser(null)
-            setProfile(null)
-            setCompany(null)
-            toast.error('Sesión expirada. Por favor, inicia sesión nuevamente.')
-          }
-        } catch (error) {
-          console.warn('⚠️ Error checking session:', error)
-        }
-      }
-    }, PERFORMANCE_CONFIG.SESSION.CHECK_INTERVAL) // Verificar según configuración
-
+    // DESACTIVADO: Verificación periódica innecesaria con Supabase
+    // Supabase maneja automáticamente el refresh de tokens y detecta sesiones expiradas
+    // a través de onAuthStateChange. No necesitamos polling manual.
+    
     return () => {
       mounted = false
       subscription.unsubscribe()
-      clearInterval(sessionCheckInterval)
     }
   }, [])
 
