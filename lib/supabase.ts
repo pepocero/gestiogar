@@ -34,13 +34,13 @@ function createSupabaseClient(url: string, key: string, options: any) {
 // Función para inicializar Supabase solo una vez
 function initializeSupabase() {
   if (typeof window === 'undefined') {
-    // En el servidor, crear instancias nuevas
+    // En el servidor, crear instancias nuevas cada vez
     return {
       supabase: createSupabaseClient(supabaseUrl, supabaseAnonKey, {
         auth: {
-          persistSession: true,
-          autoRefreshToken: true,
-          detectSessionInUrl: true
+          persistSession: false, // No persistir en servidor
+          autoRefreshToken: false,
+          detectSessionInUrl: false
         }
       }),
       supabaseAdmin: createSupabaseClient(supabaseUrl, supabaseServiceKey, {
@@ -52,8 +52,17 @@ function initializeSupabase() {
     }
   }
 
-  // En el cliente, usar singleton pattern
+  // En el cliente, usar singleton pattern ESTRICTO
   if (!globalThis.__supabaseInitialized) {
+    // Limpiar cualquier instancia previa
+    if (globalThis.__supabase) {
+      try {
+        globalThis.__supabase.removeAllChannels?.()
+      } catch (e) {
+        // Ignorar errores de limpieza
+      }
+    }
+
     globalThis.__supabase = createSupabaseClient(supabaseUrl, supabaseAnonKey, {
       auth: {
         persistSession: true,
@@ -70,6 +79,19 @@ function initializeSupabase() {
     })
     
     globalThis.__supabaseInitialized = true
+    
+    // Marcar en window para debugging
+    if (process.env.NODE_ENV === 'development') {
+      (window as any).__supabaseInstanceCount = 1
+    }
+  } else {
+    // Incrementar contador de advertencia en desarrollo
+    if (process.env.NODE_ENV === 'development') {
+      (window as any).__supabaseInstanceCount = ((window as any).__supabaseInstanceCount || 1) + 1
+      if ((window as any).__supabaseInstanceCount > 1) {
+        console.warn('⚠️ Intento de crear múltiples instancias de Supabase detectado y prevenido')
+      }
+    }
   }
 
   return {

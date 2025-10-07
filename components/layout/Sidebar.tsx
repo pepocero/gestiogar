@@ -27,6 +27,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext'
 import { useModules } from '@/contexts/ModulesContext'
 import { useSidebar } from '@/contexts/SidebarContext'
+import { usePageRefresh } from '@/hooks/usePageRefresh'
 // import { useAdvancedModules } from '@/contexts/AdvancedModulesContext' // Temporalmente deshabilitado
 
 const navigation = [
@@ -54,8 +55,25 @@ export function Sidebar({ onClose }: SidebarProps) {
   const { company, signOut } = useAuth()
   const { modules } = useModules()
   const { sidebarOpen, isDesktop } = useSidebar()
+  const { navigateWithRefresh, timeSinceLastActivity } = usePageRefresh({
+    inactivityTimeout: 180000, // 3 minutos
+    enabled: true
+  })
   // Temporalmente deshabilitado - módulos avanzados
   const advancedSidebarItems: any[] = []
+
+  // Función para manejar clicks en el menú
+  const handleNavClick = (e: React.MouseEvent<HTMLAnchorElement>, href: string) => {
+    const inactiveTime = timeSinceLastActivity()
+    
+    // Si ha estado inactivo más de 2 minutos, hacer hard refresh
+    if (inactiveTime > 120000) { // 2 minutos
+      e.preventDefault()
+      console.log('🔄 Navegación después de inactividad, haciendo hard refresh...')
+      window.location.href = href
+    }
+    // Si no, dejar que Next.js maneje la navegación normalmente
+  }
 
   const handleSignOut = async () => {
     try {
@@ -121,7 +139,10 @@ export function Sidebar({ onClose }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
-              onClick={() => onClose && onClose()}
+              onClick={(e) => {
+                handleNavClick(e, item.href)
+                onClose && onClose()
+              }}
               className={clsx(
                 'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
                 isActive
@@ -172,7 +193,10 @@ export function Sidebar({ onClose }: SidebarProps) {
                 <Link
                   key={module.id}
                   href={`/module/${module.slug}`}
-                  onClick={() => onClose && onClose()}
+                  onClick={(e) => {
+                    handleNavClick(e, `/module/${module.slug}`)
+                    onClose && onClose()
+                  }}
                   className={clsx(
                     'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',
                     isActive

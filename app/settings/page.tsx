@@ -2,6 +2,10 @@
 
 import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
+import { Button } from '@/components/ui/Button'
+import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 // Layout ya se aplica automáticamente en ProtectedLayout
 import { 
   User, 
@@ -9,10 +13,24 @@ import {
   Shield, 
   Bell, 
   Package,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  LogOut
 } from 'lucide-react'
 
 export default function SettingsPage() {
+  const { signOut } = useAuth()
+  const router = useRouter()
+
+  const handleLogout = async () => {
+    try {
+      await signOut()
+      toast.success('Sesión cerrada correctamente')
+      router.push('/auth/login')
+    } catch (error) {
+      console.error('Error al cerrar sesión:', error)
+      toast.error('Error al cerrar sesión')
+    }
+  }
   const settingsItems = [
     {
       title: 'Perfil de Usuario',
@@ -105,9 +123,12 @@ export default function SettingsPage() {
                 <Link href="/settings/company" className="text-primary-600 hover:text-primary-700 font-medium">
                   → Configurar Empresa
                 </Link>
-                <Link href="/auth/logout" className="text-red-600 hover:text-red-700 font-medium">
+                <button 
+                  onClick={handleLogout}
+                  className="text-red-600 hover:text-red-700 font-medium text-left"
+                >
                   → Cerrar Sesión
-                </Link>
+                </button>
               </div>
             </div>
           </Card>
