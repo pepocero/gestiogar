@@ -128,19 +128,22 @@ export default function DebugModulesPage() {
         <Button 
           onClick={async () => {
             try {
-              // Verificar si las tablas existen
-              const response = await fetch('/api/create-modules-tables', {
-                method: 'POST',
-                headers: {
-                  'Content-Type': 'application/json',
-                },
-              })
-              const result = await response.json()
+              // Verificar si las tablas existen consultando directamente
+              const { data: modulesData, error: modulesError } = await supabase
+                .from('modules')
+                .select('id')
+                .limit(1)
               
-              if (result.success) {
-                alert('✅ Las tablas de módulos ya existen')
+              const { data: moduleDataData, error: moduleDataError } = await supabase
+                .from('module_data')
+                .select('id')
+                .limit(1)
+              
+              if (!modulesError && !moduleDataError) {
+                alert('✅ Las tablas de módulos existen y son accesibles')
               } else {
-                alert('❌ ' + result.error + '\n\nInstrucciones:\n' + result.instructions)
+                const errors = [modulesError, moduleDataError].filter(Boolean).map(e => e?.message).join(', ')
+                alert('❌ Error al acceder a las tablas:\n' + errors + '\n\nAsegúrate de ejecutar el SQL de creación de tablas en Supabase Dashboard.')
               }
             } catch (error) {
               alert('Error: ' + error)

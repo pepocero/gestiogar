@@ -70,7 +70,7 @@ npm run build:cloudflare
 
 **Build output directory:**
 ```
-.next
+out
 ```
 
 **Node version:**
@@ -90,7 +90,7 @@ npm run build:cloudflare
 
 1. Conecta tu repositorio en Cloudflare Pages
 2. Configura el build command: `npm run build:cloudflare`
-3. Configura el output directory: `.next`
+3. Configura el output directory: `out`
 4. Agrega las variables de entorno
 5. Deploy
 
