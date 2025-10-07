@@ -231,3 +231,5 @@ COMMENT ON COLUMN holidays.tipo IS 'Tipo de día festivo: festivo_nacional, fest
 COMMENT ON COLUMN vacation_requests.estado IS 'Estado de la solicitud: pendiente, aprobada, rechazada';
 COMMENT ON COLUMN vacation_balances.ano IS 'Año al que corresponde el balance de vacaciones';
 
+
+

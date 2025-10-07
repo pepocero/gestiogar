@@ -147,3 +147,5 @@ Para soporte técnico o preguntas sobre este módulo:
 - ✅ Seguridad multitenant
 - ✅ Días festivos nacionales preconfigurados
 
+
+
