@@ -17,10 +17,8 @@ export function SessionGuard({ children }: SessionGuardProps) {
   useEffect(() => {
     if (!loading && !user && !sessionChecked) {
       setSessionChecked(true)
-      toast.error('Sesión expirada. Redirigiendo al login...')
-      setTimeout(() => {
-        router.push('/auth/login')
-      }, 2000)
+      // Redirigir sin mostrar toast confuso
+      router.push('/auth/login')
     }
   }, [user, loading, sessionChecked, router])
 
