@@ -18,11 +18,17 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const publicRoutes = [
     '/',           // Página de presentación
     '/auth/login', // Página de login
-    '/auth/signup', // Página de registro
+    '/auth/register', // Página de registro (corregido)
+    '/auth/signup', // Página de registro (alternativa)
     '/auth/forgot-password', // Página de recuperar contraseña
   ]
   
-  const isPublicRoute = publicRoutes.includes(pathname)
+  // Normalizar pathname para comparar (eliminar trailing slash si existe)
+  const normalizedPath = pathname.endsWith('/') && pathname !== '/' 
+    ? pathname.slice(0, -1) 
+    : pathname
+  
+  const isPublicRoute = publicRoutes.includes(normalizedPath)
   
   // Si es una ruta pública, mostrar solo el contenido sin sidebar
   if (isPublicRoute) {
