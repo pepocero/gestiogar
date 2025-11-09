@@ -267,14 +267,16 @@ export default function ModulesPage() {
   const [activeTab, setActiveTab] = useState<'installed' | 'store'>('installed')
 
   useEffect(() => {
-    loadModules()
-  }, [])
+    if (company?.id) {
+      loadModules(company.id)
+    }
+  }, [company?.id])
 
-  const loadModules = async () => {
+  const loadModules = async (companyId: string) => {
     try {
       setLoading(true)
       setError(null)
-      const data = await getModules()
+      const data = await getModules(companyId)
       console.log('Módulos cargados:', data)
       setModules(data)
       
@@ -402,7 +404,8 @@ export default function ModulesPage() {
     if (!confirm(`¿Estás seguro de eliminar el módulo "${module.name}"?`)) return
 
     try {
-      await deleteModule(module.id)
+      if (!company?.id) return
+      await deleteModule(module.id, company.id)
       setModules(prev => prev.filter(m => m.id !== module.id))
       toast.success('Módulo eliminado correctamente')
     } catch (error) {

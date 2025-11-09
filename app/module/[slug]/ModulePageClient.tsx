@@ -23,7 +23,7 @@ interface ModuleDataItem {
 export default function ModulePageClient() {
   const params = useParams()
   const { company, user } = useAuth()
-  const { modules } = useModules()
+  const { modules, loading: modulesLoading } = useModules()
   const [moduleData, setModuleData] = useState<ModuleDataItem[]>([])
   const [loading, setLoading] = useState(true)
   const [showModal, setShowModal] = useState(false)
@@ -44,11 +44,15 @@ export default function ModulePageClient() {
   logger.config('Module fields:', currentModule?.config?.fields)
 
   const loadModuleData = async () => {
-    if (!currentModule?.id) return
+    if (!currentModule?.id || !company?.id) {
+      setModuleData([])
+      setLoading(false)
+      return
+    }
 
     try {
       setLoading(true)
-      const data = await getModuleData(currentModule.id)
+      const data = await getModuleData(currentModule.id, company.id)
       setModuleData(data)
     } catch (error: any) {
       console.error('Error loading module data:', error)
@@ -59,21 +63,31 @@ export default function ModulePageClient() {
   }
 
   const loadTechnicians = async () => {
+    if (!company?.id) {
+      setTechnicians([])
+      return
+    }
+
     try {
       logger.debug('Loading technicians...')
-      const data = await getTechnicians()
+      const data = await getTechnicians(company.id)
       logger.data('Technicians loaded:', data)
       setTechnicians(data)
     } catch (error: any) {
       logger.error('Error loading technicians:', error)
-      // No mostrar error si no hay técnicos, simplemente usar lista vacía
+      setTechnicians([])
     }
   }
 
   useEffect(() => {
+    if (!company?.id) {
+      setLoading(false)
+      return
+    }
+
     loadModuleData()
     loadTechnicians()
-  }, [currentModule?.id])
+  }, [currentModule?.id, company?.id])
 
   // Limpiar estado al desmontar el componente para evitar problemas de navegación
   useEffect(() => {
@@ -117,7 +131,7 @@ export default function ModulePageClient() {
       }
 
       if (editingItem) {
-        await updateModuleData(editingItem.id, { data: formData })
+        await updateModuleData(editingItem.id, { data: formData }, company.id)
         toast.success('Registro actualizado correctamente')
       } else {
         await createModuleData(dataToSave)
@@ -142,7 +156,11 @@ export default function ModulePageClient() {
     if (!selectedItem) return
 
     try {
-      await deleteModuleData(selectedItem.id)
+      if (!company?.id) {
+        toast.error('No se pudo obtener la empresa actual')
+        return
+      }
+      await deleteModuleData(selectedItem.id, company.id)
       toast.success('Registro eliminado correctamente')
       setShowDeleteModal(false)
       setSelectedItem(null)
@@ -454,6 +472,19 @@ export default function ModulePageClient() {
   }
 
   // Si no hay módulo, mostrar mensaje después de todos los hooks
+  if (modulesLoading) {
+    return (
+      <div className="p-6">
+        <Card className="p-6">
+          <div className="text-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto"></div>
+            <p className="mt-2 text-gray-600">Cargando módulos...</p>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
   if (!currentModule) {
     return (
       <div className="p-6">

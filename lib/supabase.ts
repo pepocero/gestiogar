@@ -12,24 +12,52 @@ declare global {
   var __supabaseInitialized: boolean | undefined
 }
 
+// Almacenamiento en memoria para instancias que no deben persistir sesión
+function createMemoryStorage() {
+  const store = new Map<string, string>()
+  return {
+    getItem(key: string) {
+      return store.has(key) ? store.get(key)! : null
+    },
+    setItem(key: string, value: string) {
+      store.set(key, value)
+    },
+    removeItem(key: string) {
+      store.delete(key)
+    }
+  }
+}
+
 // Función para crear el cliente con configuración optimizada
 function createSupabaseClient(url: string, key: string, options: any = {}) {
+  const isBrowser = typeof window !== 'undefined'
+
   const defaultAuthOptions = {
-    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-    storageKey: 'supabase.auth.token',
     flowType: 'pkce',
     debug: false,
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    ...(isBrowser
+      ? {
+          storage: window.localStorage,
+          storageKey: 'supabase.auth.token'
+        }
+      : {})
+  }
+
+  const finalAuthOptions = {
+    ...defaultAuthOptions,
+    ...(options?.auth || {})
+  }
+
+  if (!isBrowser && finalAuthOptions.storage === undefined) {
+    delete finalAuthOptions.storage
   }
 
   return createClient(url, key, {
     ...options,
-    auth: {
-      ...defaultAuthOptions,
-      ...(options?.auth || {})
-    }
+    auth: finalAuthOptions
   })
 }
 
@@ -43,7 +71,7 @@ function initializeSupabase() {
           persistSession: false, // No persistir en servidor
           autoRefreshToken: false,
           detectSessionInUrl: false,
-          storage: undefined,
+          storage: createMemoryStorage(),
           storageKey: 'supabase.server.auth.token'
         }
       }),
@@ -52,7 +80,7 @@ function initializeSupabase() {
           persistSession: false,
           autoRefreshToken: false,
           detectSessionInUrl: false,
-          storage: undefined,
+          storage: createMemoryStorage(),
           storageKey: 'supabase.server.admin.token'
         }
       })
@@ -75,6 +103,7 @@ function initializeSupabase() {
         persistSession: true,
         autoRefreshToken: true,
         detectSessionInUrl: true,
+        storage: window.localStorage,
         storageKey: 'supabase.auth.token'
       }
     })
@@ -84,7 +113,7 @@ function initializeSupabase() {
         persistSession: false,
         autoRefreshToken: false,
         detectSessionInUrl: false,
-        storage: undefined,
+        storage: createMemoryStorage(),
         storageKey: 'supabase.admin.token'
       }
     })

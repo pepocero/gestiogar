@@ -139,6 +139,7 @@ export function Sidebar({ onClose }: SidebarProps) {
             <Link
               key={item.name}
               href={item.href}
+              prefetch={false}
               onClick={(e) => {
                 handleNavClick(e, item.href)
                 onClose && onClose()
@@ -193,6 +194,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                 <Link
                   key={module.id}
                   href={`/module/${module.slug}`}
+                  prefetch={false}
                   onClick={(e) => {
                     handleNavClick(e, `/module/${module.slug}`)
                     onClose && onClose()
@@ -269,6 +271,7 @@ export function Sidebar({ onClose }: SidebarProps) {
                 <Link
                   key={`advanced-${index}`}
                   href={item.href}
+                  prefetch={false}
                   onClick={() => onClose && onClose()}
                   className={clsx(
                     'group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors',

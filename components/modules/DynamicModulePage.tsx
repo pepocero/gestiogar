@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useParams, useSearchParams } from 'next/navigation'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
@@ -10,6 +9,7 @@ import { Plus, Search, Edit, Trash2, Save, X } from 'lucide-react'
 import { getModuleData, createModuleData, updateModuleData, deleteModuleData } from '@/lib/modules'
 import { ModuleData } from '@/types/module'
 import toast from 'react-hot-toast'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface DynamicModulePageProps {
   moduleId: string
@@ -18,6 +18,7 @@ interface DynamicModulePageProps {
 }
 
 export default function DynamicModulePage({ moduleId, moduleName, config }: DynamicModulePageProps) {
+  const { company, user } = useAuth()
   const [data, setData] = useState<ModuleData[]>([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
@@ -27,13 +28,17 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
   const [formData, setFormData] = useState<Record<string, any>>({})
 
   useEffect(() => {
-    loadData()
-  }, [moduleId])
+    if (company?.id) {
+      loadData(company.id)
+    } else {
+      setLoading(false)
+    }
+  }, [moduleId, company?.id])
 
-  const loadData = async () => {
+  const loadData = async (companyId: string) => {
     try {
       setLoading(true)
-      const moduleData = await getModuleData(moduleId)
+      const moduleData = await getModuleData(moduleId, companyId)
       setData(moduleData)
     } catch (error) {
       console.error('Error loading module data:', error)
@@ -44,9 +49,16 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
   }
 
   const handleCreate = async () => {
+    if (!company?.id || !user?.id) {
+      toast.error('No se pudo obtener información del usuario')
+      return
+    }
+
     try {
       const newData = await createModuleData({
         module_id: moduleId,
+        company_id: company.id,
+        created_by: user.id,
         data: formData
       })
       
@@ -62,11 +74,15 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
 
   const handleUpdate = async () => {
     if (!editingItem) return
+    if (!company?.id) {
+      toast.error('No se pudo obtener la empresa actual')
+      return
+    }
 
     try {
       const updatedData = await updateModuleData(editingItem.id, {
         data: formData
-      })
+      }, company.id)
       
       setData(prev => prev.map(item => 
         item.id === editingItem.id ? updatedData : item
@@ -83,9 +99,13 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
 
   const handleDelete = async (item: ModuleData) => {
     if (!confirm('¿Estás seguro de eliminar este elemento?')) return
+    if (!company?.id) {
+      toast.error('No se pudo obtener la empresa actual')
+      return
+    }
 
     try {
-      await deleteModuleData(item.id)
+      await deleteModuleData(item.id, company.id)
       setData(prev => prev.filter(d => d.id !== item.id))
       toast.success('Elemento eliminado correctamente')
     } catch (error) {

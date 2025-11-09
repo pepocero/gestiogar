@@ -31,7 +31,7 @@ export function ModulesProvider({ children }: { children: ReactNode }) {
       setLoading(true)
       conditionalLog('debug', '🔄 Loading modules for company:', company.id)
       
-      const data = await getModules()
+      const data = await getModules(company.id)
       conditionalLog('debug', '📦 Raw modules data:', data)
       
       const activeModules = data.filter(module => module.is_active)

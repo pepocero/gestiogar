@@ -2,10 +2,11 @@ import { supabase } from './supabase'
 import { Module, ModuleData } from '@/types/module'
 import { conditionalLog } from './performance'
 
-export async function getTechnicians(): Promise<any[]> {
+export async function getTechnicians(companyId: string): Promise<any[]> {
   const { data, error } = await supabase
     .from('technicians')
     .select('id, first_name, last_name, is_active')
+    .eq('company_id', companyId)
     .eq('is_active', true)
     .order('first_name')
 
@@ -17,12 +18,13 @@ export async function getTechnicians(): Promise<any[]> {
   return data || []
 }
 
-export async function getModules(): Promise<Module[]> {
-  conditionalLog('debug', '🔍 getModules: Starting module fetch...')
+export async function getModules(companyId: string): Promise<Module[]> {
+  conditionalLog('debug', '🔍 getModules: Starting module fetch...', { companyId })
   
   const { data, error } = await supabase
     .from('modules')
     .select('*')
+    .eq('company_id', companyId)
     .eq('is_active', true)
     .order('name')
 
@@ -78,11 +80,12 @@ export async function updateModule(id: string, updates: Partial<Module>): Promis
   return data
 }
 
-export async function deleteModule(id: string): Promise<void> {
+export async function deleteModule(id: string, companyId: string): Promise<void> {
   const { error } = await supabase
     .from('modules')
     .delete()
     .eq('id', id)
+    .eq('company_id', companyId)
 
   if (error) {
     console.error('Error deleting module:', error)
@@ -90,11 +93,12 @@ export async function deleteModule(id: string): Promise<void> {
   }
 }
 
-export async function getModuleData(moduleId: string): Promise<ModuleData[]> {
+export async function getModuleData(moduleId: string, companyId: string): Promise<ModuleData[]> {
   const { data, error } = await supabase
     .from('module_data')
     .select('*')
     .eq('module_id', moduleId)
+    .eq('company_id', companyId)
     .order('created_at', { ascending: false })
 
   if (error) {
@@ -106,6 +110,10 @@ export async function getModuleData(moduleId: string): Promise<ModuleData[]> {
 }
 
 export async function createModuleData(data: Partial<ModuleData>): Promise<ModuleData> {
+  if (!data.company_id) {
+    throw new Error('company_id es requerido para crear datos del módulo')
+  }
+
   const { data: result, error } = await supabase
     .from('module_data')
     .insert([data])
@@ -120,11 +128,12 @@ export async function createModuleData(data: Partial<ModuleData>): Promise<Modul
   return result
 }
 
-export async function updateModuleData(id: string, updates: Partial<ModuleData>): Promise<ModuleData> {
+export async function updateModuleData(id: string, updates: Partial<ModuleData>, companyId: string): Promise<ModuleData> {
   const { data, error } = await supabase
     .from('module_data')
     .update(updates)
     .eq('id', id)
+    .eq('company_id', companyId)
     .select()
     .single()
 
@@ -136,11 +145,12 @@ export async function updateModuleData(id: string, updates: Partial<ModuleData>)
   return data
 }
 
-export async function deleteModuleData(id: string): Promise<void> {
+export async function deleteModuleData(id: string, companyId: string): Promise<void> {
   const { error } = await supabase
     .from('module_data')
     .delete()
     .eq('id', id)
+    .eq('company_id', companyId)
 
   if (error) {
     console.error('Error deleting module data:', error)
