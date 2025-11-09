@@ -13,21 +13,22 @@ declare global {
 }
 
 // Función para crear el cliente con configuración optimizada
-function createSupabaseClient(url: string, key: string, options: any) {
+function createSupabaseClient(url: string, key: string, options: any = {}) {
+  const defaultAuthOptions = {
+    storage: typeof window !== 'undefined' ? window.localStorage : undefined,
+    storageKey: 'supabase.auth.token',
+    flowType: 'pkce',
+    debug: false,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true
+  }
+
   return createClient(url, key, {
     ...options,
     auth: {
-      ...options.auth,
-      // Configuración adicional para evitar múltiples instancias
-      storage: typeof window !== 'undefined' ? window.localStorage : undefined,
-      storageKey: 'supabase.auth.token',
-      flowType: 'pkce',
-      // Evitar múltiples instancias
-      debug: false,
-      // Configuración adicional para estabilidad
-      persistSession: true,
-      autoRefreshToken: true,
-      detectSessionInUrl: true
+      ...defaultAuthOptions,
+      ...(options?.auth || {})
     }
   })
 }
@@ -41,13 +42,18 @@ function initializeSupabase() {
         auth: {
           persistSession: false, // No persistir en servidor
           autoRefreshToken: false,
-          detectSessionInUrl: false
+          detectSessionInUrl: false,
+          storage: undefined,
+          storageKey: 'supabase.server.auth.token'
         }
       }),
       supabaseAdmin: createSupabaseClient(supabaseUrl, supabaseServiceKey, {
         auth: {
           persistSession: false,
-          autoRefreshToken: false
+          autoRefreshToken: false,
+          detectSessionInUrl: false,
+          storage: undefined,
+          storageKey: 'supabase.server.admin.token'
         }
       })
     }
@@ -68,14 +74,18 @@ function initializeSupabase() {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
-        detectSessionInUrl: true
+        detectSessionInUrl: true,
+        storageKey: 'supabase.auth.token'
       }
     })
     
     globalThis.__supabaseAdmin = createSupabaseClient(supabaseUrl, supabaseServiceKey, {
       auth: {
         persistSession: false,
-        autoRefreshToken: false
+        autoRefreshToken: false,
+        detectSessionInUrl: false,
+        storage: undefined,
+        storageKey: 'supabase.admin.token'
       }
     })
     
