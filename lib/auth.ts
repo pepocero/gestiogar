@@ -1,4 +1,4 @@
-import { supabase, supabaseAdmin } from './supabase'
+import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from './supabase'
 import { User } from '@supabase/supabase-js'
 
 export interface Company {
@@ -63,8 +63,7 @@ export async function createCompanyAndOwner(
 ) {
   try {
     // 1. Crear la empresa usando el service role (bypass RLS)
-    const { data: company, error: companyError } = await supabaseAdmin
-      .from('companies')
+    const { data: company, error: companyError } = await supabaseAdminTable('companies')
       .insert([companyData])
       .select()
       .single()
@@ -82,19 +81,18 @@ export async function createCompanyAndOwner(
 
     if (authError) {
       // Si falla la creación del usuario, eliminar la empresa
-      await supabaseAdmin.from('companies').delete().eq('id', company.id)
+      await supabaseAdminTable('companies').delete().eq('id', company.id)
       throw authError
     }
 
     if (!authData.user) {
       // Si no se creó el usuario, eliminar la empresa
-      await supabaseAdmin.from('companies').delete().eq('id', company.id)
+      await supabaseAdminTable('companies').delete().eq('id', company.id)
       throw new Error('No se pudo crear el usuario')
     }
 
     // 3. Crear el perfil del usuario usando supabaseAdmin (bypass RLS)
-    const { data: profile, error: profileError } = await supabaseAdmin
-      .from('users')
+    const { data: profile, error: profileError } = await supabaseAdminTable('users')
       .insert([
         {
           id: authData.user.id,
@@ -112,7 +110,7 @@ export async function createCompanyAndOwner(
     if (profileError) {
       // Si falla la creación del perfil, eliminar empresa
       console.error('Error creating user profile:', profileError)
-      await supabaseAdmin.from('companies').delete().eq('id', company.id)
+      await supabaseAdminTable('companies').delete().eq('id', company.id)
       throw profileError
     }
 
@@ -138,8 +136,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     
     // OPTIMIZACIÓN: Usar join para evitar múltiples consultas
     // Esto evita el timeout causado por la función user_company_id()
-    const { data: result, error } = await supabaseAdmin
-      .from('users')
+    const { data: result, error } = await supabaseAdminTable('users')
       .select(`
         *,
         company:companies(*)
@@ -151,8 +148,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
     if (error) {
       console.log('Admin query failed, trying normal client...')
       
-      const { data: user, error: userError } = await supabase
-        .from('users')
+      const { data: user, error: userError } = await supabaseTable('users')
         .select('*')
         .eq('id', userId)
         .single()
@@ -168,8 +164,7 @@ export async function getUserProfile(userId: string): Promise<UserProfile | null
         return null
       }
 
-      const { data: company, error: companyError } = await supabaseAdmin
-        .from('companies')
+      const { data: company, error: companyError } = await supabaseAdminTable('companies')
         .select('*')
         .eq('id', user.company_id)
         .single()
@@ -225,8 +220,7 @@ export async function updateUserProfile(
   updates: Partial<UserProfile>
 ): Promise<UserProfile | null> {
   try {
-    const { data, error } = await supabase
-      .from('users')
+    const { data, error } = await supabaseTable('users')
       .update(updates)
       .eq('id', userId)
       .select('*')
@@ -242,8 +236,7 @@ export async function updateUserProfile(
     }
 
     // Obtener la empresa actualizada
-    const { data: company, error: companyError } = await supabase
-      .from('companies')
+    const { data: company, error: companyError } = await supabaseTable('companies')
       .select('*')
       .eq('id', data.company_id)
       .single()
@@ -269,8 +262,7 @@ export async function updateCompany(
   updates: Partial<Company>
 ): Promise<Company | null> {
   try {
-    const { data, error } = await supabase
-      .from('companies')
+    const { data, error } = await supabaseTable('companies')
       .update(updates)
       .eq('id', companyId)
       .select()
@@ -291,8 +283,7 @@ export async function updateCompany(
 // Función para verificar si un slug de empresa está disponible
 export async function isCompanySlugAvailable(slug: string): Promise<boolean> {
   try {
-    const { data, error } = await supabaseAdmin
-      .from('companies')
+    const { data, error } = await supabaseAdminTable('companies')
       .select('id')
       .eq('slug', slug)
       .single()

@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import { useAuth } from '@/contexts/AuthContext'
 import { useModules } from '@/contexts/ModulesContext'
 
@@ -31,10 +31,11 @@ export default function DebugModulesPage() {
       }
 
       // Test 2: Intentar consultar módulos directamente
-      const { data: modulesDirect, error: modulesError } = await supabase
-        .from('modules')
-        .select('*')
-        .eq('company_id', company?.id)
+      const { data: modulesDirect, error: modulesError } = company?.id
+        ? await supabaseTable('modules')
+            .select('*')
+            .eq('company_id', company.id)
+        : { data: null, error: null }
       
       results.modulesDirect = {
         success: !modulesError,
@@ -129,13 +130,11 @@ export default function DebugModulesPage() {
           onClick={async () => {
             try {
               // Verificar si las tablas existen consultando directamente
-              const { data: modulesData, error: modulesError } = await supabase
-                .from('modules')
+      const { data: modulesData, error: modulesError } = await supabaseTable('modules')
                 .select('id')
                 .limit(1)
               
-              const { data: moduleDataData, error: moduleDataError } = await supabase
-                .from('module_data')
+              const { data: moduleDataData, error: moduleDataError } = await supabaseTable('module_data')
                 .select('id')
                 .limit(1)
               

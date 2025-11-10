@@ -1,7 +1,7 @@
 'use client'
 
 import React, { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import type { AuthUser } from '@/types/auth'
 import toast from 'react-hot-toast'
 import { PERFORMANCE_CONFIG, conditionalLog } from '@/lib/performance'
@@ -61,8 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       conditionalLog('debug', '🔄 Loading user profile for:', userId)
       
       // Query optimizada con timeout
-      const { data: userData, error } = await supabase
-        .from('users')
+      const { data: userData, error } = await supabaseTable('users')
         .select(`
           *,
           company:companies(*)
@@ -190,8 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       throw new Error('Usuario no autenticado')
     }
 
-    const { error } = await supabase
-      .from('users')
+    const { error } = await supabaseTable('users')
       .update(updates)
       .eq('id', user.id)
 

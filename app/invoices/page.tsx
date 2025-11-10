@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/Badge'
 import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/lib/supabase'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, X, Printer, FileText, Calendar, Clock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
 
@@ -242,8 +242,7 @@ export default function InvoicesPage() {
       console.log('Updating invoice with data:', updateData)
 
       // Actualizar en Supabase
-      const { data, error } = await supabaseAdmin
-        .from('invoices')
+      const { data, error } = await supabaseAdminTable('invoices')
         .update(updateData)
         .eq('id', selectedInvoice.id)
         .select()
@@ -287,8 +286,7 @@ export default function InvoicesPage() {
 
     setIsUpdating(true)
     try {
-      const { error } = await supabaseAdmin
-        .from('invoices')
+      const { error } = await supabaseAdminTable('invoices')
         .delete()
         .eq('id', selectedInvoice.id)
 
@@ -658,8 +656,7 @@ export default function InvoicesPage() {
       console.log('=== INTENTANDO INSERTAR EN SUPABASE ===')
       
       // Insertar en Supabase
-      const { data, error } = await supabaseAdmin
-        .from('invoices')
+      const { data, error } = await supabaseAdminTable('invoices')
         .insert(invoiceData)
         .select()
 

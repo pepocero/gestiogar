@@ -8,9 +8,9 @@ export function diagnoseSupabaseInstances() {
   console.log('🔍 Diagnóstico de instancias de Supabase:')
   
   // Verificar variables globales
-  const hasGlobalSupabase = !!(globalThis as any).__supabase
-  const hasGlobalSupabaseAdmin = !!(globalThis as any).__supabaseAdmin
-  const isInitialized = !!(globalThis as any).__supabaseInitialized
+  const hasGlobalSupabase = !!(globalThis as any).__supabaseClient
+  const hasGlobalSupabaseAdmin = !!(globalThis as any).__supabaseAdminClient
+  const isInitialized = hasGlobalSupabase
   
   console.log('📊 Estado de inicialización:')
   console.log('  - __supabase:', hasGlobalSupabase ? '✅ Presente' : '❌ Ausente')
@@ -57,9 +57,8 @@ export function cleanupSupabaseInstances() {
   console.log('🧹 Limpiando instancias de Supabase...')
   
   // Limpiar variables globales
-  delete (globalThis as any).__supabase
-  delete (globalThis as any).__supabaseAdmin
-  delete (globalThis as any).__supabaseInitialized
+  delete (globalThis as any).__supabaseClient
+  delete (globalThis as any).__supabaseAdminClient
   
   // Limpiar localStorage
   localStorage.removeItem('supabase.auth.token')

@@ -1,5 +1,5 @@
 // app/modules/holidays-vacations/src/services/vacationsService.ts
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import type { VacationRequest, VacationFormData, VacationStats, VacationBalance } from '../types/holiday'
 
 export class VacationsService {
@@ -38,8 +38,7 @@ export class VacationsService {
       estado: 'pendiente'
     }
     
-    const { data, error } = await supabase
-      .from('vacation_requests')
+    const { data, error } = await supabaseTable('vacation_requests')
       .insert([vacationData])
       .select()
       .single()
@@ -49,8 +48,7 @@ export class VacationsService {
   }
   
   static async update(id: string, updates: Partial<VacationRequest>): Promise<VacationRequest> {
-    const { data, error } = await supabase
-      .from('vacation_requests')
+    const { data, error } = await supabaseTable('vacation_requests')
       .update(updates)
       .eq('id', id)
       .select()
@@ -61,8 +59,7 @@ export class VacationsService {
   }
   
   static async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('vacation_requests')
+    const { error } = await supabaseTable('vacation_requests')
       .delete()
       .eq('id', id)
     
@@ -93,8 +90,7 @@ export class VacationsService {
   }
   
   static async approveRequest(id: string, aprobadoPor: string, comentarios?: string): Promise<VacationRequest> {
-    const { data, error } = await supabase
-      .from('vacation_requests')
+    const { data, error } = await supabaseTable('vacation_requests')
       .update({
         estado: 'aprobada',
         aprobado_por: aprobadoPor,
@@ -110,8 +106,7 @@ export class VacationsService {
   }
   
   static async rejectRequest(id: string, aprobadoPor: string, comentarios: string): Promise<VacationRequest> {
-    const { data, error } = await supabase
-      .from('vacation_requests')
+    const { data, error } = await supabaseTable('vacation_requests')
       .update({
         estado: 'rechazada',
         aprobado_por: aprobadoPor,
@@ -128,15 +123,14 @@ export class VacationsService {
   
   static async getStats(): Promise<VacationStats> {
     const [totalData, pendingData, approvedData, rejectedData] = await Promise.all([
-      supabase.from('vacation_requests').select('*', { count: 'exact' }),
-      supabase.from('vacation_requests').select('*', { count: 'exact' }).eq('estado', 'pendiente'),
-      supabase.from('vacation_requests').select('*', { count: 'exact' }).eq('estado', 'aprobada'),
-      supabase.from('vacation_requests').select('*', { count: 'exact' }).eq('estado', 'rechazada')
+      supabaseTable('vacation_requests').select('*', { count: 'exact' }),
+      supabaseTable('vacation_requests').select('*', { count: 'exact' }).eq('estado', 'pendiente'),
+      supabaseTable('vacation_requests').select('*', { count: 'exact' }).eq('estado', 'aprobada'),
+      supabaseTable('vacation_requests').select('*', { count: 'exact' }).eq('estado', 'rechazada')
     ])
     
     // Calcular promedio de días por solicitud
-    const { data: requestsData } = await supabase
-      .from('vacation_requests')
+    const { data: requestsData } = await supabaseTable('vacation_requests')
       .select('dias_solicitados')
       .eq('estado', 'aprobada')
     
@@ -175,8 +169,7 @@ export class VacationsService {
       dias_restantes: diasDisponibles
     }
     
-    const { data, error } = await supabase
-      .from('vacation_balances')
+    const { data, error } = await supabaseTable('vacation_balances')
       .insert([balanceData])
       .select()
       .single()
@@ -186,8 +179,7 @@ export class VacationsService {
   }
   
   static async updateVacationBalance(employeeId: string, year: number, updates: Partial<VacationBalance>): Promise<VacationBalance> {
-    const { data, error } = await supabase
-      .from('vacation_balances')
+    const { data, error } = await supabaseTable('vacation_balances')
       .update(updates)
       .eq('employee_id', employeeId)
       .eq('ano', year)

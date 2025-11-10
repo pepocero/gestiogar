@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, FileText, Eye, Send, Check, X, User, Mail, Wrench, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
@@ -290,8 +290,7 @@ export default function EstimatesPage() {
 
       if (editingEstimate) {
         // Actualizar presupuesto existente
-        const { error } = await supabase
-          .from('estimates')
+        const { error } = await supabaseTable('estimates')
           .update({
             ...formData,
             total_amount: totalAmount,
@@ -307,8 +306,7 @@ export default function EstimatesPage() {
         // Actualizar items del presupuesto
         if (estimateItems.length > 0) {
           // Primero eliminar todos los items existentes
-          const { error: deleteError } = await supabase
-            .from('estimate_items')
+          const { error: deleteError } = await supabaseTable('estimate_items')
             .delete()
             .eq('estimate_id', editingEstimate.id)
 
@@ -327,8 +325,7 @@ export default function EstimatesPage() {
             estimate_id: editingEstimate.id
           }))
 
-          const { error: itemsError } = await supabase
-            .from('estimate_items')
+          const { error: itemsError } = await supabaseTable('estimate_items')
             .insert(itemsToInsert)
 
           if (itemsError) {
@@ -339,8 +336,7 @@ export default function EstimatesPage() {
         toast.success('Presupuesto actualizado correctamente')
       } else {
         // Crear nuevo presupuesto
-        const { data: newEstimate, error } = await supabase
-          .from('estimates')
+        const { data: newEstimate, error } = await supabaseTable('estimates')
           .insert([{
             ...formData,
             estimate_number: estimateNumber,
@@ -368,8 +364,7 @@ export default function EstimatesPage() {
             estimate_id: newEstimate.id
           }))
 
-          const { error: itemsError } = await supabase
-            .from('estimate_items')
+          const { error: itemsError } = await supabaseTable('estimate_items')
             .insert(itemsToInsert)
 
           if (itemsError) {
@@ -413,8 +408,7 @@ export default function EstimatesPage() {
     }
 
     try {
-      const { error } = await supabase
-        .from('estimates')
+      const { error } = await supabaseTable('estimates')
         .delete()
         .eq('id', id)
 
@@ -454,8 +448,7 @@ export default function EstimatesPage() {
 
   const handleStatusChange = async (id: string, newStatus: string) => {
     try {
-      const { error } = await supabase
-        .from('estimates')
+      const { error } = await supabaseTable('estimates')
         .update({ status: newStatus })
         .eq('id', id)
 

@@ -19,8 +19,8 @@ export function getSupabase() {
 // Función para verificar si Supabase está inicializado correctamente
 export function isSupabaseInitialized(): boolean {
   if (typeof window === 'undefined') {
-    return true // En el servidor siempre está inicializado
+    return true
   }
-  
-  return !!(globalThis as any).__supabaseInitialized
+
+  return !!(globalThis as any).__supabaseClient
 }

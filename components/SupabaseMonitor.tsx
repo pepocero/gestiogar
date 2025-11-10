@@ -26,13 +26,13 @@ export function SupabaseMonitor({ showDetails = false }: SupabaseMonitorProps) {
     const checkStatus = async () => {
       try {
         // Verificar inicialización
-        const initialized = !!(globalThis as any).__supabaseInitialized
+        const initialized = !!(globalThis as any).__supabaseClient
         
         // Verificar sesión
         const { data: { session } } = await supabase.auth.getSession()
         
         // Contar instancias (aproximado)
-        const instances = (window as any).__supabaseInstances || 1
+        const instances = (window as any).__supabaseInstanceCount || 1
         
         setStatus({
           initialized,
@@ -100,7 +100,7 @@ export function SupabaseMonitor({ showDetails = false }: SupabaseMonitorProps) {
       {showDetails && (
         <div className="mt-2 pt-2 border-t border-gray-200">
           <div className="text-gray-500">
-            <div>URL: {supabase.supabaseUrl}</div>
+            <div>URL: {process.env.NEXT_PUBLIC_SUPABASE_URL || 'No disponible'}</div>
             <div>Storage: {typeof window !== 'undefined' ? 'Disponible' : 'No disponible'}</div>
           </div>
         </div>

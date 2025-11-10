@@ -10,7 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { ImageEditor } from '@/components/ui/ImageEditor'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, User, MapPin, Clock, CheckCircle, XCircle, DollarSign, Wrench, Camera, Upload, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function TechniciansPage() {
@@ -90,16 +90,14 @@ export default function TechniciansPage() {
       console.log('Creating technician with data:', technicianData)
 
       // Intentar primero con cliente normal, luego con admin si falla
-      let { data, error } = await supabase
-        .from('technicians')
+      let { data, error } = await supabaseTable('technicians')
         .insert([technicianData])
         .select()
 
       // Si falla con cliente normal, intentar con admin
       if (error) {
         console.log('Error with normal client, trying with admin:', error)
-        const adminResult = await supabaseAdmin
-          .from('technicians')
+        const adminResult = await supabaseAdminTable('technicians')
           .insert([technicianData])
           .select()
         
@@ -129,8 +127,7 @@ export default function TechniciansPage() {
           console.log('URL de foto obtenida:', photoUrl)
           if (photoUrl) {
             // Actualizar el técnico con la URL de la foto
-            const { error: updateError } = await supabase
-              .from('technicians')
+            const { error: updateError } = await supabaseTable('technicians')
               .update({ profile_photo_url: photoUrl })
               .eq('id', data[0].id)
             
@@ -209,8 +206,7 @@ export default function TechniciansPage() {
 
       console.log('Updating technician with data:', technicianData)
 
-      const { data, error } = await supabase
-        .from('technicians')
+      const { data, error } = await supabaseTable('technicians')
         .update(technicianData)
         .eq('id', selectedTechnician.id)
         .select()
@@ -235,8 +231,7 @@ export default function TechniciansPage() {
           console.log('URL de nueva foto obtenida:', photoUrl)
           if (photoUrl) {
             // Actualizar el técnico con la nueva URL de la foto
-            const { error: updateError } = await supabase
-              .from('technicians')
+            const { error: updateError } = await supabaseTable('technicians')
               .update({ profile_photo_url: photoUrl })
               .eq('id', selectedTechnician.id)
             
@@ -277,8 +272,7 @@ export default function TechniciansPage() {
         await deleteProfilePhotoFromStorage(selectedTechnician.profile_photo_url)
       }
 
-      const { error } = await supabase
-        .from('technicians')
+      const { error } = await supabaseTable('technicians')
         .delete()
         .eq('id', selectedTechnician.id)
 
@@ -446,8 +440,7 @@ export default function TechniciansPage() {
       setRemovingPhoto(true)
       
       // Obtener el técnico actual para acceder a la URL de la foto
-      const { data: technician, error } = await supabase
-        .from('technicians')
+      const { data: technician, error } = await supabaseTable('technicians')
         .select('profile_photo_url')
         .eq('id', technicianId)
         .single()
@@ -457,13 +450,12 @@ export default function TechniciansPage() {
         return
       }
 
-      if (technician?.profile_photo_url) {
+      if ((technician as { profile_photo_url?: string } | null)?.profile_photo_url) {
         // Eliminar del storage
-        await deleteProfilePhotoFromStorage(technician.profile_photo_url)
+        await deleteProfilePhotoFromStorage((technician as { profile_photo_url: string }).profile_photo_url)
         
         // Actualizar en la base de datos
-        const { error: updateError } = await supabase
-          .from('technicians')
+        const { error: updateError } = await supabaseTable('technicians')
           .update({ profile_photo_url: null })
           .eq('id', technicianId)
 

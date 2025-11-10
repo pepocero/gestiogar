@@ -6,7 +6,7 @@ import { Button } from '@/components/ui'
 import { Modal, Input, Badge } from '@/components/ui'
 import { Building2, Plus, Settings, Eye, Edit, Trash2, Upload, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import { ImageEditor } from '@/components/ui/ImageEditor'
 import toast from 'react-hot-toast'
 
@@ -253,8 +253,7 @@ export default function InsurancePage() {
           }
         }
 
-        const { error } = await supabase
-          .from('insurance_companies')
+        const { error } = await supabaseTable('insurance_companies')
           .update(updateData)
           .eq('id', editingCompany.id)
           .eq('company_id', company.id)
@@ -266,8 +265,7 @@ export default function InsurancePage() {
         toast.success('Aseguradora actualizada correctamente')
       } else {
         // Crear nueva aseguradora
-        const { data, error } = await supabase
-          .from('insurance_companies')
+        const { data, error } = await supabaseTable('insurance_companies')
           .insert({
             company_id: company.id,
             name: form.name,
@@ -292,8 +290,7 @@ export default function InsurancePage() {
           console.log('URL de logo obtenida:', logoUrl)
           if (logoUrl) {
             // Actualizar la aseguradora con la URL del logo
-            const { error: updateError } = await supabase
-              .from('insurance_companies')
+            const { error: updateError } = await supabaseTable('insurance_companies')
               .update({ logo_url: logoUrl })
               .eq('id', data[0].id)
 

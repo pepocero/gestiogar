@@ -25,7 +25,7 @@ import {
   MessageSquare
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
+import { supabaseTable } from '@/lib/supabase'
 import { 
   BarChart, 
   Bar, 
@@ -120,13 +120,13 @@ export default function ReportsPage() {
         appointmentsResult,
         communicationsResult
       ] = await Promise.all([
-        supabase.from('jobs').select('*').eq('company_id', company.id),
-        supabase.from('clients').select('*').eq('company_id', company.id),
-        supabase.from('technicians').select('*').eq('company_id', company.id),
-        supabase.from('invoices').select('*').eq('company_id', company.id),
-        supabase.from('estimates').select('*').eq('company_id', company.id),
-        supabase.from('appointments').select('*').eq('company_id', company.id),
-        supabase.from('communications').select('*').eq('company_id', company.id)
+        supabaseTable('jobs').select('*').eq('company_id', company.id),
+        supabaseTable('clients').select('*').eq('company_id', company.id),
+        supabaseTable('technicians').select('*').eq('company_id', company.id),
+        supabaseTable('invoices').select('*').eq('company_id', company.id),
+        supabaseTable('estimates').select('*').eq('company_id', company.id),
+        supabaseTable('appointments').select('*').eq('company_id', company.id),
+        supabaseTable('communications').select('*').eq('company_id', company.id)
       ])
 
       const jobs = jobsResult.data || []

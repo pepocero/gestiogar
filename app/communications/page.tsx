@@ -9,7 +9,7 @@ import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, MessageSquare, User, Wrench, Calendar, ArrowUpRight, ArrowDownLeft, Reply, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 interface Conversation {
@@ -283,8 +283,7 @@ export default function CommunicationsPage() {
 
       // Si no hay conversation_id, crear una nueva conversación
       if (!conversationId) {
-        const { data: conversationData, error: conversationError } = await supabase
-          .from('conversations')
+        const { data: conversationData, error: conversationError } = await supabaseTable('conversations')
           .insert([{
             company_id: company.id,
             client_id: formData.client_id || null,
@@ -317,8 +316,7 @@ export default function CommunicationsPage() {
         conversation_id: conversationId,
       }
 
-      const { data, error } = await supabase
-        .from('communications')
+      const { data, error } = await supabaseTable('communications')
         .insert([communicationData])
         .select()
 
@@ -384,8 +382,7 @@ export default function CommunicationsPage() {
         content: formData.content,
       }
 
-      const { error } = await supabase
-        .from('communications')
+      const { error } = await supabaseTable('communications')
         .update(communicationData)
         .eq('id', selectedCommunication.id)
 
@@ -413,8 +410,7 @@ export default function CommunicationsPage() {
     if (!selectedCommunication) return
 
     try {
-      const { error } = await supabase
-        .from('communications')
+      const { error } = await supabaseTable('communications')
         .delete()
         .eq('id', selectedCommunication.id)
 
@@ -494,8 +490,7 @@ export default function CommunicationsPage() {
     }
 
     try {
-      const { error } = await supabase
-        .from('conversations')
+      const { error } = await supabaseTable('conversations')
         .update({ status: newStatus })
         .eq('id', conversation.id)
         .eq('company_id', company.id)

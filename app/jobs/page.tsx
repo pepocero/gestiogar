@@ -10,7 +10,7 @@ import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, Wrench, Eye, Calendar, User, MapPin, Mail } from 'lucide-react'
 import { format } from 'date-fns'
@@ -282,8 +282,7 @@ export default function JobsPage() {
 
       if (editingJob) {
         // Actualizar trabajo existente
-        const { error } = await supabase
-          .from('jobs')
+        const { error } = await supabaseTable('jobs')
           .update(cleanFormData)
           .eq('id', editingJob.id)
 
@@ -294,8 +293,7 @@ export default function JobsPage() {
         toast.success('Trabajo actualizado correctamente')
       } else {
         // Crear nuevo trabajo
-        const { error } = await supabase
-          .from('jobs')
+        const { error } = await supabaseTable('jobs')
           .insert([{
             ...cleanFormData,
             job_number: jobNumber,
@@ -364,8 +362,7 @@ export default function JobsPage() {
     if (!jobToDelete) return
 
     try {
-      const { error } = await supabase
-        .from('jobs')
+      const { error } = await supabaseTable('jobs')
         .delete()
         .eq('id', jobToDelete.id)
 
@@ -393,8 +390,7 @@ export default function JobsPage() {
         updateData.completion_date = new Date().toISOString()
       }
 
-      const { error } = await supabase
-        .from('jobs')
+      const { error } = await supabaseTable('jobs')
         .update(updateData)
         .eq('id', id)
 

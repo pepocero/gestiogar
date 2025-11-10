@@ -1,5 +1,5 @@
 // app/modules/holidays-vacations/src/services/holidaysService.ts
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import type { Holiday, HolidayFormData, HolidayStats } from '../types/holiday'
 
 export class HolidaysService {
@@ -25,8 +25,7 @@ export class HolidaysService {
   }
   
   static async create(holiday: HolidayFormData): Promise<Holiday> {
-    const { data, error } = await supabase
-      .from('holidays')
+    const { data, error } = await supabaseTable('holidays')
       .insert([holiday])
       .select()
       .single()
@@ -36,8 +35,7 @@ export class HolidaysService {
   }
   
   static async update(id: string, updates: Partial<HolidayFormData>): Promise<Holiday> {
-    const { data, error } = await supabase
-      .from('holidays')
+    const { data, error } = await supabaseTable('holidays')
       .update(updates)
       .eq('id', id)
       .select()
@@ -48,8 +46,7 @@ export class HolidaysService {
   }
   
   static async delete(id: string): Promise<void> {
-    const { error } = await supabase
-      .from('holidays')
+    const { error } = await supabaseTable('holidays')
       .delete()
       .eq('id', id)
     
@@ -102,11 +99,11 @@ export class HolidaysService {
   
   static async getStats(): Promise<HolidayStats> {
     const [totalData, upcomingData, nationalData, companyData, localData] = await Promise.all([
-      supabase.from('holidays').select('*', { count: 'exact' }),
+      supabaseTable('holidays').select('*', { count: 'exact' }),
       this.getUpcomingHolidays(30),
-      supabase.from('holidays').select('*', { count: 'exact' }).eq('tipo', 'festivo_nacional'),
-      supabase.from('holidays').select('*', { count: 'exact' }).eq('tipo', 'festivo_empresa'),
-      supabase.from('holidays').select('*', { count: 'exact' }).eq('tipo', 'festivo_local')
+      supabaseTable('holidays').select('*', { count: 'exact' }).eq('tipo', 'festivo_nacional'),
+      supabaseTable('holidays').select('*', { count: 'exact' }).eq('tipo', 'festivo_empresa'),
+      supabaseTable('holidays').select('*', { count: 'exact' }).eq('tipo', 'festivo_local')
     ])
     
     return {
@@ -143,8 +140,7 @@ export class HolidaysService {
       { nombre: 'Navidad', fecha: '2024-12-25', tipo: 'festivo_nacional', repetir_anual: true, aplica_todos: true }
     ]
     
-    const { error } = await supabase
-      .from('holidays')
+    const { error } = await supabaseTable('holidays')
       .insert(defaultHolidays)
     
     if (error) throw error

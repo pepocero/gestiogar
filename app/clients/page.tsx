@@ -11,7 +11,7 @@ import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, User, MapPin, CheckCircle, XCircle, Building2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase, supabaseAdmin } from '@/lib/supabase'
+import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 export default function ClientsPage() {
@@ -50,8 +50,7 @@ export default function ClientsPage() {
     
     setLoadingClients(true)
     try {
-      const { data, error } = await supabase
-        .from('clients')
+      const { data, error } = await supabaseTable('clients')
         .select(`
           *,
           insurance_companies (
@@ -79,8 +78,7 @@ export default function ClientsPage() {
     if (!company?.id) return
     
     try {
-      const { data, error } = await supabase
-        .from('insurance_companies')
+      const { data, error } = await supabaseTable('insurance_companies')
         .select('id, name')
         .eq('company_id', company.id)
 
@@ -125,16 +123,14 @@ export default function ClientsPage() {
       }
 
       // Intentar primero con cliente normal, luego con admin si falla
-      let { data, error } = await supabase
-        .from('clients')
+      let { data, error } = await supabaseTable('clients')
         .insert([clientData])
         .select()
 
       // Si falla con cliente normal, intentar con admin
       if (error) {
         console.log('Error with normal client, trying with admin:', error)
-        const adminResult = await supabaseAdmin
-          .from('clients')
+        const adminResult = await supabaseAdminTable('clients')
           .insert([clientData])
           .select()
         
@@ -233,8 +229,7 @@ export default function ClientsPage() {
         notes: formData.get('notes') as string || null,
       }
 
-      const { error } = await supabase
-        .from('clients')
+      const { error } = await supabaseTable('clients')
         .update(clientData)
         .eq('id', selectedClient.id)
 
@@ -266,8 +261,7 @@ export default function ClientsPage() {
     if (!selectedClient) return
 
     try {
-      const { error } = await supabase
-        .from('clients')
+      const { error } = await supabaseTable('clients')
         .delete()
         .eq('id', selectedClient.id)
 

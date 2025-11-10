@@ -7,7 +7,7 @@ import { Bell, Search, Menu, User, Settings, LogOut, Camera, X } from 'lucide-re
 import { Button } from '@/components/ui/Button'
 import { Modal } from '@/components/ui/Modal'
 import { ImageEditor } from '@/components/ui/ImageEditor'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
 interface HeaderProps {
@@ -206,8 +206,7 @@ export function Header({ onMenuClick }: HeaderProps) {
         phone: profileForm.phone
       })
 
-      const { error } = await supabase
-        .from('users')
+      const { error } = await supabaseTable('users')
         .update({ 
           profile_photo_url: newPhotoUrl,
           first_name: profileForm.first_name,

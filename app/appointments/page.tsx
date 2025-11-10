@@ -9,7 +9,7 @@ import { Table } from '@/components/ui/Table'
 import { Modal } from '@/components/ui/Modal'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, Clock, MapPin, User, Wrench, List } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
-import { supabase } from '@/lib/supabase'
+import { supabase, supabaseTable } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 import { Calendar as BigCalendar, momentLocalizer, View } from 'react-big-calendar'
 import moment from 'moment'
@@ -23,10 +23,10 @@ interface Appointment {
   scheduled_date: string
   duration_minutes: number
   status: string
-  notes: string
-  client_id: string
-  technician_id: string
-  job_id: string
+  notes: string | null
+  client_id: string | null
+  technician_id: string | null
+  job_id: string | null
   clients?: {
     id: string
     first_name: string
@@ -39,6 +39,25 @@ interface Appointment {
   }
   created_at: string
   updated_at: string
+}
+
+type AppointmentRow = Appointment & {
+  company_id: string
+}
+
+interface AppointmentInsert {
+  id?: string
+  company_id: string
+  client_id?: string | null
+  technician_id?: string | null
+  job_id?: string | null
+  appointment_type?: string
+  scheduled_date: string
+  duration_minutes?: number
+  status?: string
+  notes?: string | null
+  created_at?: string
+  updated_at?: string
 }
 
 // Configurar moment en español
@@ -110,7 +129,7 @@ export default function AppointmentsPage() {
         throw error
       }
 
-      setAppointments(data || [])
+      setAppointments((data as Appointment[]) || [])
     } catch (error) {
       console.error('Error loading appointments:', error)
       toast.error('Error al cargar las citas')
@@ -175,7 +194,7 @@ export default function AppointmentsPage() {
       // Combinar fecha y hora en un timestamp
       const scheduledDateTime = new Date(`${formData.scheduled_date}T${formData.scheduled_time}`).toISOString()
       
-      const appointmentData = {
+      const appointmentData: AppointmentInsert = {
         company_id: company.id,
         client_id: formData.client_id || null,
         technician_id: formData.technician_id || null,
@@ -186,10 +205,8 @@ export default function AppointmentsPage() {
         status: formData.status || 'scheduled',
         notes: formData.notes || null,
       }
-
-      const { data, error } = await supabase
-        .from('appointments')
-        .insert([appointmentData])
+      const { data, error } = await supabaseTable('appointments')
+        .insert(appointmentData)
         .select()
 
       if (error) {
@@ -272,8 +289,7 @@ export default function AppointmentsPage() {
         notes: formData.notes || null,
       }
 
-      const { error } = await supabase
-        .from('appointments')
+      const { error } = await supabaseTable('appointments')
         .update(appointmentData)
         .eq('id', selectedAppointment.id)
 
@@ -301,8 +317,7 @@ export default function AppointmentsPage() {
     if (!selectedAppointment) return
 
     try {
-      const { error } = await supabase
-        .from('appointments')
+      const { error } = await supabaseTable('appointments')
         .delete()
         .eq('id', selectedAppointment.id)
 
