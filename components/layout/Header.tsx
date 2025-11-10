@@ -1,6 +1,7 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
+import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { Bell, Search, Menu, User, Settings, LogOut, Camera, X } from 'lucide-react'
@@ -15,6 +16,7 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
+  const router = useRouter()
   const { profile, company, signOut } = useAuth()
   const { sidebarOpen, isDesktop } = useSidebar()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
@@ -244,13 +246,13 @@ export function Header({ onMenuClick }: HeaderProps) {
     try {
       await signOut()
       toast.success('Sesión cerrada exitosamente')
-      // Redirigir a la página de bienvenida después de cerrar sesión
-      window.location.href = '/'
+      router.replace('/auth/login')
+      router.refresh()
     } catch (error) {
       console.error('Error logging out:', error)
       toast.error('Error al cerrar sesión')
-      // Redirigir a la página de bienvenida incluso si hay error
-      window.location.href = '/'
+      router.replace('/auth/login')
+      router.refresh()
     }
   }
 
@@ -358,9 +360,9 @@ export function Header({ onMenuClick }: HeaderProps) {
                 </button>
                 <hr className="my-1" />
                 <button
-                  onClick={() => {
-                    handleLogout()
+                  onClick={async () => {
                     setShowProfileMenu(false)
+                    await handleLogout()
                   }}
                   className="flex items-center w-full px-4 py-2 text-sm text-red-600 hover:bg-red-50"
                 >
