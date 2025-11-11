@@ -9,11 +9,9 @@ const nextConfig = {
       exclude: ['error', 'warn'],
     } : false,
   },
-  // Configuración para Cloudflare Pages (exportación estática)
-  output: 'export',
+  // Configuración de despliegue
   compress: true,
   poweredByHeader: false,
-  trailingSlash: true,
   // Reducir el tamaño de archivos de webpack
   webpack: (config, { isServer }) => {
     // Deshabilitar cache en producción para evitar archivos grandes
