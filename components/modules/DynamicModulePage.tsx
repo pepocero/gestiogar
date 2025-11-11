@@ -1,12 +1,12 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Modal } from '@/components/ui/Modal'
 import { Plus, Search, Edit, Trash2, Save, X } from 'lucide-react'
-import { getModuleData, createModuleData, updateModuleData, deleteModuleData } from '@/lib/modules'
+import { getModuleData, createModuleData, updateModuleData, deleteModuleData, getTechnicians } from '@/lib/modules'
 import { ModuleData } from '@/types/module'
 import toast from 'react-hot-toast'
 import { useAuth } from '@/contexts/AuthContext'
@@ -26,6 +26,7 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
   const [showEditModal, setShowEditModal] = useState(false)
   const [editingItem, setEditingItem] = useState<ModuleData | null>(null)
   const [formData, setFormData] = useState<Record<string, any>>({})
+  const [technicians, setTechnicians] = useState<any[]>([])
 
   useEffect(() => {
     if (company?.id) {
@@ -34,6 +35,44 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
       setLoading(false)
     }
   }, [moduleId, company?.id])
+
+  const hasTechnicianField = useMemo(() => {
+    if (!config?.fields) return false
+    return config.fields.some(
+      (field: any) => field.type === 'select' && field.dynamic && field.source === 'technicians'
+    )
+  }, [config?.fields])
+
+  useEffect(() => {
+    let isMounted = true
+
+    const loadTechnicians = async () => {
+      if (!company?.id || !hasTechnicianField) {
+        if (isMounted) {
+          setTechnicians([])
+        }
+        return
+      }
+
+      try {
+        const technicianData = await getTechnicians(company.id)
+        if (isMounted) {
+          setTechnicians(technicianData)
+        }
+      } catch (error) {
+        console.error('Error loading technicians:', error)
+        if (isMounted) {
+          setTechnicians([])
+        }
+      }
+    }
+
+    loadTechnicians()
+
+    return () => {
+      isMounted = false
+    }
+  }, [company?.id, hasTechnicianField])
 
   const loadData = async (companyId: string) => {
     try {
@@ -120,6 +159,18 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
     setShowEditModal(true)
   }
 
+  const getTechnicianOptions = () => {
+    if (!technicians || technicians.length === 0) return []
+
+    return technicians.map((tech: any) => {
+      const fullName = [tech.first_name, tech.last_name].filter(Boolean).join(' ').trim()
+      return {
+        value: tech.id,
+        label: fullName || tech.email || 'Técnico sin nombre'
+      }
+    })
+  }
+
   const renderFormFields = (fields: any[], values: Record<string, any>, onChange: (key: string, value: any) => void) => {
     return fields.map((field) => {
       switch (field.type) {
@@ -177,6 +228,36 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
               </label>
             </div>
           )
+        case 'select': {
+          let selectOptions = field.options || []
+
+          if (field.dynamic && field.source === 'technicians') {
+            const technicianOptions = getTechnicianOptions()
+            selectOptions = [...(field.options || []), ...technicianOptions]
+          }
+
+          return (
+            <div key={field.name} className="space-y-2">
+              <label className="block text-sm font-medium text-gray-700">
+                {field.label}
+                {field.required && <span className="text-red-500 ml-1">*</span>}
+              </label>
+              <select
+                value={values[field.name] ?? ''}
+                onChange={(e) => onChange(field.name, e.target.value)}
+                required={field.required}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white"
+              >
+                <option value="">Selecciona una opción</option>
+                {selectOptions.map((option: any) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          )
+        }
         default:
           return (
             <Input
@@ -196,6 +277,37 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
     const searchLower = searchTerm.toLowerCase()
     return JSON.stringify(item.data).toLowerCase().includes(searchLower)
   })
+
+  const hasDynamicTechnicianOptions = hasTechnicianField && technicians.length > 0
+
+  const getDisplayValue = (field: any, value: any) => {
+    if (value === undefined || value === null || value === '') {
+      return 'N/A'
+    }
+
+    if (field.type === 'select') {
+      let selectOptions = field.options || []
+
+      if (field.dynamic && field.source === 'technicians') {
+        if (value === 'sin_asignar') {
+          return 'Sin asignar'
+        }
+
+        const technician = technicians.find((tech: any) => tech.id === value)
+        if (technician) {
+          const fullName = [technician.first_name, technician.last_name].filter(Boolean).join(' ').trim()
+          return fullName || technician.email || value
+        }
+      }
+
+      const option = selectOptions.find((opt: any) => opt.value === value)
+      if (option) {
+        return option.label
+      }
+    }
+
+    return String(value)
+  }
 
   if (loading) {
     return (
@@ -261,10 +373,7 @@ export default function DynamicModulePage({ moduleId, moduleName, config }: Dyna
                                 {field.label}:
                               </span>
                               <span className="ml-2 text-gray-900">
-                                {item.data[field.name] !== undefined 
-                                  ? String(item.data[field.name])
-                                  : 'N/A'
-                                }
+                                {getDisplayValue(field, item.data[field.name])}
                               </span>
                             </div>
                           ))}

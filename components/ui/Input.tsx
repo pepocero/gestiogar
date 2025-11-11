@@ -22,6 +22,7 @@ export function Input({
       {label && (
         <label htmlFor={inputId} className="form-label">
           {label}
+          {props.required && <span className="text-red-500 ml-1">*</span>}
         </label>
       )}
       <input
