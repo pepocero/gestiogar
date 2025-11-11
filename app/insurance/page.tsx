@@ -55,9 +55,13 @@ export default function InsurancePage() {
     setLogoPreview(null)
   }
 
-  useEffect(() => {
-    loadCompanies()
-  }, [])
+useEffect(() => {
+  if (!company?.id) {
+    return
+  }
+
+  loadCompanies()
+}, [company?.id])
 
   const loadCompanies = async () => {
     try {

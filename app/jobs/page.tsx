@@ -93,14 +93,16 @@ export default function JobsPage() {
     notes: '',
   })
 
-  useEffect(() => {
-    if (company) {
-      loadJobs()
-      loadClients()
-      loadTechnicians()
-      loadInsuranceCompanies()
-    }
-  }, [company])
+useEffect(() => {
+  if (!company?.id) {
+    return
+  }
+
+  loadJobs()
+  loadClients()
+  loadTechnicians()
+  loadInsuranceCompanies()
+}, [company?.id])
 
   const loadJobs = async () => {
     try {

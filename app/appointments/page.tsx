@@ -92,10 +92,12 @@ export default function AppointmentsPage() {
   })
 
   useEffect(() => {
-    if (company) {
-      loadAppointments()
+    if (!company?.id) {
+      return
     }
-  }, [company])
+
+    loadAppointments()
+  }, [company?.id])
 
   // Cargar datos al abrir el modal
   useEffect(() => {

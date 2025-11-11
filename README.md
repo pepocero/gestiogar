@@ -2,7 +2,7 @@
 
 Gestiogar es una aplicación web multitenant desarrollada para empresas de reparaciones del hogar que trabajan con aseguradoras. Permite gestionar presupuestos, trabajos, técnicos, clientes y aseguradoras de forma eficiente.
 
-> 🚀 Desplegado en Cloudflare Pages con exportación estática de Next.js
+> 🚀 Despliegue recomendado en Vercel o Cloudflare Pages usando la salida estándar de Next.js (sin `next export`)
 
 ## Características Principales
 
@@ -125,6 +125,12 @@ npm run dev
 ```
 
 La aplicación estará disponible en `http://localhost:3000`
+
+## Despliegue
+
+- Ejecuta `npm run build` y deja que la plataforma (Vercel, Cloudflare Pages, etc.) sirva la carpeta `.next/`.
+- **No** añadas `output: 'export'` en `next.config.js`; la aplicación depende del comportamiento estándar de Next.js (SSR/ISR).
+- Configura las variables `NEXT_PUBLIC_SUPABASE_URL` y `NEXT_PUBLIC_SUPABASE_ANON_KEY` en el panel de despliegue antes de publicar.
 
 ## Uso
 

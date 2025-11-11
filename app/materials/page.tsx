@@ -43,9 +43,13 @@ export default function MaterialsPage() {
     })
   }
 
-  useEffect(() => {
-    loadMaterials()
-  }, [])
+useEffect(() => {
+  if (!company?.id) {
+    return
+  }
+
+  loadMaterials()
+}, [company?.id])
 
   const loadMaterials = async () => {
     try {

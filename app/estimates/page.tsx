@@ -90,14 +90,16 @@ export default function EstimatesPage() {
     material_id: '',
   })
 
-  useEffect(() => {
-    if (company) {
-      loadEstimates()
-      loadClients()
-      loadJobs()
-      loadMaterials()
-    }
-  }, [company])
+useEffect(() => {
+  if (!company?.id) {
+    return
+  }
+
+  loadEstimates()
+  loadClients()
+  loadJobs()
+  loadMaterials()
+}, [company?.id])
 
   const loadEstimates = async () => {
     try {

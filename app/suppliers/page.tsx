@@ -43,9 +43,13 @@ export default function SuppliersPage() {
     })
   }
 
-  useEffect(() => {
-    loadSuppliers()
-  }, [])
+useEffect(() => {
+  if (!company?.id) {
+    return
+  }
+
+  loadSuppliers()
+}, [company?.id])
 
   const loadSuppliers = async () => {
     try {

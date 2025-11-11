@@ -98,11 +98,13 @@ export default function ReportsPage() {
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
 
-  useEffect(() => {
-    if (company) {
-      loadReportData()
-    }
-  }, [company])
+useEffect(() => {
+  if (!company?.id) {
+    return
+  }
+
+  loadReportData()
+}, [company?.id])
 
   const loadReportData = async () => {
     if (!company) return
