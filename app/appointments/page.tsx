@@ -67,7 +67,7 @@ const localizer = momentLocalizer(moment)
 export default function AppointmentsPage() {
   const { company } = useAuth()
   const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -93,6 +93,7 @@ export default function AppointmentsPage() {
 
   useEffect(() => {
     if (!company?.id) {
+      setLoading(false)
       return
     }
 

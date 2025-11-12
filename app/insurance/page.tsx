@@ -13,7 +13,7 @@ import toast from 'react-hot-toast'
 export default function InsurancePage() {
   const { company } = useAuth()
   const [companies, setCompanies] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -57,6 +57,7 @@ export default function InsurancePage() {
 
 useEffect(() => {
   if (!company?.id) {
+    setLoading(false)
     return
   }
 

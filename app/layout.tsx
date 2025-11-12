@@ -3,6 +3,7 @@ import { Inter } from 'next/font/google'
 import './globals.css'
 import { AuthProvider } from '@/contexts/AuthContext'
 import { ModulesProvider } from '@/contexts/ModulesContext'
+import { AccountingProvider } from '@/contexts/AccountingContext'
 import { ProtectedLayout } from '@/components/ProtectedLayout'
 import { SupabaseInitializer } from '@/components/SupabaseInitializer'
 import { Toaster } from 'react-hot-toast'
@@ -40,19 +41,21 @@ export default function RootLayout({
         <SupabaseInitializer>
           <AuthProvider>
             <ModulesProvider>
-              <ProtectedLayout>
-                {children}
-              </ProtectedLayout>
-              <Toaster 
-                position="top-right"
-                toastOptions={{
-                  duration: 4000,
-                  style: {
-                    background: '#363636',
-                    color: '#fff',
-                  },
-                }}
-              />
+              <AccountingProvider>
+                <ProtectedLayout>
+                  {children}
+                </ProtectedLayout>
+                <Toaster 
+                  position="top-right"
+                  toastOptions={{
+                    duration: 4000,
+                    style: {
+                      background: '#363636',
+                      color: '#fff',
+                    },
+                  }}
+                />
+              </AccountingProvider>
             </ModulesProvider>
           </AuthProvider>
         </SupabaseInitializer>

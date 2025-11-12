@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 export default function SuppliersPage() {
   const { company } = useAuth()
   const [suppliers, setSuppliers] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -45,6 +45,7 @@ export default function SuppliersPage() {
 
 useEffect(() => {
   if (!company?.id) {
+    setLoading(false)
     return
   }
 

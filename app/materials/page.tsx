@@ -12,7 +12,7 @@ import toast from 'react-hot-toast'
 export default function MaterialsPage() {
   const { company } = useAuth()
   const [materials, setMaterials] = useState<any[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showDeleteModal, setShowDeleteModal] = useState(false)
@@ -45,6 +45,7 @@ export default function MaterialsPage() {
 
 useEffect(() => {
   if (!company?.id) {
+    setLoading(false)
     return
   }
 

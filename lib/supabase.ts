@@ -79,6 +79,25 @@ const supabaseAdmin = isBrowser
 
 export { supabase, supabaseAdmin }
 
+// Helper para detectar errores de autenticación
+export const isAuthError = (error: any): boolean => {
+  if (!error) return false
+  const errorCode = error.code || error.status
+  const errorMessage = (error.message || '').toLowerCase()
+  
+  // Códigos de error de Supabase/PostgREST relacionados con autenticación
+  return (
+    errorCode === 401 ||
+    errorCode === 'PGRST301' ||
+    errorCode === 'PGRST302' ||
+    errorMessage.includes('jwt') ||
+    errorMessage.includes('expired') ||
+    errorMessage.includes('invalid token') ||
+    errorMessage.includes('authentication') ||
+    errorMessage.includes('unauthorized')
+  )
+}
+
 // Helper para obtener builders sin tipado estricto generado (evita errores TS con `never`)
 export const supabaseTable = (table: string) => (supabase.from(table) as any)
 export const supabaseAdminTable = (table: string) => (supabaseAdmin.from(table) as any)

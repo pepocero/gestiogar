@@ -60,7 +60,7 @@ interface Communication {
 export default function CommunicationsPage() {
   const { company } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [showViewModal, setShowViewModal] = useState(false)
   const [showEditModal, setShowEditModal] = useState(false)
@@ -90,9 +90,11 @@ export default function CommunicationsPage() {
   })
 
   useEffect(() => {
-    if (company?.id) {
-      loadConversations()
+    if (!company?.id) {
+      setLoading(false)
+      return
     }
+    loadConversations()
   }, [company?.id])
 
   // Aplicar filtros cuando cambien las conversaciones o los filtros

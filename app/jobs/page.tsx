@@ -59,7 +59,7 @@ interface Job {
 export default function JobsPage() {
   const { company } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [editingJob, setEditingJob] = useState<Job | null>(null)
   const [clients, setClients] = useState<any[]>([])
@@ -95,6 +95,7 @@ export default function JobsPage() {
 
 useEffect(() => {
   if (!company?.id) {
+    setLoading(false)
     return
   }
 

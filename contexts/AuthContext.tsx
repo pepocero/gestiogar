@@ -1,7 +1,7 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
-import { supabase, supabaseTable } from '@/lib/supabase'
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react'
+import { supabase, supabaseTable, isAuthError } from '@/lib/supabase'
 import type { AuthUser } from '@/types/auth'
 import toast from 'react-hot-toast'
 import { PERFORMANCE_CONFIG, conditionalLog } from '@/lib/performance'
@@ -48,12 +48,36 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
+  
+  // Ref para evitar re-crear loadUserProfile cuando profile cambia
+  const profileRef = useRef<UserProfile | null>(null)
+  useEffect(() => {
+    profileRef.current = profile
+  }, [profile])
+
+  // Función para limpiar sesión y redirigir al login
+  const handleSessionExpired = useCallback(async () => {
+    console.warn('⚠️ Session expired, signing out...')
+    setUser(null)
+    setProfile(null)
+    profileRef.current = null
+    setCompany(null)
+    
+    // Solo redirigir si no estamos ya en la página de login
+    if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+      await supabase.auth.signOut()
+      toast.error('Tu sesión ha expirado. Por favor, inicia sesión nuevamente.')
+      window.location.href = '/auth/login'
+    } else {
+      await supabase.auth.signOut()
+    }
+  }, [])
 
   // Versión optimizada de loadUserProfile con caché y mejor manejo de errores
-  const loadUserProfile = async (userId: string) => {
+  const loadUserProfile = useCallback(async (userId: string) => {
     try {
       // Solo cargar si no está ya cargado o si es un usuario diferente
-      if (profile && profile.id === userId) {
+      if (profileRef.current && profileRef.current.id === userId) {
         conditionalLog('debug', '🔄 User profile already loaded, skipping...')
         return
       }
@@ -70,17 +94,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         .single()
 
       if (error) {
-        console.warn('⚠️ Could not load user profile:', error.message)
-        // Si no puede cargar el perfil, usar datos básicos del usuario auth
-        const authUser = (await supabase.auth.getUser()).data.user
-        if (authUser) {
-          setProfile({
-            id: authUser.id,
-            email: authUser.email,
-            first_name: authUser.user_metadata?.first_name,
-            last_name: authUser.user_metadata?.last_name,
-          })
+        // Si es un error de autenticación, la sesión expiró
+        if (isAuthError(error)) {
+          await handleSessionExpired()
+          return
         }
+        
+        console.warn('⚠️ Could not load user profile:', error.message)
+        // Si no puede cargar el perfil, intentar usar datos básicos del usuario auth
+        const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
+        
+        // Si también falla getUser, la sesión expiró
+        if (authError || !authUser) {
+          await handleSessionExpired()
+          return
+        }
+        
+        // Usar datos básicos del usuario auth como fallback
+        setProfile({
+          id: authUser.id,
+          email: authUser.email || undefined,
+          first_name: authUser.user_metadata?.first_name,
+          last_name: authUser.user_metadata?.last_name,
+        })
         return
       }
 
@@ -88,11 +124,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(userData)
       setCompany(userData.company || null)
       
-    } catch (error) {
+    } catch (error: any) {
       console.warn('⚠️ Error loading user profile:', error)
+      
+      // Si es un error de autenticación, la sesión expiró
+      if (isAuthError(error)) {
+        await handleSessionExpired()
+        return
+      }
+      
       // No mostrar error toast para evitar spam
     }
-  }
+  }, [handleSessionExpired])
 
   useEffect(() => {
     let mounted = true
@@ -100,14 +143,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const initializeAuth = async () => {
       try {
         // Obtener sesión inicial
-        const { data: { session } } = await supabase.auth.getSession()
+        const { data: { session }, error } = await supabase.auth.getSession()
+        
+        // Si hay error al obtener la sesión, limpiar estado
+        if (error) {
+          console.warn('⚠️ Error getting session:', error)
+          if (mounted) {
+            setUser(null)
+            setProfile(null)
+            setCompany(null)
+          }
+          return
+        }
         
         if (session?.user && mounted) {
           setUser(session.user)
           await loadUserProfile(session.user.id)
+        } else if (mounted) {
+          // No hay sesión, limpiar estado
+          setUser(null)
+          setProfile(null)
+          setCompany(null)
         }
       } catch (error) {
         console.error('Error initializing auth:', error)
+        if (mounted) {
+          setUser(null)
+          setProfile(null)
+          setCompany(null)
+        }
       } finally {
         if (mounted) {
           setLoading(false)
@@ -126,7 +190,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null)
           setProfile(null)
           setCompany(null)
-          toast.success('Sesión cerrada')
+          // Solo mostrar toast si no estamos redirigiendo (para evitar doble mensaje)
+          if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
+            toast.success('Sesión cerrada')
+          }
         } else if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
           // Solo cargar perfil si no está ya cargado
@@ -136,6 +203,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (event === 'TOKEN_REFRESHED') {
           // Token refrescado automáticamente
           conditionalLog('debug', '🔄 Token refreshed successfully')
+          // Verificar que la sesión sigue válida después del refresh
+          const { data: { session: currentSession }, error } = await supabase.auth.getSession()
+          if (error || !currentSession) {
+            // Si después del refresh no hay sesión, limpiar estado
+            console.warn('⚠️ Session invalid after token refresh')
+            await handleSessionExpired()
+          }
         }
       }
     )
@@ -148,7 +222,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       mounted = false
       subscription.unsubscribe()
     }
-  }, [])
+  }, [loadUserProfile, handleSessionExpired])
 
   const signIn = async (email: string, password: string) => {
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -194,6 +268,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .eq('id', user.id)
 
     if (error) {
+      // Si es un error de autenticación, la sesión expiró
+      if (isAuthError(error)) {
+        await handleSessionExpired()
+        throw new Error('Sesión expirada. Por favor, inicia sesión nuevamente.')
+      }
       throw error
     }
 

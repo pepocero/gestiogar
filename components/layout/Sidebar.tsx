@@ -23,6 +23,7 @@ import {
   Truck,
   Receipt,
   Building,
+  Calculator,
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { useModules } from '@/contexts/ModulesContext'
@@ -35,6 +36,7 @@ const navigation = [
   { name: 'Trabajos', href: '/jobs', icon: Wrench },
   { name: 'Presupuestos', href: '/estimates', icon: FileText },
   { name: 'Facturas', href: '/invoices', icon: DollarSign },
+  { name: 'Contabilidad', href: '/accounting', icon: Calculator },
   { name: 'Clientes', href: '/clients', icon: Users },
   { name: 'Técnicos', href: '/technicians', icon: User },
   { name: 'Aseguradoras', href: '/insurance', icon: Building2 },

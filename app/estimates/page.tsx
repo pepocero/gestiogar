@@ -55,7 +55,7 @@ interface EstimateItem {
 export default function EstimatesPage() {
   const { company } = useAuth()
   const [estimates, setEstimates] = useState<Estimate[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
   const [showItemsModal, setShowItemsModal] = useState(false)
   const [editingEstimate, setEditingEstimate] = useState<Estimate | null>(null)
@@ -92,6 +92,7 @@ export default function EstimatesPage() {
 
 useEffect(() => {
   if (!company?.id) {
+    setLoading(false)
     return
   }
 

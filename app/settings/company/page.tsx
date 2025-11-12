@@ -77,20 +77,34 @@ export default function CompanySettingsPage() {
     setUploadingLogo(true)
     try {
       const fileExt = logoFile.name.split('.').pop()
-      const fileName = `logo_${company.id}.${fileExt}`
+      const cleanName = (company.name || 'empresa')
+        .normalize('NFD')
+        .replace(/[\u0300-\u036f]/g, '')
+        .replace(/[^a-zA-Z0-9]/g, '')
+        .substring(0, 50)
+      const fileName = `${cleanName || 'logo'}_${company.id}.${fileExt}`
+      const filePath = `logo/${company.id}/${fileName}`
 
+      // Subir logo (sobrescribe si existe)
       const { error: uploadError } = await supabase.storage
         .from('profile-photos')
-        .upload(`logo/${fileName}`, logoFile)
+        .upload(filePath, logoFile, {
+          upsert: true,
+          contentType: logoFile.type
+        })
 
       if (uploadError) throw uploadError
 
-      // Actualizar URL del logo en la empresa
-      const logoUrl = await supabase.storage
+      // Generar URL firmada (1 año)
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
         .from('profile-photos')
-        .getPublicUrl(`logo/${fileName}`)
+        .createSignedUrl(filePath, 60 * 60 * 24 * 365)
 
-      await updateCompany(company.id, { logo_url: logoUrl.data.publicUrl })
+      if (signedUrlError || !signedUrlData?.signedUrl) {
+        throw signedUrlError || new Error('No se pudo generar la URL del logo')
+      }
+
+      await updateCompany(company.id, { logo_url: signedUrlData.signedUrl })
       
       toast.success('Logo actualizado correctamente')
       setShowLogoModal(false)

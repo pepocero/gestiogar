@@ -72,7 +72,7 @@ interface ChartData {
 
 export default function ReportsPage() {
   const { company } = useAuth()
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState<ReportStats>({
     totalRevenue: 0,
     totalJobs: 0,
@@ -100,6 +100,7 @@ export default function ReportsPage() {
 
 useEffect(() => {
   if (!company?.id) {
+    setLoading(false)
     return
   }
 

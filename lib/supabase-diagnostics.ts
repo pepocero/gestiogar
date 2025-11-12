@@ -14,7 +14,15 @@ export function diagnoseSupabaseInstances() {
   
   console.log('📊 Estado de inicialización:')
   console.log('  - __supabase:', hasGlobalSupabase ? '✅ Presente' : '❌ Ausente')
-  console.log('  - __supabaseAdmin:', hasGlobalSupabaseAdmin ? '✅ Presente' : '❌ Ausente')
+  // En el navegador, supabaseAdmin reutiliza supabase (no hay instancia separada)
+  // Esto es intencional para evitar múltiples GoTrueClient instances
+  if (hasGlobalSupabaseAdmin) {
+    console.log('  - __supabaseAdmin:', '✅ Presente (instancia separada)')
+  } else if (hasGlobalSupabase) {
+    console.log('  - __supabaseAdmin:', '✅ Reutiliza __supabase (normal en navegador)')
+  } else {
+    console.log('  - __supabaseAdmin:', '❌ Ausente')
+  }
   console.log('  - __supabaseInitialized:', isInitialized ? '✅ Inicializado' : '❌ No inicializado')
   
   // Verificar localStorage
