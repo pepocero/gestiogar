@@ -158,10 +158,8 @@ export async function updateAccountingTransaction(
     console.log('[Accounting] updateAccountingTransaction start', { id, companyId })
   }
 
-  const payload = normalizeTransactionInput({
-    ...updates,
-    company_id: companyId
-  })
+  // Usar normalizeTransactionUpdate que maneja campos opcionales
+  const payload = normalizeTransactionUpdate(updates, companyId)
 
   const { data, error } = await supabaseTable(TABLE_NAME)
     .update(payload)
@@ -264,5 +262,53 @@ function normalizeTransactionInput(input: AccountingTransactionInput) {
     metadata: input.metadata ?? {},
     created_by: input.created_by ?? null
   }
+}
+
+// Helper para normalizar updates parciales (solo incluye campos presentes)
+function normalizeTransactionUpdate(updates: Partial<AccountingTransactionInput>, companyId: string): Partial<Record<keyof AccountingTransactionInput, any>> {
+  const payload: Partial<Record<keyof AccountingTransactionInput, any>> = {
+    company_id: companyId
+  }
+
+  // Solo agregar campos que están presentes en updates
+  if (updates.date !== undefined) payload.date = updates.date
+  if (updates.type !== undefined) payload.type = updates.type
+  if (updates.category !== undefined) payload.category = updates.category
+  if (updates.sub_category !== undefined) payload.sub_category = updates.sub_category ?? null
+  
+  // Manejar amount y cálculos relacionados
+  if (updates.amount !== undefined) {
+    payload.amount = Number(updates.amount || 0)
+    
+    // Si se actualiza amount, recalcular tax_amount y net_amount si es necesario
+    if (updates.tax_rate !== undefined) {
+      payload.tax_rate = updates.tax_rate
+      payload.tax_amount = payload.amount * (updates.tax_rate / 100)
+      payload.net_amount = payload.amount - payload.tax_amount
+    } else if (updates.tax_amount !== undefined) {
+      payload.tax_amount = updates.tax_amount
+      payload.net_amount = payload.amount - updates.tax_amount
+    } else if (updates.net_amount !== undefined) {
+      payload.net_amount = updates.net_amount
+    }
+  } else {
+    // Si no se actualiza amount, solo actualizar tax_rate, tax_amount o net_amount si están presentes
+    if (updates.tax_rate !== undefined) payload.tax_rate = updates.tax_rate
+    if (updates.tax_amount !== undefined) payload.tax_amount = updates.tax_amount
+    if (updates.net_amount !== undefined) payload.net_amount = updates.net_amount
+  }
+  
+  if (updates.currency !== undefined) payload.currency = updates.currency ?? 'EUR'
+  if (updates.payment_method !== undefined) payload.payment_method = updates.payment_method ?? null
+  if (updates.status !== undefined) payload.status = updates.status ?? 'paid'
+  if (updates.due_date !== undefined) payload.due_date = updates.due_date ?? null
+  if (updates.related_invoice_id !== undefined) payload.related_invoice_id = updates.related_invoice_id ?? null
+  if (updates.related_job_id !== undefined) payload.related_job_id = updates.related_job_id ?? null
+  if (updates.notes !== undefined) payload.notes = updates.notes ?? null
+  if (updates.attachments !== undefined) payload.attachments = updates.attachments ?? null
+  if (updates.metadata !== undefined) payload.metadata = updates.metadata ?? {}
+  if (updates.created_by !== undefined) payload.created_by = updates.created_by ?? null
+
+  return payload
 }
 
