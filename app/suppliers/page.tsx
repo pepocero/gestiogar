@@ -53,6 +53,9 @@ useEffect(() => {
 
   const loadSuppliers = async () => {
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Suppliers] loadSuppliers start', company?.id)
+      }
       setLoading(true)
       
       if (!company) {
@@ -71,11 +74,20 @@ useEffect(() => {
       }
 
       setSuppliers(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Suppliers] loadSuppliers success', {
+          companyId: company.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error loading suppliers:', error)
       toast.error('Error cargando proveedores')
     } finally {
       setLoading(false)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Suppliers] loadSuppliers finished', company?.id)
+      }
     }
   }
 

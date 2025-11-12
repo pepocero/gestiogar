@@ -103,6 +103,9 @@ useEffect(() => {
 
   const loadEstimates = async () => {
     try {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Estimates] loadEstimates start', company?.id)
+    }
       setLoading(true)
       const { data, error } = await supabase
         .from('estimates')
@@ -119,11 +122,20 @@ useEffect(() => {
       }
 
       setEstimates(data || [])
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Estimates] loadEstimates success', {
+        companyId: company?.id,
+        count: data?.length || 0
+      })
+    }
     } catch (error) {
       console.error('Error loading estimates:', error)
       toast.error('Error al cargar los presupuestos')
     } finally {
       setLoading(false)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Estimates] loadEstimates finished', company?.id)
+    }
     }
   }
 
@@ -180,6 +192,9 @@ useEffect(() => {
 
   const loadClients = async () => {
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Estimates] loadClients start', company?.id)
+      }
       const { data, error } = await supabase
         .from('clients')
         .select('id, first_name, last_name, email')
@@ -191,6 +206,12 @@ useEffect(() => {
       }
 
       setClients(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Estimates] loadClients success', {
+          companyId: company?.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error loading clients:', error)
     }
@@ -198,6 +219,9 @@ useEffect(() => {
 
   const loadJobs = async () => {
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Estimates] loadJobs start', company?.id)
+      }
       const { data, error } = await supabase
         .from('jobs')
         .select('id, job_number, title, status')
@@ -210,6 +234,12 @@ useEffect(() => {
       }
 
       setJobs(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Estimates] loadJobs success', {
+          companyId: company?.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error loading jobs:', error)
     }
@@ -217,6 +247,9 @@ useEffect(() => {
 
   const loadMaterials = async () => {
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Estimates] loadMaterials start', company?.id)
+      }
       const { data, error } = await supabase
         .from('materials')
         .select('id, name, selling_price, unit')
@@ -229,6 +262,12 @@ useEffect(() => {
       }
 
       setMaterials(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Estimates] loadMaterials success', {
+          companyId: company?.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error loading materials:', error)
     }

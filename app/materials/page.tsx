@@ -53,6 +53,9 @@ useEffect(() => {
 
   const loadMaterials = async () => {
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Materials] loadMaterials start', company?.id)
+      }
       setLoading(true)
       
       if (!company) {
@@ -74,11 +77,20 @@ useEffect(() => {
       }
 
       setMaterials(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Materials] loadMaterials success', {
+          companyId: company.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error loading materials:', error)
       toast.error('Error cargando materiales')
     } finally {
       setLoading(false)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Materials] loadMaterials finished', company?.id)
+      }
     }
   }
 

@@ -37,6 +37,9 @@ export default function TechniciansPage() {
     
     setLoadingTechnicians(true)
     try {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Technicians] fetchTechnicians start', company.id)
+    }
       const { data, error } = await supabase
         .from('technicians')
         .select('*')
@@ -50,11 +53,20 @@ export default function TechniciansPage() {
       }
 
       setTechnicians(data || [])
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Technicians] fetchTechnicians success', {
+        companyId: company.id,
+        count: data?.length || 0
+      })
+    }
     } catch (error) {
       console.error('Error fetching technicians:', error)
       toast.error('Error inesperado al cargar los técnicos')
     } finally {
       setLoadingTechnicians(false)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Technicians] fetchTechnicians finished', company.id)
+    }
     }
   }
 

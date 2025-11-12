@@ -65,6 +65,9 @@ useEffect(() => {
 
   const loadCompanies = async () => {
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Insurance] loadCompanies start', company?.id)
+      }
       setLoading(true)
       
       if (!company) {
@@ -83,11 +86,21 @@ useEffect(() => {
       }
 
       setCompanies(data || [])
+
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Insurance] loadCompanies success', {
+          companyId: company.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error loading companies:', error)
       toast.error('Error cargando aseguradoras')
     } finally {
       setLoading(false)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Insurance] loadCompanies finished', company?.id)
+      }
     }
   }
 

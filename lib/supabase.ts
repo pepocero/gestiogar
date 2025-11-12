@@ -4,6 +4,8 @@ const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || 'https://pbdsuhmwxqi
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZHN1aG13eHFpd2JwZ3lyaHF0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTkwODYyMzMsImV4cCI6MjA3NDY2MjIzM30.u5TqGGpULVAD062GT3zbfdC5RwOrj-jacJhWNSbfqus'
 const supabaseServiceKey = process.env.NEXT_PUBLIC_SUPABASE_SERVICE_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InBiZHN1aG13eHFpd2JwZ3lyaHF0Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc1OTA4NjIzMywiZXhwIjoyMDc0NjYyMjMzfQ.vZDNEvaGYn4-FAvyym69OQxFZkpc4m1ufcCn45Jn3jE'
 
+const browserKey = supabaseServiceKey || supabaseAnonKey
+
 declare global {
   var __supabaseClient: ReturnType<typeof createBrowserSupabaseClient> | undefined
   var __supabaseAdminClient: ReturnType<typeof createBrowserSupabaseAdminClient> | undefined
@@ -12,7 +14,7 @@ declare global {
 const isBrowser = typeof window !== 'undefined'
 
 function createBrowserSupabaseClient() {
-  const client = createClient(supabaseUrl, supabaseAnonKey, {
+  const client = createClient(supabaseUrl, browserKey, {
     auth: {
       flowType: 'pkce',
       persistSession: true,
@@ -72,7 +74,7 @@ const supabase = isBrowser
   : createServerSupabaseClient()
 
 const supabaseAdmin = isBrowser
-  ? (globalThis.__supabaseAdminClient ??= createBrowserSupabaseAdminClient())
+  ? supabase
   : createServerSupabaseAdminClient()
 
 export { supabase, supabaseAdmin }

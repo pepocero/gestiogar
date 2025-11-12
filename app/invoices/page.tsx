@@ -62,6 +62,9 @@ export default function InvoicesPage() {
     if (!company?.id) return
     
     try {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Invoices] loadClients start', company.id)
+    }
       const { data, error } = await supabase
         .from('clients')
         .select('id, first_name, last_name')
@@ -74,6 +77,12 @@ export default function InvoicesPage() {
       }
 
       setClients(data || [])
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Invoices] loadClients success', {
+        companyId: company.id,
+        count: data?.length || 0
+      })
+    }
     } catch (error) {
       console.error('Error loading clients:', error)
     }
@@ -85,6 +94,9 @@ export default function InvoicesPage() {
 
     setLoadingInvoices(true)
     try {
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Invoices] fetchInvoices start', company.id)
+    }
       const { data, error } = await supabase
         .from('invoices')
         .select(`
@@ -100,10 +112,19 @@ export default function InvoicesPage() {
       }
 
       setInvoices(data || [])
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Invoices] fetchInvoices success', {
+        companyId: company.id,
+        count: data?.length || 0
+      })
+    }
     } catch (error) {
       console.error('Error loading invoices:', error)
     } finally {
       setLoadingInvoices(false)
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Invoices] fetchInvoices finished', company.id)
+    }
     }
   }
 

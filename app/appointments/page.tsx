@@ -108,6 +108,9 @@ export default function AppointmentsPage() {
 
   const loadAppointments = async () => {
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Appointments] loadAppointments start', company?.id)
+      }
       setLoading(true)
       const { data, error } = await supabase
         .from('appointments')
@@ -132,11 +135,20 @@ export default function AppointmentsPage() {
       }
 
       setAppointments((data as Appointment[]) || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Appointments] loadAppointments success', {
+          companyId: company?.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error loading appointments:', error)
       toast.error('Error al cargar las citas')
     } finally {
       setLoading(false)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Appointments] loadAppointments finished', company?.id)
+      }
     }
   }
 
@@ -154,6 +166,12 @@ export default function AppointmentsPage() {
         console.error('Error fetching clients:', clientsError)
       } else {
         setClients(clientsData || [])
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[Appointments] fetchClients success', {
+            companyId: company.id,
+            count: clientsData?.length || 0
+          })
+        }
       }
 
       // Cargar técnicos
@@ -166,10 +184,20 @@ export default function AppointmentsPage() {
         console.error('Error fetching technicians:', techniciansError)
       } else {
         setTechnicians(techniciansData || [])
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[Appointments] fetchTechnicians success', {
+            companyId: company.id,
+            count: techniciansData?.length || 0
+          })
+        }
       }
 
     } catch (error) {
       console.error('Error fetching data:', error)
+    } finally {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Appointments] fetchClientsAndTechnicians finished', company.id)
+      }
     }
   }
 

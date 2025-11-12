@@ -115,6 +115,9 @@ export default function CommunicationsPage() {
     }
 
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Communications] loadConversations start', company.id)
+      }
       setLoading(true)
       const { data, error } = await supabase
         .from('conversations')
@@ -160,11 +163,20 @@ export default function CommunicationsPage() {
       }))
 
       setConversations(conversationsWithOrderedComms)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Communications] loadConversations success', {
+          companyId: company.id,
+          count: conversationsWithOrderedComms.length
+        })
+      }
     } catch (error) {
       console.error('Error loading conversations:', error)
       toast.error('Error al cargar las conversaciones')
     } finally {
       setLoading(false)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Communications] loadConversations finished', company.id)
+      }
     }
   }
 
@@ -182,6 +194,12 @@ export default function CommunicationsPage() {
         console.error('Error fetching clients:', clientsError)
       } else {
         setClients(clientsData || [])
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[Communications] fetchClients success', {
+            companyId: company.id,
+            count: clientsData?.length || 0
+          })
+        }
       }
 
       // Cargar técnicos
@@ -194,6 +212,12 @@ export default function CommunicationsPage() {
         console.error('Error fetching technicians:', techniciansError)
       } else {
         setTechnicians(techniciansData || [])
+        if (process.env.NODE_ENV !== 'production') {
+          console.log('[Communications] fetchTechnicians success', {
+            companyId: company.id,
+            count: techniciansData?.length || 0
+          })
+        }
       }
 
     } catch (error) {

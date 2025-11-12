@@ -50,6 +50,9 @@ export default function ClientsPage() {
     
     setLoadingClients(true)
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Clients] fetchClients start', company.id)
+      }
       const { data, error } = await supabaseTable('clients')
         .select(`
           *,
@@ -67,10 +70,19 @@ export default function ClientsPage() {
       }
 
       setClients(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Clients] fetchClients success', {
+          companyId: company.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error fetching clients:', error)
     } finally {
       setLoadingClients(false)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Clients] fetchClients finished', company.id)
+      }
     }
   }
 
@@ -88,6 +100,12 @@ export default function ClientsPage() {
       }
 
       setInsuranceCompanies(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Clients] fetchInsuranceCompanies success', {
+          companyId: company.id,
+          count: data?.length || 0
+        })
+      }
     } catch (error) {
       console.error('Error fetching insurance companies:', error)
     }

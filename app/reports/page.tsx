@@ -110,6 +110,9 @@ useEffect(() => {
     if (!company) return
 
     try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Reports] loadReportData start', company.id)
+      }
       setLoading(true)
 
       // Cargar estadísticas básicas
@@ -186,10 +189,28 @@ useEffect(() => {
       // Preparar datos para gráficos
       prepareChartData(jobs, clients, technicians, invoices)
 
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Reports] loadReportData success', {
+          companyId: company.id,
+          totals: {
+            jobs: jobs.length,
+            clients: clients.length,
+            technicians: technicians.length,
+            invoices: invoices.length,
+            estimates: estimates.length,
+            appointments: appointments.length,
+            communications: communications.length
+          }
+        })
+      }
+
     } catch (error) {
       console.error('Error loading report data:', error)
     } finally {
       setLoading(false)
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Reports] loadReportData finished', company.id)
+      }
     }
   }
 
