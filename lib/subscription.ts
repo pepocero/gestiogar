@@ -344,7 +344,13 @@ export async function checkAndUpdateAllExpiredSubscriptions(): Promise<{ updated
     }
 
     // Filtrar las que han expirado y son Pro o canceladas
-    const expiredCompanies = allCompanies.filter(company => {
+    const expiredCompanies = allCompanies.filter((company: {
+      id: string
+      paypal_subscription_id: string | null
+      subscription_plan: string | null
+      subscription_status: string | null
+      subscription_ends_at: string | null
+    }) => {
       const expiresAt = new Date(company.subscription_ends_at!)
       const hasExpired = expiresAt <= new Date(now)
       const isProOrCancelled = company.subscription_plan === 'pro' || company.subscription_status === 'cancelled'
