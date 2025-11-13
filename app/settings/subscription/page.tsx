@@ -46,7 +46,10 @@ function SubscriptionPageContent() {
         loadSubscriptionData()
       }, 2000)
     } else if (canceled) {
-      toast.info('Suscripción cancelada. No se realizó ningún cargo.')
+      toast('Suscripción cancelada. No se realizó ningún cargo.', {
+        icon: 'ℹ️',
+        duration: 4000
+      })
     }
   }, [searchParams])
 
