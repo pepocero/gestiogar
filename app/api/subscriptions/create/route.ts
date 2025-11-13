@@ -24,9 +24,13 @@ export async function POST(req: NextRequest) {
     }
 
     // URLs de retorno
+    // Nota: PayPal NO acepta placeholders como {subscription_id} en las URLs
+    // PayPal automáticamente agregará el subscription_id como parámetro al redirigir
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://gestiogar.carlinitools.com'
-    const returnUrl = `${baseUrl}/settings/subscription?success=true&subscription_id={subscription_id}`
+    const returnUrl = `${baseUrl}/settings/subscription?success=true`
     const cancelUrl = `${baseUrl}/settings/subscription?canceled=true`
+    
+    console.log('[API] PayPal URLs:', { returnUrl, cancelUrl })
 
     console.log('[API] Creating subscription with:', {
       companyId,
@@ -36,7 +40,26 @@ export async function POST(req: NextRequest) {
     })
 
     // Crear suscripción en PayPal
-    const result = await createPayPalSubscription(companyId, returnUrl, cancelUrl)
+    let result
+    try {
+      result = await createPayPalSubscription(companyId, returnUrl, cancelUrl)
+    } catch (paypalError: any) {
+      console.error('[API] Exception in createPayPalSubscription:', paypalError)
+      console.error('[API] Exception details:', {
+        message: paypalError?.message,
+        stack: paypalError?.stack,
+        statusCode: paypalError?.statusCode,
+        result: paypalError?.result,
+        body: paypalError?.body
+      })
+      return NextResponse.json(
+        { 
+          error: 'Failed to create subscription in PayPal',
+          details: process.env.NODE_ENV === 'development' ? paypalError?.message : undefined
+        },
+        { status: 500 }
+      )
+    }
 
     if (!result) {
       console.error('[API] createPayPalSubscription returned null')

@@ -105,11 +105,16 @@ export async function createPayPalSubscription(
     
     if (response.statusCode !== 201) {
       console.error('[PayPal] Failed to create subscription. Status:', response.statusCode)
-      console.error('[PayPal] Response:', JSON.stringify(response, null, 2))
+      console.error('[PayPal] Full response:', JSON.stringify(response, null, 2))
       
       // Intentar obtener más detalles del error
       if (response.result) {
-        console.error('[PayPal] Error details:', response.result)
+        console.error('[PayPal] Error details:', JSON.stringify(response.result, null, 2))
+      }
+      
+      // Si hay un error en el body, intentar extraer el mensaje
+      if (response.body) {
+        console.error('[PayPal] Error body:', JSON.stringify(response.body, null, 2))
       }
       
       return null
@@ -142,6 +147,9 @@ export async function createPayPalSubscription(
     }
   } catch (error: any) {
     console.error('[PayPal] Error creating subscription:', error)
+    console.error('[PayPal] Error type:', error?.constructor?.name)
+    console.error('[PayPal] Error keys:', Object.keys(error || {}))
+    
     if (error.message) {
       console.error('[PayPal] Error message:', error.message)
     }
@@ -154,6 +162,18 @@ export async function createPayPalSubscription(
     if (error.result) {
       console.error('[PayPal] Error result:', JSON.stringify(error.result, null, 2))
     }
+    if (error.body) {
+      console.error('[PayPal] Error body:', JSON.stringify(error.body, null, 2))
+    }
+    if (error.response) {
+      console.error('[PayPal] Error response:', JSON.stringify(error.response, null, 2))
+    }
+    
+    // Intentar extraer información del error del SDK
+    if (error.errors) {
+      console.error('[PayPal] Error details:', JSON.stringify(error.errors, null, 2))
+    }
+    
     return null
   }
 }
