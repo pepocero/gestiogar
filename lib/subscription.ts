@@ -72,9 +72,14 @@ export async function getPlanLimits(companyId: string): Promise<PlanLimits> {
     }
 
     // Determinar si el plan está activo
+    // Una suscripción está activa si:
+    // 1. Tiene status 'active' y no ha expirado, O
+    // 2. Tiene status 'cancelled' pero aún no ha expirado (mantiene acceso hasta el final del período pagado)
+    const hasNotExpired = !company.subscription_ends_at || new Date(company.subscription_ends_at) > new Date()
     const isActive = 
-      company.subscription_status === 'active' && 
-      (!company.subscription_ends_at || new Date(company.subscription_ends_at) > new Date())
+      (company.subscription_status === 'active' || company.subscription_status === 'cancelled') && 
+      hasNotExpired &&
+      company.subscription_plan === 'pro'
     
     const plan: SubscriptionPlan = isActive ? company.subscription_plan : 'free'
 
@@ -228,10 +233,11 @@ export async function updateSubscriptionStatus(
       updateData.subscription_plan = plan
     }
 
-    if (status === 'expired' || status === 'cancelled') {
-      // Si se cancela o expira, cambiar a plan free
+    if (status === 'expired') {
+      // Solo cambiar a plan free cuando realmente expire
       updateData.subscription_plan = 'free'
     }
+    // Si se cancela, mantener el plan 'pro' hasta que expire
 
     const { error } = await supabaseTable('companies')
       .update(updateData)

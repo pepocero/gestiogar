@@ -211,14 +211,18 @@ function SubscriptionPageContent() {
   }
 
   // Usar datos del contexto (company) como fuente principal, con fallback a subscription
-  const isPro = (company?.subscription_plan === 'pro' && company?.subscription_status === 'active') ||
-                (subscription?.subscription_plan === 'pro' && subscription?.subscription_status === 'active')
+  // Una suscripción Pro está activa si:
+  // 1. Tiene plan 'pro' y status 'active' y no ha expirado, O
+  // 2. Tiene plan 'pro' y status 'cancelled' pero aún no ha expirado (mantiene acceso hasta el final del período pagado)
+  const hasNotExpired = !company?.subscription_ends_at || new Date(company.subscription_ends_at) > new Date()
+  const isPro = ((company?.subscription_plan === 'pro' && (company?.subscription_status === 'active' || company?.subscription_status === 'cancelled')) ||
+                (subscription?.subscription_plan === 'pro' && (subscription?.subscription_status === 'active' || subscription?.subscription_status === 'cancelled'))) &&
+                hasNotExpired
   const isCancelled = company?.subscription_status === 'cancelled' || subscription?.subscription_status === 'cancelled'
   const isExpired = company?.subscription_status === 'expired' || subscription?.subscription_status === 'expired'
   
   // Verificar que la suscripción no haya expirado
-  const subscriptionActive = isPro && 
-    (!company?.subscription_ends_at || new Date(company.subscription_ends_at) > new Date())
+  const subscriptionActive = isPro
 
   return (
     <div className="space-y-6">

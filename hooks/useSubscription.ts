@@ -37,9 +37,13 @@ export function useSubscription() {
     return await canCreateItem(company.id, itemType)
   }
 
+  // Una suscripción Pro está activa si:
+  // 1. Tiene plan 'pro' y status 'active' y no ha expirado, O
+  // 2. Tiene plan 'pro' y status 'cancelled' pero aún no ha expirado (mantiene acceso hasta el final del período pagado)
+  const hasNotExpired = !company?.subscription_ends_at || new Date(company.subscription_ends_at) > new Date()
   const isPro = company?.subscription_plan === 'pro' && 
-                company?.subscription_status === 'active' &&
-                (!company.subscription_ends_at || new Date(company.subscription_ends_at) > new Date())
+                (company?.subscription_status === 'active' || company?.subscription_status === 'cancelled') &&
+                hasNotExpired
 
   return {
     limits,

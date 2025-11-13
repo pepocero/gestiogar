@@ -75,10 +75,26 @@ export async function POST(req: NextRequest) {
 
       case 'cancel':
         // Marcar como cancelada (pero sigue activa hasta expires_at)
+        // IMPORTANTE: No cambiar el plan a 'free', solo cambiar el status a 'cancelled'
+        // El plan 'pro' se mantiene hasta que expire la suscripción
+        
+        // Obtener la fecha de expiración del evento de PayPal si está disponible
+        // PayPal puede enviar next_billing_time en el evento, que indica hasta cuándo sigue activa
+        const cancelExpiresAt = event.resource?.billing_info?.next_billing_time
+          ? event.resource.billing_info.next_billing_time
+          : null
+        
+        const cancelUpdateData: any = {
+          subscription_status: 'cancelled'
+        }
+        
+        // Si tenemos una fecha de expiración del evento, actualizarla
+        if (cancelExpiresAt) {
+          cancelUpdateData.subscription_ends_at = cancelExpiresAt
+        }
+        
         await supabaseAdminTable('companies')
-          .update({
-            subscription_status: 'cancelled'
-          })
+          .update(cancelUpdateData)
           .eq('id', company.id)
 
         // Actualizar registro en historial
