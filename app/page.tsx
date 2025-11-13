@@ -20,8 +20,12 @@ import {
   Zap,
   TrendingUp,
   Award,
-  Sparkles
+  Sparkles,
+  X,
+  Crown
 } from 'lucide-react'
+import { getProPrice } from '@/lib/pricing'
+import { getDefaultFreeLimits } from '@/lib/subscription'
 
 export default function HomePage() {
   return (
@@ -87,8 +91,8 @@ export default function HomePage() {
             </h1>
             
             <p className="text-xl md:text-2xl text-blue-100 mb-10 max-w-3xl mx-auto leading-relaxed">
-              Centraliza clientes, técnicos, trabajos y presupuestos en una sola plataforma. 
-              Diseñada específicamente para empresas que trabajan con <span className="font-semibold text-white">aseguradoras</span>.
+            Plataforma de gestión integral para empresas de reparaciones del hogar. Diseñada para maximizar tu eficiencia y rentabilidad.
+           
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center mb-12">
@@ -108,11 +112,7 @@ export default function HomePage() {
             </div>
 
             {/* Stats */}
-            <div className="grid grid-cols-3 gap-8 max-w-2xl mx-auto">
-              <div className="text-center">
-                <div className="text-3xl font-bold text-white mb-1">100%</div>
-                <div className="text-sm text-blue-200">Gratis</div>
-              </div>
+            <div className="grid grid-cols-2 gap-8 max-w-xl mx-auto">
               <div className="text-center">
                 <div className="text-3xl font-bold text-white mb-1">24/7</div>
                 <div className="text-sm text-blue-200">Disponible</div>
@@ -177,6 +177,165 @@ export default function HomePage() {
                 </Link>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Comparison Section */}
+      <section className="py-24 bg-gradient-to-br from-gray-50 to-blue-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center bg-blue-100 text-blue-700 px-4 py-2 rounded-full mb-4 font-medium">
+              <Crown className="h-4 w-4 mr-2" />
+              Planes y Precios
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+              Elige el plan perfecto para tu empresa
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Comienza gratis y actualiza cuando necesites más funcionalidades
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+            {/* Plan Free */}
+            <div className="bg-white rounded-2xl shadow-lg border-2 border-gray-200 overflow-hidden hover:shadow-xl transition-shadow">
+              <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-8 py-6 border-b border-gray-200">
+                <h3 className="text-2xl font-bold text-gray-900 mb-2">Plan Free</h3>
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-extrabold text-gray-900">0€</span>
+                  <span className="text-gray-600 ml-2">/mes</span>
+                </div>
+                <p className="text-sm text-gray-600 mt-2">Ideal para empezar</p>
+              </div>
+              
+              <div className="p-8">
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700">Hasta {getDefaultFreeLimits().max_jobs} trabajos</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700">Hasta {getDefaultFreeLimits().max_clients} clientes</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700">Hasta {getDefaultFreeLimits().max_estimates} presupuestos</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700">Hasta {getDefaultFreeLimits().max_invoices} facturas</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700">Hasta {getDefaultFreeLimits().max_technicians} técnicos</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700">Hasta {getDefaultFreeLimits().max_insurance_companies} aseguradoras</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700">Hasta {getDefaultFreeLimits().max_materials} materiales</span>
+                  </li>
+                  <li className="flex items-start">
+                    <X className="h-5 w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-500">Soporte por email</span>
+                  </li>
+                </ul>
+                
+                <Link 
+                  href="/auth/register"
+                  className="block w-full text-center bg-gray-100 text-gray-900 px-6 py-3 rounded-xl hover:bg-gray-200 transition-colors font-semibold"
+                >
+                  Comenzar Gratis
+                </Link>
+              </div>
+            </div>
+
+            {/* Plan Pro */}
+            <div className="bg-white rounded-2xl shadow-2xl border-2 border-blue-500 overflow-hidden relative hover:shadow-3xl transition-shadow">
+              <div className="absolute top-0 right-0 bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-2 rounded-bl-xl text-sm font-bold">
+                Recomendado
+              </div>
+              
+              <div className="bg-gradient-to-r from-blue-500 to-blue-600 px-8 py-6 border-b border-blue-400">
+                <div className="flex items-center mb-2">
+                  <Crown className="h-6 w-6 text-yellow-300 mr-2" />
+                  <h3 className="text-2xl font-bold text-white">Plan Pro</h3>
+                </div>
+                <div className="flex items-baseline">
+                  <span className="text-4xl font-extrabold text-white">{getProPrice()}</span>
+                  <span className="text-blue-100 ml-2">/mes</span>
+                </div>
+                <p className="text-sm text-blue-100 mt-2">Para empresas en crecimiento</p>
+              </div>
+              
+              <div className="p-8">
+                <ul className="space-y-4 mb-8">
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Trabajos ilimitados</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Clientes ilimitados</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Presupuestos ilimitados</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Facturas ilimitadas</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Técnicos ilimitados</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Aseguradoras ilimitadas</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Materiales ilimitados</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Soporte prioritario</span>
+                  </li>
+                  <li className="flex items-start">
+                    <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-700 font-medium">Todas las funcionalidades avanzadas</span>
+                  </li>
+                </ul>
+                
+                <Link 
+                  href="/auth/register"
+                  className="block w-full text-center bg-gradient-to-r from-blue-500 to-blue-600 text-white px-6 py-3 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all shadow-lg font-semibold"
+                >
+                  Actualizar a Pro
+                </Link>
+                <p className="text-xs text-gray-500 text-center mt-3">
+                  Cancela en cualquier momento
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-12 text-center">
+            <p className="text-gray-600 mb-4">
+              ¿Necesitas un plan personalizado para tu empresa?
+            </p>
+            <Link 
+              href="/auth/register"
+              className="text-blue-600 hover:text-blue-700 font-semibold inline-flex items-center"
+            >
+              Contacta con nosotros
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Link>
           </div>
         </div>
       </section>
@@ -407,18 +566,29 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="flex items-center justify-center space-x-8 text-blue-100">
-            <div className="flex items-center">
+          <div className="bg-white/10 backdrop-blur-sm rounded-2xl p-6 max-w-4xl mx-auto">
+            <div className="flex items-start space-x-4">
+              <div className="bg-blue-500 p-3 rounded-xl flex-shrink-0">
+                <Sparkles className="h-6 w-6 text-white" />
+              </div>
+              <div>
+                <h3 className="text-xl font-bold text-white mb-2">Módulos y Expansión</h3>
+                <p className="text-blue-100 leading-relaxed mb-3">
+                  Expande las funcionalidades de Gestiogar con módulos especializados disponibles en la configuración. 
+                  Cada módulo añade nuevas capacidades para adaptar la plataforma a las necesidades específicas de tu empresa.
+                </p>
+                <p className="text-blue-100 leading-relaxed">
+                  <strong className="text-white">¿Necesitas algo más específico?</strong> Solicita módulos hechos a medida 
+                  diseñados especialmente para tu negocio y escala tu aplicación según tus requerimientos únicos.
+                </p>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-center mt-6">
+            <div className="flex items-center text-blue-100">
               <CheckCircle className="h-5 w-5 mr-2 text-green-300" />
               <span>Sin tarjeta de crédito</span>
-            </div>
-            <div className="flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2 text-green-300" />
-              <span>Gratis para siempre</span>
-            </div>
-            <div className="flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2 text-green-300" />
-              <span>Sin límites</span>
             </div>
           </div>
         </div>
@@ -442,8 +612,8 @@ export default function HomePage() {
                 <span className="ml-3 text-2xl font-bold">Gestiogar</span>
               </div>
               <p className="text-gray-400 leading-relaxed mb-6 max-w-md">
-                Plataforma de gestión integral para empresas de reparaciones del hogar. 
-                Diseñada para maximizar tu eficiencia y rentabilidad.
+              Centraliza clientes, técnicos, trabajos y presupuestos en una sola plataforma. 
+              Diseñada para empresas de reparaciones y adaptada también para empresas que trabajan con <span className="font-semibold text-white">aseguradoras</span>.
               </p>
               <div className="flex space-x-4">
                 <a href="#" className="bg-gray-800 p-3 rounded-lg hover:bg-gray-700 transition-colors">

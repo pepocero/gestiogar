@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createPayPalSubscription } from '@/lib/paypal'
-import { supabaseAdminTable } from '@/lib/supabase'
+import { supabaseAdminTable, supabase } from '@/lib/supabase'
+import { isDemoUser } from '@/lib/subscription'
 
 export async function POST(req: NextRequest) {
   try {
@@ -8,6 +9,18 @@ export async function POST(req: NextRequest) {
 
     if (!companyId) {
       return NextResponse.json({ error: 'Company ID is required' }, { status: 400 })
+    }
+
+    // Verificar si el usuario actual es demo
+    const { data: { user } } = await supabase.auth.getUser()
+    if (user && isDemoUser(user.email)) {
+      return NextResponse.json(
+        { 
+          error: 'No se puede crear una suscripción con la cuenta demo. Por favor, crea una cuenta nueva para suscribirte.',
+          isDemo: true
+        },
+        { status: 403 }
+      )
     }
 
     // Verificar variables de entorno

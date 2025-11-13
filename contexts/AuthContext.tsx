@@ -148,6 +148,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(userData)
       setCompany(userData.company || null)
       
+      // Verificar si la suscripción ha expirado (en segundo plano, sin bloquear)
+      if (userData.company?.id && userData.company?.subscription_plan === 'pro' && userData.company?.subscription_ends_at) {
+        const expiresAt = new Date(userData.company.subscription_ends_at)
+        const now = new Date()
+        
+        // Si la suscripción ha expirado, actualizar el estado
+        if (expiresAt <= now && userData.company.subscription_status !== 'expired') {
+          // Llamar al endpoint para actualizar el estado (en segundo plano)
+          fetch('/api/subscriptions/check-expired', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ companyId: userData.company.id })
+          }).catch(err => {
+            console.warn('[AuthContext] Error checking expired subscription:', err)
+          })
+        }
+      }
+      
     } catch (error: any) {
       console.warn('⚠️ Error loading user profile:', error)
       

@@ -16,7 +16,7 @@ import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription
 import toast from 'react-hot-toast'
 
 export default function ClientsPage() {
-  const { company, user, loading } = useAuth()
+  const { company, user, loading, profile } = useAuth()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [insuranceCompanies, setInsuranceCompanies] = useState<any[]>([])
@@ -128,7 +128,8 @@ export default function ClientsPage() {
     }
 
     // Verificar límite antes de crear
-    const canCreate = await canCreateItem(company.id, 'max_clients')
+    const userEmail = profile?.email || null
+    const canCreate = await canCreateItem(company.id, 'max_clients', userEmail)
     if (!canCreate.allowed) {
       toast.error(`Has alcanzado el límite de ${canCreate.limit} clientes. Actualiza a Gestiogar Pro para crear más.`, {
         duration: 6000

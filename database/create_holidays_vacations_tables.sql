@@ -236,3 +236,4 @@ COMMENT ON COLUMN vacation_balances.ano IS 'Año al que corresponde el balance d
 
 
 
+

@@ -58,7 +58,7 @@ interface Job {
 }
 
 export default function JobsPage() {
-  const { company } = useAuth()
+  const { company, profile } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -345,7 +345,8 @@ useEffect(() => {
         toast.success('Trabajo actualizado correctamente')
       } else {
         // Verificar límite antes de crear
-        const canCreate = await canCreateItem(company.id, 'max_jobs')
+        const userEmail = profile?.email || null
+        const canCreate = await canCreateItem(company.id, 'max_jobs', userEmail)
         if (!canCreate.allowed) {
           toast.error(`Has alcanzado el límite de ${canCreate.limit} trabajos. Actualiza a Gestiogar Pro para crear más.`, {
             duration: 6000

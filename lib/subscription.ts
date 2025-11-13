@@ -1,4 +1,4 @@
-import { supabaseTable } from '@/lib/supabase'
+import { supabaseTable, supabaseAdminTable } from '@/lib/supabase'
 
 export type SubscriptionPlan = 'free' | 'pro'
 export type SubscriptionStatus = 'active' | 'cancelled' | 'expired'
@@ -41,6 +41,14 @@ export interface Subscription {
   updated_at: string
 }
 
+// Email del usuario demo
+export const DEMO_USER_EMAIL = 'demo@demo.com'
+
+// Verificar si un email corresponde al usuario demo
+export function isDemoUser(email: string | null | undefined): boolean {
+  return email?.toLowerCase() === DEMO_USER_EMAIL.toLowerCase()
+}
+
 // Límites por defecto del plan gratuito
 export function getDefaultFreeLimits(): PlanLimits {
   return {
@@ -57,9 +65,30 @@ export function getDefaultFreeLimits(): PlanLimits {
   }
 }
 
+// Límites para el usuario demo (más restrictivos que free)
+export function getDemoLimits(): PlanLimits {
+  return {
+    max_jobs: 4,
+    max_clients: 4,
+    max_estimates: 4,
+    max_invoices: 4,
+    max_technicians: 4,
+    max_insurance_companies: 4,
+    max_suppliers: 4,
+    max_materials: 4,
+    max_appointments: 4,
+    max_conversations: 4
+  }
+}
+
 // Obtener límites del plan de una empresa
-export async function getPlanLimits(companyId: string): Promise<PlanLimits> {
+export async function getPlanLimits(companyId: string, userEmail?: string | null): Promise<PlanLimits> {
   try {
+    // Si es usuario demo, retornar límites demo directamente
+    if (userEmail && isDemoUser(userEmail)) {
+      return getDemoLimits()
+    }
+
     // Obtener información de la empresa
     const { data: company, error: companyError } = await supabaseTable('companies')
       .select('subscription_plan, subscription_status, subscription_ends_at')
@@ -75,13 +104,21 @@ export async function getPlanLimits(companyId: string): Promise<PlanLimits> {
     // Una suscripción está activa si:
     // 1. Tiene status 'active' y no ha expirado, O
     // 2. Tiene status 'cancelled' pero aún no ha expirado (mantiene acceso hasta el final del período pagado)
+    // 3. Tiene status 'cancelled' pero aún no ha expirado Y tiene paypal_subscription_id (indica que tenía suscripción Pro)
     const hasNotExpired = !company.subscription_ends_at || new Date(company.subscription_ends_at) > new Date()
-    const isActive = 
-      (company.subscription_status === 'active' || company.subscription_status === 'cancelled') && 
-      hasNotExpired &&
-      company.subscription_plan === 'pro'
     
-    const plan: SubscriptionPlan = isActive ? company.subscription_plan : 'free'
+    // Si tiene suscripción cancelada pero aún no ha expirado Y tiene paypal_subscription_id, es Pro
+    const isCancelledButActive = company.subscription_status === 'cancelled' && 
+                                  hasNotExpired && 
+                                  !!company.subscription_ends_at // Tiene fecha de expiración, indica que tenía suscripción
+    
+    const isActive = 
+      ((company.subscription_status === 'active' || company.subscription_status === 'cancelled') && 
+       hasNotExpired &&
+       company.subscription_plan === 'pro') ||
+      isCancelledButActive
+    
+    const plan: SubscriptionPlan = isActive ? 'pro' : 'free'
 
     // Obtener límites del plan
     const { data: limits, error: limitsError } = await supabaseTable('plan_limits')
@@ -115,9 +152,10 @@ export async function getPlanLimits(companyId: string): Promise<PlanLimits> {
 // Verificar si una empresa puede crear más elementos de un tipo
 export async function canCreateItem(
   companyId: string,
-  itemType: keyof PlanLimits
+  itemType: keyof PlanLimits,
+  userEmail?: string | null
 ): Promise<{ allowed: boolean; limit: number | null; current: number }> {
-  const limits = await getPlanLimits(companyId)
+  const limits = await getPlanLimits(companyId, userEmail)
   const limit = limits[itemType]
 
   // Plan Pro (ilimitado)
@@ -218,6 +256,146 @@ export async function getSubscriptionHistory(companyId: string): Promise<Subscri
   }
 }
 
+// Verificar y actualizar suscripciones expiradas
+// Esta función verifica si una suscripción ha expirado y actualiza el estado
+export async function checkAndUpdateExpiredSubscription(companyId: string): Promise<boolean> {
+  try {
+    const { data: company, error } = await supabaseAdminTable('companies')
+      .select('id, subscription_plan, subscription_status, subscription_ends_at, paypal_subscription_id')
+      .eq('id', companyId)
+      .single()
+
+    if (error || !company) {
+      return false
+    }
+
+    // Si no tiene fecha de expiración o no es Pro, no hacer nada
+    // También verificar si tiene suscripción cancelada pero aún activa
+    const hasProPlan = company.subscription_plan === 'pro'
+    const hasCancelledButActive = company.subscription_status === 'cancelled' && 
+                                   company.subscription_ends_at && 
+                                   new Date(company.subscription_ends_at) > new Date()
+    
+    if (!company.subscription_ends_at || (!hasProPlan && !hasCancelledButActive)) {
+      return false
+    }
+
+    // Verificar si la suscripción ha expirado
+    const now = new Date()
+    const expiresAt = new Date(company.subscription_ends_at)
+
+    if (expiresAt <= now && company.subscription_status !== 'expired') {
+      // La suscripción ha expirado, actualizar estado
+      const { error: updateError } = await supabaseAdminTable('companies')
+        .update({
+          subscription_plan: 'free',
+          subscription_status: 'expired'
+        })
+        .eq('id', companyId)
+
+      if (updateError) {
+        console.error('[Subscription] Error updating expired subscription:', updateError)
+        return false
+      }
+
+      // Actualizar registro en historial si existe
+      if (company.paypal_subscription_id) {
+        await supabaseAdminTable('subscriptions')
+          .update({
+            status: 'expired'
+          })
+          .eq('company_id', companyId)
+          .eq('paypal_subscription_id', company.paypal_subscription_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+      }
+
+      console.log('[Subscription] Subscription expired for company:', companyId)
+      return true
+    }
+
+    return false
+  } catch (error) {
+    console.error('[Subscription] Error checking expired subscription:', error)
+    return false
+  }
+}
+
+// Verificar y actualizar todas las suscripciones expiradas
+// Esta función se puede llamar periódicamente (cron job) para verificar todas las suscripciones
+export async function checkAndUpdateAllExpiredSubscriptions(): Promise<{ updated: number; errors: number }> {
+  try {
+    const now = new Date().toISOString()
+
+    // Buscar todas las empresas con suscripciones que han expirado
+    // Incluir tanto las que tienen plan 'pro' como las canceladas
+    const { data: allCompanies, error: fetchError } = await supabaseAdminTable('companies')
+      .select('id, paypal_subscription_id, subscription_plan, subscription_status, subscription_ends_at')
+      .neq('subscription_status', 'expired')
+      .not('subscription_ends_at', 'is', null)
+
+    if (fetchError) {
+      console.error('[Subscription] Error finding subscriptions:', fetchError)
+      return { updated: 0, errors: 0 }
+    }
+
+    if (!allCompanies || allCompanies.length === 0) {
+      return { updated: 0, errors: 0 }
+    }
+
+    // Filtrar las que han expirado y son Pro o canceladas
+    const expiredCompanies = allCompanies.filter(company => {
+      const expiresAt = new Date(company.subscription_ends_at!)
+      const hasExpired = expiresAt <= new Date(now)
+      const isProOrCancelled = company.subscription_plan === 'pro' || company.subscription_status === 'cancelled'
+      return hasExpired && isProOrCancelled
+    })
+
+    if (!expiredCompanies || expiredCompanies.length === 0) {
+      return { updated: 0, errors: 0 }
+    }
+
+    let updated = 0
+    let errors = 0
+
+    // Actualizar cada suscripción expirada
+    for (const company of expiredCompanies) {
+      const { error: updateError } = await supabaseAdminTable('companies')
+        .update({
+          subscription_plan: 'free',
+          subscription_status: 'expired'
+        })
+        .eq('id', company.id)
+
+      if (updateError) {
+        console.error(`[Subscription] Error updating expired subscription for company ${company.id}:`, updateError)
+        errors++
+        continue
+      }
+
+      // Actualizar registro en historial si existe
+      if (company.paypal_subscription_id) {
+        await supabaseAdminTable('subscriptions')
+          .update({
+            status: 'expired'
+          })
+          .eq('company_id', company.id)
+          .eq('paypal_subscription_id', company.paypal_subscription_id)
+          .order('created_at', { ascending: false })
+          .limit(1)
+      }
+
+      updated++
+    }
+
+    console.log(`[Subscription] Updated ${updated} expired subscriptions, ${errors} errors`)
+    return { updated, errors }
+  } catch (error) {
+    console.error('[Subscription] Error checking all expired subscriptions:', error)
+    return { updated: 0, errors: 0 }
+  }
+}
+
 // Actualizar estado de suscripción
 export async function updateSubscriptionStatus(
   companyId: string,
@@ -254,4 +432,3 @@ export async function updateSubscriptionStatus(
     return false
   }
 }
-

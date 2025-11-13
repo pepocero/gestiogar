@@ -10,16 +10,19 @@ import {
   getPlanLimits, 
   getSubscriptionHistory,
   canCreateItem,
-  type PlanLimits as PlanLimitsType
+  type PlanLimits as PlanLimitsType,
+  isDemoUser
 } from '@/lib/subscription'
+import { getProPrice } from '@/lib/pricing'
 import { Crown, Check, X, Calendar, CreditCard, Zap, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { LimitIndicator } from '@/components/subscription/LimitIndicator'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { Suspense } from 'react'
 
 function SubscriptionPageContent() {
-  const { company, refreshProfile } = useAuth()
+  const { company, refreshProfile, profile } = useAuth()
+  const router = useRouter()
   const searchParams = useSearchParams()
   const [subscription, setSubscription] = useState<any>(null)
   const [limits, setLimits] = useState<PlanLimitsType | null>(null)
@@ -63,9 +66,10 @@ function SubscriptionPageContent() {
 
     try {
       setLoading(true)
+      const userEmail = profile?.email || null
       const [subData, limitsData, historyData] = await Promise.all([
         getCompanySubscription(company.id),
-        getPlanLimits(company.id),
+        getPlanLimits(company.id, userEmail),
         getSubscriptionHistory(company.id)
       ])
 
@@ -101,8 +105,9 @@ function SubscriptionPageContent() {
       { key: 'max_conversations', table: 'communications' }
     ]
 
+    const userEmail = profile?.email || null
     for (const check of checks) {
-      const result = await canCreateItem(company.id, check.key as any)
+      const result = await canCreateItem(company.id, check.key as any, userEmail)
       usageData[check.key] = {
         current: result.current,
         limit: result.limit
@@ -115,6 +120,18 @@ function SubscriptionPageContent() {
   const handleUpgrade = async () => {
     if (!company?.id) {
       toast.error('No se pudo obtener la información de la empresa')
+      return
+    }
+
+    // Verificar si es usuario demo
+    const userEmail = profile?.email || null
+    if (isDemoUser(userEmail)) {
+      toast.error('No puedes suscribirte con la cuenta demo. Por favor, crea una cuenta nueva.', {
+        duration: 5000
+      })
+      setTimeout(() => {
+        router.push('/auth/register')
+      }, 2000)
       return
     }
 
@@ -132,6 +149,18 @@ function SubscriptionPageContent() {
       const data = await response.json()
 
       if (!response.ok) {
+        // Si es error de demo, redirigir a registro
+        if (data.isDemo) {
+          toast.error(data.error || 'No puedes suscribirte con la cuenta demo. Por favor, crea una cuenta nueva.', {
+            id: 'upgrade',
+            duration: 5000
+          })
+          setTimeout(() => {
+            router.push('/auth/register')
+          }, 2000)
+          return
+        }
+        
         const errorMessage = data.error || 'Error al crear la suscripción'
         const errorDetails = data.details ? `\n\nDetalles: ${data.details}` : ''
         console.error('[Subscription] API Error:', {
@@ -202,6 +231,83 @@ function SubscriptionPageContent() {
     }
   }
 
+  const handleReactivate = async () => {
+    if (!confirm('¿Estás seguro de que quieres reactivar tu suscripción? Se creará una nueva suscripción y se reanudarán los pagos automáticos.')) {
+      return
+    }
+
+    if (!company?.id) {
+      toast.error('No se encontró información de la empresa')
+      return
+    }
+
+    // Verificar si es usuario demo
+    const userEmail = profile?.email || null
+    if (isDemoUser(userEmail)) {
+      toast.error('No puedes reactivar una suscripción con la cuenta demo. Por favor, crea una cuenta nueva.', {
+        duration: 5000
+      })
+      setTimeout(() => {
+        router.push('/auth/register')
+      }, 2000)
+      return
+    }
+
+    try {
+      toast.loading('Creando nueva suscripción...', { id: 'reactivate' })
+      
+      // Usar el mismo endpoint que para crear una nueva suscripción
+      // PayPal no permite reactivar suscripciones canceladas, así que creamos una nueva
+      const response = await fetch('/api/subscriptions/create', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ companyId: company.id })
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        // Si es error de demo, redirigir a registro
+        if (data.isDemo) {
+          toast.error(data.error || 'No puedes reactivar una suscripción con la cuenta demo. Por favor, crea una cuenta nueva.', {
+            id: 'reactivate',
+            duration: 5000
+          })
+          setTimeout(() => {
+            router.push('/auth/register')
+          }, 2000)
+          return
+        }
+        
+        const errorMessage = data.error || 'Error al reactivar la suscripción'
+        const errorDetails = data.details ? `\n\nDetalles: ${data.details}` : ''
+        console.error('[Subscription] API Error:', {
+          status: response.status,
+          error: errorMessage,
+          details: data.details
+        })
+        throw new Error(errorMessage + errorDetails)
+      }
+
+      if (data.approvalUrl) {
+        console.log('[Subscription] Redirecting to PayPal for reactivation:', data.approvalUrl)
+        // Redirigir a PayPal para aprobar la nueva suscripción
+        window.location.href = data.approvalUrl
+      } else {
+        console.error('[Subscription] No approval URL received:', data)
+        throw new Error('No se recibió la URL de aprobación de PayPal')
+      }
+    } catch (error: any) {
+      console.error('[Subscription] Error reactivating subscription:', error)
+      toast.error(error.message || 'Error al reactivar la suscripción', { 
+        id: 'reactivate',
+        duration: 6000
+      })
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -214,10 +320,22 @@ function SubscriptionPageContent() {
   // Una suscripción Pro está activa si:
   // 1. Tiene plan 'pro' y status 'active' y no ha expirado, O
   // 2. Tiene plan 'pro' y status 'cancelled' pero aún no ha expirado (mantiene acceso hasta el final del período pagado)
+  // 3. Tiene status 'cancelled' pero aún no ha expirado Y tiene paypal_subscription_id (indica que tenía suscripción Pro)
   const hasNotExpired = !company?.subscription_ends_at || new Date(company.subscription_ends_at) > new Date()
-  const isPro = ((company?.subscription_plan === 'pro' && (company?.subscription_status === 'active' || company?.subscription_status === 'cancelled')) ||
-                (subscription?.subscription_plan === 'pro' && (subscription?.subscription_status === 'active' || subscription?.subscription_status === 'cancelled'))) &&
-                hasNotExpired
+  
+  // Verificar si tiene suscripción Pro activa o cancelada pero aún activa
+  const hasProPlan = company?.subscription_plan === 'pro' || subscription?.subscription_plan === 'pro'
+  const hasActiveOrCancelledStatus = (company?.subscription_status === 'active' || company?.subscription_status === 'cancelled') ||
+                                     (subscription?.subscription_status === 'active' || subscription?.subscription_status === 'cancelled')
+  const hasPayPalSubscription = !!(company?.paypal_subscription_id || subscription?.paypal_subscription_id)
+  
+  // Si tiene suscripción cancelada pero aún no ha expirado Y tiene paypal_subscription_id, es Pro
+  const isCancelledButActive = (company?.subscription_status === 'cancelled' || subscription?.subscription_status === 'cancelled') &&
+                                hasNotExpired &&
+                                hasPayPalSubscription
+  
+  const isPro = ((hasProPlan && hasActiveOrCancelledStatus) || isCancelledButActive) && hasNotExpired
+  
   const isCancelled = company?.subscription_status === 'cancelled' || subscription?.subscription_status === 'cancelled'
   const isExpired = company?.subscription_status === 'expired' || subscription?.subscription_status === 'expired'
   
@@ -287,9 +405,16 @@ function SubscriptionPageContent() {
                     </p>
                   </div>
                 )}
-                <Button variant="danger" onClick={handleCancel}>
-                  Cancelar Suscripción
-                </Button>
+                {!isCancelled && (
+                  <Button variant="danger" onClick={handleCancel}>
+                    Cancelar Suscripción
+                  </Button>
+                )}
+                {isCancelled && subscriptionActive && (
+                  <Button variant="primary" onClick={handleReactivate}>
+                    Reactivar Suscripción
+                  </Button>
+                )}
               </>
             )}
 
@@ -426,7 +551,7 @@ function SubscriptionPageContent() {
                           </li>
                         </ul>
                         <div className="text-2xl font-bold text-gray-900 mb-2">
-                          9.99€ <span className="text-sm font-normal text-gray-600">/mes</span>
+                          {getProPrice()} <span className="text-sm font-normal text-gray-600">/mes</span>
                         </div>
                         <p className="text-sm text-gray-500 mb-4">
                           Cancela en cualquier momento. Sin pérdida de datos.

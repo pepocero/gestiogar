@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { createCompanyAndOwner, generateUniqueSlug } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
 import toast from 'react-hot-toast'
 
@@ -51,32 +50,48 @@ export default function RegisterPage() {
     setLoading(true)
 
     try {
-      // Generar slug único para la empresa
-      const slug = await generateUniqueSlug(formData.companyName)
-
-      // Crear empresa y usuario propietario
-      const result = await createCompanyAndOwner(
-        {
-          name: formData.companyName,
-          slug,
-          address: formData.companyAddress,
-          phone: formData.companyPhone,
-          email: formData.companyEmail,
-          website: formData.companyWebsite,
-          tax_id: formData.companyTaxId,
+      // Llamar al endpoint API para crear empresa y usuario
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        {
+        body: JSON.stringify({
+          companyName: formData.companyName,
+          companyAddress: formData.companyAddress,
+          companyPhone: formData.companyPhone,
+          companyEmail: formData.companyEmail,
+          companyWebsite: formData.companyWebsite,
+          companyTaxId: formData.companyTaxId,
+          firstName: formData.firstName,
+          lastName: formData.lastName,
           email: formData.email,
           password: formData.password,
-          first_name: formData.firstName,
-          last_name: formData.lastName,
           phone: formData.phone,
-        }
-      )
+        }),
+      })
 
-      // Cerrar sesión y redirigir a login con parámetro de éxito
-      await supabase.auth.signOut()
-      router.push('/auth/login?registered=true')
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Error al crear la empresa')
+      }
+
+      // Iniciar sesión con las credenciales del usuario recién creado
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: formData.email,
+        password: formData.password,
+      })
+
+      if (signInError) {
+        // Si no puede iniciar sesión automáticamente, redirigir a login
+        toast.success('Empresa creada correctamente. Por favor, inicia sesión.')
+        router.push('/auth/login?registered=true')
+      } else {
+        // Si inicia sesión correctamente, redirigir al dashboard
+        toast.success('¡Bienvenido a Gestiogar!')
+        router.push('/dashboard')
+      }
     } catch (error: any) {
       console.error('Error creating company:', error)
       toast.error(error.message || 'Error al crear la empresa')

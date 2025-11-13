@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { getPlanLimits, canCreateItem, type PlanLimits } from '@/lib/subscription'
 
 export function useSubscription() {
-  const { company } = useAuth()
+  const { company, profile } = useAuth()
   const [limits, setLimits] = useState<PlanLimits | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -15,14 +15,15 @@ export function useSubscription() {
     } else {
       setLoading(false)
     }
-  }, [company?.id])
+  }, [company?.id, profile?.email])
 
   const loadLimits = async () => {
     if (!company?.id) return
 
     try {
       setLoading(true)
-      const planLimits = await getPlanLimits(company.id)
+      const userEmail = profile?.email || null
+      const planLimits = await getPlanLimits(company.id, userEmail)
       setLimits(planLimits)
     } catch (error) {
       console.error('[useSubscription] Error loading limits:', error)
@@ -34,16 +35,26 @@ export function useSubscription() {
   const checkCanCreate = async (itemType: keyof PlanLimits) => {
     if (!company?.id) return { allowed: false, limit: null, current: 0 }
 
-    return await canCreateItem(company.id, itemType)
+    const userEmail = profile?.email || null
+    return await canCreateItem(company.id, itemType, userEmail)
   }
 
   // Una suscripción Pro está activa si:
   // 1. Tiene plan 'pro' y status 'active' y no ha expirado, O
   // 2. Tiene plan 'pro' y status 'cancelled' pero aún no ha expirado (mantiene acceso hasta el final del período pagado)
+  // 3. Tiene status 'cancelled' pero aún no ha expirado Y tiene paypal_subscription_id (indica que tenía suscripción Pro)
   const hasNotExpired = !company?.subscription_ends_at || new Date(company.subscription_ends_at) > new Date()
-  const isPro = company?.subscription_plan === 'pro' && 
+  
+  // Si tiene suscripción cancelada pero aún no ha expirado Y tiene paypal_subscription_id, es Pro
+  const isCancelledButActive = company?.subscription_status === 'cancelled' && 
+                                hasNotExpired && 
+                                !!company?.paypal_subscription_id &&
+                                !!company?.subscription_ends_at
+  
+  const isPro = (company?.subscription_plan === 'pro' && 
                 (company?.subscription_status === 'active' || company?.subscription_status === 'cancelled') &&
-                hasNotExpired
+                hasNotExpired) ||
+                isCancelledButActive
 
   return {
     limits,
