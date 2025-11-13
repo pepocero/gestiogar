@@ -19,7 +19,7 @@ import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
 
 function SubscriptionPageContent() {
-  const { company } = useAuth()
+  const { company, refreshProfile } = useAuth()
   const searchParams = useSearchParams()
   const [subscription, setSubscription] = useState<any>(null)
   const [limits, setLimits] = useState<PlanLimitsType | null>(null)
@@ -39,11 +39,15 @@ function SubscriptionPageContent() {
     const canceled = searchParams.get('canceled')
     const subscriptionId = searchParams.get('subscription_id')
 
-    if (success && subscriptionId) {
+    if (success) {
       toast.success('¡Suscripción activada correctamente!')
-      // Recargar datos después de un momento
-      setTimeout(() => {
-        loadSubscriptionData()
+      // Esperar un momento para que el webhook procese la actualización
+      // Luego recargar datos y perfil
+      setTimeout(async () => {
+        // Recargar datos de suscripción
+        await loadSubscriptionData()
+        // Forzar recarga del perfil para obtener los datos actualizados de la empresa
+        await refreshProfile()
       }, 2000)
     } else if (canceled) {
       toast('Suscripción cancelada. No se realizó ningún cargo.', {
@@ -51,6 +55,7 @@ function SubscriptionPageContent() {
         duration: 4000
       })
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchParams])
 
   const loadSubscriptionData = async () => {
@@ -186,9 +191,10 @@ function SubscriptionPageContent() {
 
       toast.success('Suscripción cancelada. Seguirás teniendo acceso hasta el final del período pagado.', { id: 'cancel' })
       
-      // Recargar datos
-      setTimeout(() => {
-        loadSubscriptionData()
+      // Recargar datos y perfil para reflejar los cambios
+      setTimeout(async () => {
+        await loadSubscriptionData()
+        await refreshProfile()
       }, 1000)
     } catch (error: any) {
       toast.error(error.message || 'Error al cancelar la suscripción', { id: 'cancel' })
@@ -204,9 +210,15 @@ function SubscriptionPageContent() {
     )
   }
 
-  const isPro = subscription?.subscription_plan === 'pro' && subscription?.subscription_status === 'active'
-  const isCancelled = subscription?.subscription_status === 'cancelled'
-  const isExpired = subscription?.subscription_status === 'expired'
+  // Usar datos del contexto (company) como fuente principal, con fallback a subscription
+  const isPro = (company?.subscription_plan === 'pro' && company?.subscription_status === 'active') ||
+                (subscription?.subscription_plan === 'pro' && subscription?.subscription_status === 'active')
+  const isCancelled = company?.subscription_status === 'cancelled' || subscription?.subscription_status === 'cancelled'
+  const isExpired = company?.subscription_status === 'expired' || subscription?.subscription_status === 'expired'
+  
+  // Verificar que la suscripción no haya expirado
+  const subscriptionActive = isPro && 
+    (!company?.subscription_ends_at || new Date(company.subscription_ends_at) > new Date())
 
   return (
     <div className="space-y-6">
@@ -237,22 +249,27 @@ function SubscriptionPageContent() {
         </CardHeader>
         <CardBody>
           <div className="space-y-4">
-            {isPro && (
+            {subscriptionActive && (
               <>
                 <div className="flex items-center gap-2 text-green-600">
                   <Check className="h-5 w-5" />
-                  <span className="font-medium">Suscripción activa</span>
+                  <span className="font-medium">Suscripción Pro activa</span>
                 </div>
-                {subscription?.subscription_started_at && (
+                <div className="bg-green-50 border border-green-200 rounded-md p-3">
+                  <p className="text-sm text-green-800">
+                    <strong>¡Tienes acceso completo!</strong> Todos los límites han sido eliminados. Puedes crear trabajos, clientes, presupuestos y facturas sin restricciones.
+                  </p>
+                </div>
+                {(company?.subscription_started_at || subscription?.subscription_started_at) && (
                   <div className="text-sm text-gray-600">
                     <Calendar className="h-4 w-4 inline mr-2" />
-                    Activa desde: {new Date(subscription.subscription_started_at).toLocaleDateString('es-ES')}
+                    Activa desde: {new Date((company?.subscription_started_at || subscription?.subscription_started_at)!).toLocaleDateString('es-ES')}
                   </div>
                 )}
-                {subscription?.subscription_ends_at && (
+                {(company?.subscription_ends_at || subscription?.subscription_ends_at) && (
                   <div className="text-sm text-gray-600">
                     <Calendar className="h-4 w-4 inline mr-2" />
-                    Renovación: {new Date(subscription.subscription_ends_at).toLocaleDateString('es-ES')}
+                    Renovación: {new Date((company?.subscription_ends_at || subscription?.subscription_ends_at)!).toLocaleDateString('es-ES')}
                   </div>
                 )}
                 {isCancelled && (
@@ -262,7 +279,7 @@ function SubscriptionPageContent() {
                       <span className="font-medium">Suscripción cancelada</span>
                     </div>
                     <p className="text-sm text-yellow-700 mt-1">
-                      Tu suscripción seguirá activa hasta el final del período pagado.
+                      Tu suscripción seguirá activa hasta el final del período pagado ({company?.subscription_ends_at ? new Date(company.subscription_ends_at).toLocaleDateString('es-ES') : 'fecha no disponible'}).
                     </p>
                   </div>
                 )}
@@ -272,7 +289,7 @@ function SubscriptionPageContent() {
               </>
             )}
 
-            {!isPro && (
+            {!subscriptionActive && (
               <>
                 <div className="space-y-3">
                   <p className="text-gray-600">

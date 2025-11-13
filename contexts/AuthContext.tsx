@@ -46,6 +46,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<any>
   signOut: () => Promise<void>
   updateProfile: (updates: Partial<UserProfile>) => Promise<any>
+  refreshProfile: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -81,10 +82,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   // Versión optimizada de loadUserProfile con caché y mejor manejo de errores
-  const loadUserProfile = useCallback(async (userId: string) => {
+  const loadUserProfile = useCallback(async (userId: string, forceRefresh: boolean = false) => {
     try {
-      // Solo cargar si no está ya cargado o si es un usuario diferente
-      if (profileRef.current && profileRef.current.id === userId) {
+      // Solo cargar si no está ya cargado o si es un usuario diferente, a menos que se fuerce la recarga
+      if (!forceRefresh && profileRef.current && profileRef.current.id === userId) {
         conditionalLog('debug', '🔄 User profile already loaded, skipping...')
         return
       }
@@ -175,13 +176,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setUser(null)
             setProfile(null)
             setCompany(null)
+            setLoading(false)
           }
           return
         }
         
         if (session?.user && mounted) {
           setUser(session.user)
-          await loadUserProfile(session.user.id)
+          // Cargar perfil con timeout para evitar que se quede colgado
+          try {
+            await Promise.race([
+              loadUserProfile(session.user.id),
+              new Promise((_, reject) => 
+                setTimeout(() => reject(new Error('Timeout loading profile')), 10000)
+              )
+            ])
+          } catch (profileError) {
+            console.warn('⚠️ Error or timeout loading profile:', profileError)
+            // Continuar aunque falle la carga del perfil
+          }
         } else if (mounted) {
           // No hay sesión, limpiar estado
           setUser(null)
@@ -305,6 +318,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await loadUserProfile(user.id)
   }
 
+  const refreshProfile = async () => {
+    if (!user?.id) return
+    // Limpiar el caché antes de recargar
+    profileRef.current = null
+    await loadUserProfile(user.id, true)
+  }
+
   const value = {
     user,
     profile,
@@ -314,6 +334,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     signUp,
     signOut,
     updateProfile,
+    refreshProfile,
   }
 
   return (
