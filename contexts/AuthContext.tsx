@@ -213,14 +213,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null)
           setProfile(null)
           setCompany(null)
+          setLoading(false)
           // Solo mostrar toast si no estamos redirigiendo (para evitar doble mensaje)
           if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
             toast.success('Sesión cerrada')
           }
         } else if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
-          // Solo cargar perfil si no está ya cargado
-          if (!profile || profile.id !== session.user.id) {
+          setLoading(false) // Asegurar que loading se establece en false cuando hay un usuario
+          // Solo cargar perfil si no está ya cargado (usar profileRef para evitar problemas de closures)
+          if (!profileRef.current || profileRef.current.id !== session.user.id) {
             await loadUserProfile(session.user.id)
           }
         } else if (event === 'TOKEN_REFRESHED') {

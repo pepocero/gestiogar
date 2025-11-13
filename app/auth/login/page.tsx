@@ -1,18 +1,27 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 import { supabase } from '@/lib/supabase'
+import { useAuth } from '@/contexts/AuthContext'
 
 export default function SimpleLoginPage() {
   const router = useRouter()
+  const { user, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
     password: ''
   })
+
+  // Redirigir si el usuario ya está autenticado
+  useEffect(() => {
+    if (!authLoading && user) {
+      router.push('/dashboard')
+    }
+  }, [user, authLoading, router])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -40,17 +49,27 @@ export default function SimpleLoginPage() {
       }
 
       console.log('✅ Login successful:', data.user.id)
+      
+      // Esperar a que Supabase guarde la sesión
+      await new Promise(resolve => setTimeout(resolve, 500))
+      
+      // Verificar que la sesión se guardó correctamente
+      const { data: { session } } = await supabase.auth.getSession()
+      
+      if (!session) {
+        throw new Error('No se pudo establecer la sesión. Por favor, intenta nuevamente.')
+      }
+
       toast.success('¡Bienvenido! Redirigiendo al dashboard...')
       
-      // Redirigir inmediatamente sin esperar contextos complejos
-      setTimeout(() => {
-        window.location.href = '/dashboard'
-      }, 1000)
+      // Usar router.push en lugar de window.location.href para mejor integración con Next.js
+      // El useEffect se encargará de redirigir cuando el usuario esté disponible
+      router.push('/dashboard')
+      router.refresh()
 
     } catch (error: any) {
       console.error('❌ Login error:', error)
       toast.error(error.message || 'Error al iniciar sesión')
-    } finally {
       setLoading(false)
     }
   }
