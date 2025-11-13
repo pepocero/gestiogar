@@ -11,6 +11,7 @@ import { ImageEditor } from '@/components/ui/ImageEditor'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, User, MapPin, Clock, CheckCircle, XCircle, DollarSign, Wrench, Camera, Upload, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/lib/supabase'
+import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 
 export default function TechniciansPage() {
@@ -40,11 +41,18 @@ export default function TechniciansPage() {
     if (process.env.NODE_ENV !== 'production') {
       console.log('[Technicians] fetchTechnicians start', company.id)
     }
-      const { data, error } = await supabase
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company.id)
+      
+      let query = supabase
         .from('technicians')
         .select('*')
         .eq('company_id', company.id)
-        .order('created_at', { ascending: false })
+      
+      // Aplicar límite según el plan
+      query = applyPlanLimit(query, limits.max_technicians, 'created_at', true)
+
+      const { data, error } = await query
 
       if (error) {
         console.error('Error fetching technicians:', error)

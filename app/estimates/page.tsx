@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { supabase, supabaseTable } from '@/lib/supabase'
+import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, FileText, Eye, Send, Check, X, User, Mail, Wrench, Calendar } from 'lucide-react'
 import { format } from 'date-fns'
@@ -108,7 +109,11 @@ useEffect(() => {
       console.log('[Estimates] loadEstimates start', company?.id)
     }
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company!.id)
+      
+      let query = supabase
         .from('estimates')
         .select(`
           *,
@@ -116,7 +121,11 @@ useEffect(() => {
           jobs(job_number, title)
         `)
         .eq('company_id', company!.id)
-        .order('created_at', { ascending: false })
+      
+      // Aplicar límite según el plan
+      query = applyPlanLimit(query, limits.max_estimates, 'created_at', true)
+
+      const { data, error } = await query
 
       if (error) {
         throw error

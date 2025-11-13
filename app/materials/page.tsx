@@ -7,6 +7,7 @@ import { Modal, Input, Badge } from '@/components/ui'
 import { Package, Plus, Settings, Eye, Edit, Trash2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
+import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 
 export default function MaterialsPage() {
@@ -64,14 +65,21 @@ useEffect(() => {
         return
       }
 
-      const { data, error } = await supabase
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company.id)
+      
+      let query = supabase
         .from('materials')
         .select(`
           *,
           suppliers(name)
         `)
         .eq('company_id', company.id)
-        .order('name', { ascending: true })
+      
+      // Aplicar límite según el plan (ordenar por created_at para plan free)
+      query = applyPlanLimit(query, limits.max_materials, 'created_at', true)
+
+      const { data, error } = await query
 
       if (error) {
         throw error

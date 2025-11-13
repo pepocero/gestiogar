@@ -5,6 +5,7 @@ import { supabase, supabaseTable, isAuthError } from '@/lib/supabase'
 import type { AuthUser } from '@/types/auth'
 import toast from 'react-hot-toast'
 import { PERFORMANCE_CONFIG, conditionalLog } from '@/lib/performance'
+import type { CompanySubscription } from '@/lib/subscription'
 
 interface UserProfile {
   id: string
@@ -28,6 +29,12 @@ interface Company {
   logo_url?: string
   website?: string
   tax_id?: string
+  subscription_plan?: 'free' | 'pro'
+  subscription_status?: 'active' | 'cancelled' | 'expired'
+  subscription_started_at?: string | null
+  subscription_ends_at?: string | null
+  paypal_subscription_id?: string | null
+  paypal_customer_id?: string | null
 }
 
 interface AuthContextType {
@@ -84,11 +91,27 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       conditionalLog('debug', '🔄 Loading user profile for:', userId)
       
-      // Query optimizada con timeout
+      // Query optimizada con timeout - incluir información de suscripción
       const { data: userData, error } = await supabaseTable('users')
         .select(`
           *,
-          company:companies(*)
+          company:companies(
+            id,
+            name,
+            slug,
+            address,
+            phone,
+            email,
+            logo_url,
+            website,
+            tax_id,
+            subscription_plan,
+            subscription_status,
+            subscription_started_at,
+            subscription_ends_at,
+            paypal_subscription_id,
+            paypal_customer_id
+          )
         `)
         .eq('id', userId)
         .single()

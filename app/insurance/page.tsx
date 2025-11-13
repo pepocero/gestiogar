@@ -7,6 +7,7 @@ import { Modal, Input, Badge } from '@/components/ui'
 import { Building2, Plus, Settings, Eye, Edit, Trash2, Upload, X } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseTable } from '@/lib/supabase'
+import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import { ImageEditor } from '@/components/ui/ImageEditor'
 import toast from 'react-hot-toast'
 
@@ -76,11 +77,18 @@ useEffect(() => {
         return
       }
 
-      const { data, error } = await supabase
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company.id)
+      
+      let query = supabase
         .from('insurance_companies')
         .select('*')
         .eq('company_id', company.id)
-        .order('name', { ascending: true })
+      
+      // Aplicar límite según el plan (ordenar por created_at para plan free)
+      query = applyPlanLimit(query, limits.max_insurance_companies, 'created_at', true)
+
+      const { data, error } = await query
 
       if (error) {
         throw error

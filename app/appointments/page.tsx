@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Calendar, Clock, MapPin, User, Wrench, List } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseTable } from '@/lib/supabase'
+import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 import { Calendar as BigCalendar, momentLocalizer, View } from 'react-big-calendar'
 import moment from 'moment'
@@ -113,7 +114,11 @@ export default function AppointmentsPage() {
         console.log('[Appointments] loadAppointments start', company?.id)
       }
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company!.id)
+      
+      let query = supabase
         .from('appointments')
         .select(`
           *,
@@ -129,7 +134,11 @@ export default function AppointmentsPage() {
           )
         `)
         .eq('company_id', company!.id)
-        .order('scheduled_date', { ascending: true })
+      
+      // Aplicar límite según el plan (ordenar por created_at para plan free)
+      query = applyPlanLimit(query, limits.max_appointments, 'created_at', true)
+
+      const { data, error } = await query
 
       if (error) {
         throw error

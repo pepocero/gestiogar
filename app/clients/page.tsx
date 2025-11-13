@@ -12,6 +12,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, User, MapPin, CheckCircle, XCircle, Building2 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/lib/supabase'
+import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 
 export default function ClientsPage() {
@@ -53,7 +54,10 @@ export default function ClientsPage() {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Clients] fetchClients start', company.id)
       }
-      const { data, error } = await supabaseTable('clients')
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company.id)
+      
+      let query = supabaseTable('clients')
         .select(`
           *,
           insurance_companies (
@@ -62,7 +66,11 @@ export default function ClientsPage() {
           )
         `)
         .eq('company_id', company.id)
-        .order('created_at', { ascending: false })
+      
+      // Aplicar límite según el plan
+      query = applyPlanLimit(query, limits.max_clients, 'created_at', true)
+
+      const { data, error } = await query
 
       if (error) {
         console.error('Error fetching clients:', error)
@@ -116,6 +124,15 @@ export default function ClientsPage() {
     
     if (!company?.id) {
       toast.error('No se pudo obtener la información de la empresa')
+      return
+    }
+
+    // Verificar límite antes de crear
+    const canCreate = await canCreateItem(company.id, 'max_clients')
+    if (!canCreate.allowed) {
+      toast.error(`Has alcanzado el límite de ${canCreate.limit} clientes. Actualiza a Gestiogar Pro para crear más.`, {
+        duration: 6000
+      })
       return
     }
 

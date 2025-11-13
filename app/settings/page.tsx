@@ -14,7 +14,8 @@ import {
   Bell, 
   Package,
   Settings as SettingsIcon,
-  LogOut
+  LogOut,
+  Crown
 } from 'lucide-react'
 
 export default function SettingsPage() {
@@ -71,6 +72,14 @@ export default function SettingsPage() {
       href: '/settings/notifications',
       color: 'bg-yellow-100',
       iconColor: 'text-yellow-600'
+    },
+    {
+      title: 'Suscripción',
+      description: 'Gestiona tu plan y límites de uso',
+      icon: Crown,
+      href: '/settings/subscription',
+      color: 'bg-purple-100',
+      iconColor: 'text-purple-600'
     }
   ]
 

@@ -10,6 +10,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, Phone, Mail, MessageSquare, User, Wrench, Calendar, ArrowUpRight, ArrowDownLeft, Reply, Settings } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseTable } from '@/lib/supabase'
+import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 
 interface Conversation {
@@ -121,7 +122,11 @@ export default function CommunicationsPage() {
         console.log('[Communications] loadConversations start', company.id)
       }
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company.id)
+      
+      let query = supabase
         .from('conversations')
         .select(`
           *,
@@ -150,7 +155,18 @@ export default function CommunicationsPage() {
           )
         `)
         .eq('company_id', company.id)
-        .order('updated_at', { ascending: false })
+      
+      // Aplicar límite según el plan (ordenar por created_at para plan free)
+      // Nota: applyPlanLimit ya aplica el orden, pero para conversations queremos ordenar por updated_at
+      if (limits.max_conversations === null) {
+        // Plan Pro - ordenar por updated_at descendente
+        query = query.order('updated_at', { ascending: false })
+      } else {
+        // Plan Free - aplicar límite con orden por created_at
+        query = applyPlanLimit(query, limits.max_conversations, 'created_at', true)
+      }
+
+      const { data, error } = await query
 
       if (error) {
         throw error

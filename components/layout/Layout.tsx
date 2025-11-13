@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react'
 import { Sidebar } from './Sidebar'
 import { Header } from './Header'
 import { SidebarProvider, useSidebar } from '@/contexts/SidebarContext'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 interface LayoutProps {
   children: React.ReactNode
@@ -44,6 +45,7 @@ function LayoutContent({ children }: LayoutProps) {
         
         <main className="flex-1 overflow-y-auto">
           <div className="p-6">
+            <SubscriptionBanner />
             {children}
           </div>
         </main>

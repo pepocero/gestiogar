@@ -11,6 +11,7 @@ import { Modal } from '@/components/ui/Modal'
 import { Badge } from '@/components/ui/Badge'
 import { Table, TableHeader, TableBody, TableRow, TableHead, TableCell } from '@/components/ui/Table'
 import { supabase, supabaseTable } from '@/lib/supabase'
+import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, Wrench, Eye, Calendar, User, MapPin, Mail } from 'lucide-react'
 import { format } from 'date-fns'
@@ -111,7 +112,11 @@ useEffect(() => {
         console.log('[Jobs] loadJobs start', company?.id)
       }
       setLoading(true)
-      const { data, error } = await supabase
+      
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company!.id)
+      
+      let query = supabase
         .from('jobs')
         .select(`
           *,
@@ -120,7 +125,11 @@ useEffect(() => {
           insurance_companies(name)
         `)
         .eq('company_id', company!.id)
-        .order('created_at', { ascending: false })
+      
+      // Aplicar límite según el plan
+      query = applyPlanLimit(query, limits.max_jobs, 'created_at', true)
+
+      const { data, error } = await query
 
       if (error) {
         throw error
@@ -130,7 +139,8 @@ useEffect(() => {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Jobs] loadJobs success', {
           companyId: company?.id,
-          count: data?.length || 0
+          count: data?.length || 0,
+          limit: limits.max_jobs
         })
       }
     } catch (error) {
@@ -334,6 +344,15 @@ useEffect(() => {
 
         toast.success('Trabajo actualizado correctamente')
       } else {
+        // Verificar límite antes de crear
+        const canCreate = await canCreateItem(company.id, 'max_jobs')
+        if (!canCreate.allowed) {
+          toast.error(`Has alcanzado el límite de ${canCreate.limit} trabajos. Actualiza a Gestiogar Pro para crear más.`, {
+            duration: 6000
+          })
+          return
+        }
+
         // Crear nuevo trabajo
         const { error } = await supabaseTable('jobs')
           .insert([{
