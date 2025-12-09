@@ -1,0 +1,123 @@
+{
+  "name": "Contactos de Proveedores",
+  "slug": "contactos-proveedores",
+  "version": "1.0.0",
+  "description": "Gestión de proveedores y contactos comerciales",
+  "icon": "Building",
+  "fields": [
+    {
+      "name": "nombre_empresa",
+      "label": "Nombre de la empresa",
+      "type": "text",
+      "required": true,
+      "description": "Razón social del proveedor"
+    },
+    {
+      "name": "contacto_nombre",
+      "label": "Nombre del contacto",
+      "type": "text",
+      "required": false,
+      "description": "Persona de contacto"
+    },
+    {
+      "name": "categoria",
+      "label": "Categoría",
+      "type": "select",
+      "required": true,
+      "description": "Tipo de proveedor",
+      "options": [
+        {"value": "repuestos", "label": "Repuestos"},
+        {"value": "herramientas", "label": "Herramientas"},
+        {"value": "combustible", "label": "Combustible"},
+        {"value": "servicios", "label": "Servicios"},
+        {"value": "oficina", "label": "Material de oficina"},
+        {"value": "otro", "label": "Otro"}
+      ]
+    },
+    {
+      "name": "telefono",
+      "label": "Teléfono",
+      "type": "tel",
+      "required": false,
+      "description": "Número de contacto"
+    },
+    {
+      "name": "email",
+      "label": "Email",
+      "type": "email",
+      "required": false,
+      "description": "Dirección de correo"
+    },
+    {
+      "name": "direccion",
+      "label": "Dirección",
+      "type": "text",
+      "required": false,
+      "description": "Dirección física"
+    },
+    {
+      "name": "ciudad",
+      "label": "Ciudad",
+      "type": "text",
+      "required": false,
+      "description": "Localidad"
+    },
+    {
+      "name": "codigo_postal",
+      "label": "Código postal",
+      "type": "text",
+      "required": false,
+      "description": "CP"
+    },
+    {
+      "name": "cif_nif",
+      "label": "CIF/NIF",
+      "type": "text",
+      "required": false,
+      "description": "Identificación fiscal"
+    },
+    {
+      "name": "condiciones_pago",
+      "label": "Condiciones de pago",
+      "type": "text",
+      "required": false,
+      "description": "Ej: 30 días, contado, etc."
+    },
+    {
+      "name": "descuentos",
+      "label": "Descuentos (€)",
+      "type": "number",
+      "required": false,
+      "description": "Descuentos habituales"
+    },
+    {
+      "name": "estado",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "description": "Estado de la relación",
+      "options": [
+        {"value": "activo", "label": "Activo"},
+        {"value": "inactivo", "label": "Inactivo"},
+        {"value": "suspenso", "label": "Suspendido"},
+        {"value": "evaluacion", "label": "En evaluación"}
+      ]
+    },
+    {
+      "name": "ultimo_contacto",
+      "label": "Último contacto",
+      "type": "date",
+      "required": false,
+      "description": "Cuándo fue el último contacto"
+    },
+    {
+      "name": "observaciones",
+      "label": "Observaciones",
+      "type": "textarea",
+      "required": false,
+      "description": "Notas sobre el proveedor"
+    }
+  ],
+  "displayName": "Proveedores",
+  "displayDescription": "Gestión de proveedores y contactos comerciales"
+}

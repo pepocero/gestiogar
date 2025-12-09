@@ -1,0 +1,129 @@
+{
+  "name": "Vehículos de Servicio",
+  "slug": "vehiculos-servicio",
+  "version": "1.0.0",
+  "description": "Gestión de vehículos de empresa para servicios",
+  "icon": "Truck",
+  "fields": [
+    {
+      "name": "matricula",
+      "label": "Matrícula",
+      "type": "text",
+      "required": true,
+      "description": "Número de matrícula del vehículo"
+    },
+    {
+      "name": "marca",
+      "label": "Marca",
+      "type": "text",
+      "required": true,
+      "description": "Marca del vehículo"
+    },
+    {
+      "name": "modelo",
+      "label": "Modelo",
+      "type": "text",
+      "required": true,
+      "description": "Modelo específico"
+    },
+    {
+      "name": "año",
+      "label": "Año",
+      "type": "number",
+      "required": true,
+      "description": "Año de fabricación"
+    },
+    {
+      "name": "tipo",
+      "label": "Tipo de vehículo",
+      "type": "select",
+      "required": true,
+      "description": "Clasificación del vehículo",
+      "options": [
+        {"value": "furgoneta", "label": "Furgoneta"},
+        {"value": "camion", "label": "Camión"},
+        {"value": "motocicleta", "label": "Motocicleta"},
+        {"value": "auto", "label": "Automóvil"},
+        {"value": "especializado", "label": "Especializado"}
+      ]
+    },
+    {
+      "name": "kilometraje",
+      "label": "Kilometraje actual",
+      "type": "number",
+      "required": false,
+      "description": "Kilómetros totales"
+    },
+    {
+      "name": "combustible",
+      "label": "Tipo de combustible",
+      "type": "select",
+      "required": true,
+      "description": "Combustible que utiliza",
+      "options": [
+        {"value": "gasolina", "label": "Gasolina"},
+        {"value": "diesel", "label": "Diésel"},
+        {"value": "electrico", "label": "Eléctrico"},
+        {"value": "hibrido", "label": "Híbrido"}
+      ]
+    },
+    {
+      "name": "conductor_asignado",
+      "label": "Conductor asignado",
+      "type": "text",
+      "required": false,
+      "description": "Empleado responsable"
+    },
+    {
+      "name": "estado",
+      "label": "Estado",
+      "type": "select",
+      "required": true,
+      "description": "Estado operativo",
+      "options": [
+        {"value": "activo", "label": "Activo"},
+        {"value": "revision", "label": "En revisión"},
+        {"value": "averiado", "label": "Averiado"},
+        {"value": "mantenimiento", "label": "En mantenimiento"},
+        {"value": "retirado", "label": "Retirado"}
+      ]
+    },
+    {
+      "name": "ultima_revision",
+      "label": "Última revisión",
+      "type": "date",
+      "required": false,
+      "description": "Fecha de ITV o revisión"
+    },
+    {
+      "name": "proxima_revision",
+      "label": "Próxima revisión",
+      "type": "date",
+      "required": false,
+      "description": "Fecha próxima ITV"
+    },
+    {
+      "name": "seguro",
+      "label": "Seguro",
+      "type": "text",
+      "required": false,
+      "description": "Información del seguro"
+    },
+    {
+      "name": "poliza_seguro",
+      "label": "Número de póliza",
+      "type": "text",
+      "required": false,
+      "description": "Referencia del seguro"
+    },
+    {
+      "name": "observaciones",
+      "label": "Observaciones",
+      "type": "textarea",
+      "required": false,
+      "description": "Notas sobre el vehículo"
+    }
+  ],
+  "displayName": "Vehículos",
+  "displayDescription": "Gestión de flota de vehículos de empresa"
+}

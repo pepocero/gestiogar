@@ -1,0 +1,46 @@
+{
+  "name": "Contactos Personales",
+  "slug": "contactos-personales",
+  "version": "1.0.0",
+  "description": "Gestión de contactos personales para usuarios individuales",
+  "icon": "Users",
+  "fields": [
+    {
+      "name": "nombre",
+      "label": "Nombre",
+      "type": "text",
+      "required": true,
+      "description": "Nombre completo del contacto"
+    },
+    {
+      "name": "telefono",
+      "label": "✓️ Teléfono",
+      "type": "tel",
+      "required": true,
+      "description": "Número de teléfono"
+    },
+    {
+      "name": "email",
+      "label": "📧 Email",
+      "type": "email",
+      "required": false,
+      "description": "Correo electrónico"
+    },
+    {
+      "name": "direccion",
+      "label": "🏠 Dirección",
+      "type": "text",
+      "required": false,
+      "description": "Dirección del contacto"
+    },
+    {
+      "name": "notas",
+      "label": "📝 Notas",
+      "type": "textarea",
+      "required": false,
+      "description": "Información adicional"
+    }
+  ],
+  "displayName": "Contactos",
+  "displayDescription": "Gestión de contactos personales"
+}

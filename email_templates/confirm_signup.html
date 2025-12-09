@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirma tu registro - Gestiogar</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      padding: 40px 20px;
+    }
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+    .header {
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      padding: 40px 30px;
+      text-align: center;
+    }
+    .logo {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 20px;
+      background: white;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .logo svg {
+      width: 50px;
+      height: 50px;
+      fill: none;
+      stroke: #3b82f6;
+      stroke-width: 2;
+    }
+    .header h1 {
+      color: white;
+      font-size: 32px;
+      font-weight: bold;
+      margin: 0 0 10px;
+    }
+    .header p {
+      color: rgba(255, 255, 255, 0.9);
+      font-size: 16px;
+      margin: 0;
+    }
+    .content {
+      padding: 40px 30px;
+    }
+    .content h2 {
+      color: #1e293b;
+      font-size: 24px;
+      font-weight: 600;
+      margin: 0 0 20px;
+      text-align: center;
+    }
+    .content p {
+      color: #64748b;
+      font-size: 16px;
+      line-height: 1.6;
+      margin: 0 0 30px;
+      text-align: center;
+    }
+    .button-container {
+      text-align: center;
+      margin: 30px 0;
+    }
+    .button {
+      display: inline-block;
+      background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+      color: white;
+      text-decoration: none;
+      padding: 16px 40px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+      transition: all 0.3s;
+    }
+    .button:hover {
+      box-shadow: 0 6px 20px rgba(59, 130, 246, 0.5);
+      transform: translateY(-2px);
+    }
+    .divider {
+      border: none;
+      border-top: 1px solid #e2e8f0;
+      margin: 30px 0;
+    }
+    .info-box {
+      background: #f1f5f9;
+      border-left: 4px solid #3b82f6;
+      border-radius: 6px;
+      padding: 20px;
+      margin: 20px 0;
+    }
+    .info-box p {
+      color: #475569;
+      font-size: 14px;
+      margin: 0;
+      text-align: left;
+    }
+    .footer {
+      background: #f8fafc;
+      padding: 30px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0;
+    }
+    .footer p {
+      color: #94a3b8;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+    .footer a {
+      color: #3b82f6;
+      text-decoration: none;
+    }
+    .footer a:hover {
+      text-decoration: underline;
+    }
+    .security-note {
+      background: #fef3c7;
+      border-left: 4px solid #f59e0b;
+      border-radius: 6px;
+      padding: 15px;
+      margin: 20px 0;
+    }
+    .security-note p {
+      color: #92400e;
+      font-size: 13px;
+      margin: 0;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="logo">
+        <svg viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"></path>
+        </svg>
+      </div>
+      <h1>Gestiogar</h1>
+      <p>Sistema de Gestión Empresarial</p>
+    </div>
+
+    <!-- Content -->
+    <div class="content">
+      <h2>¡Bienvenido a Gestiogar! 🎉</h2>
+      
+      <p>
+        Gracias por registrarte. Estás a un paso de comenzar a gestionar tu empresa de forma eficiente.
+      </p>
+
+      <p style="font-size: 18px; color: #1e293b; font-weight: 500;">
+        Para activar tu cuenta, confirma tu correo electrónico:
+      </p>
+
+      <div class="button-container">
+        <a href="{{ .ConfirmationURL }}" class="button">
+          ✓ Confirmar mi correo electrónico
+        </a>
+      </div>
+
+      <div class="info-box">
+        <p>
+          <strong>¿Por qué necesitas confirmar tu email?</strong><br>
+          Este paso nos ayuda a asegurar que tu cuenta está protegida y que puedes recuperar el acceso si alguna vez lo necesitas.
+        </p>
+      </div>
+
+      <hr class="divider">
+
+      <p style="font-size: 14px; color: #64748b;">
+        Una vez confirmado tu email, podrás:
+      </p>
+      
+      <div style="text-align: left; max-width: 400px; margin: 20px auto;">
+        <p style="margin: 10px 0; color: #475569; font-size: 14px;">
+          ✓ Acceder a tu dashboard personalizado<br>
+          ✓ Gestionar clientes y técnicos<br>
+          ✓ Crear trabajos y presupuestos<br>
+          ✓ Emitir facturas profesionales<br>
+          ✓ Programar citas y mucho más
+        </p>
+      </div>
+
+      <div class="security-note">
+        <p>
+          <strong>⚠️ Nota de seguridad:</strong><br>
+          Si no solicitaste esta cuenta, puedes ignorar este email. Tu dirección de correo no será utilizada.
+        </p>
+      </div>
+
+      <hr class="divider">
+
+      <p style="font-size: 13px; color: #94a3b8;">
+        Este enlace expirará en 24 horas por motivos de seguridad.
+      </p>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p style="font-weight: 600; color: #475569; margin-bottom: 10px;">
+        Gestiogar - Gestión Empresarial
+      </p>
+      <p>
+        Sistema multitenant para empresas de reparaciones del hogar
+      </p>
+      <p style="margin-top: 15px;">
+        <a href="https://tudominio.com">Visitar sitio web</a> | 
+        <a href="mailto:soporte@gestiogar.com">Contactar soporte</a>
+      </p>
+      <p style="margin-top: 20px; font-size: 12px;">
+        © 2025 Gestiogar. Todos los derechos reservados.
+      </p>
+    </div>
+  </div>
+</body>
+</html>

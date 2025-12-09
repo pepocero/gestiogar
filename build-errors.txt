@@ -1,0 +1,63 @@
+﻿
+> gestiogar@0.1.0 build
+> next build
+
+  Ôû▓ Next.js 14.2.33
+
+   Creating an optimized production build ...
+ Ô£ô Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+   Generating static pages (0/34) ...
+   Generating static pages (8/34) 
+   Generating static pages (16/34) 
+   Generating static pages (25/34) 
+ Ô£ô Generating static pages (34/34)
+   Finalizing page optimization ...
+   Collecting build traces ...
+
+Route (app)                              Size     First Load JS
+Ôöî Ôùï /                                    11.1 kB         108 kB
+Ôö£ Ôùï /_not-found                          880 B          88.6 kB
+Ôö£ Ôùï /accounting                          4.55 kB         157 kB
+Ôö£ Ôùï /appointments                        78.4 kB         215 kB
+Ôö£ Ôùï /auth/login                          2.21 kB         145 kB
+Ôö£ Ôùï /auth/register                       2.98 kB         145 kB
+Ôö£ Ôùï /clients                             5.99 kB         143 kB
+Ôö£ Ôùï /communications                      7.13 kB         144 kB
+Ôö£ Ôùï /dashboard                           2.6 kB          145 kB
+Ôö£ Ôùï /dashboard-simple                    3.11 kB         146 kB
+Ôö£ Ôùï /dashboard-test                      844 B          88.6 kB
+Ôö£ Ôùï /debug-env                           1.69 kB        89.5 kB
+Ôö£ Ôùï /debug-modules                       7.47 kB         146 kB
+Ôö£ Ôùï /estimates                           7.17 kB         152 kB
+Ôö£ Ôùï /insurance                           6.42 kB         149 kB
+Ôö£ Ôùï /inventario/herramientas             4.33 kB        97.2 kB
+Ôö£ Ôùï /invoices                            8.1 kB          145 kB
+Ôö£ Ôùï /jobs                                7.28 kB         152 kB
+Ôö£ Ôùï /materials                           4.77 kB         147 kB
+Ôö£ ÔùÅ /module/[slug]                       5.82 kB         143 kB
+Ôö£   Ôö£ /module/vehicles
+Ôö£   Ôö£ /module/vehicle-management
+Ôö£   Ôö£ /module/holidays-vacations
+Ôö£   Ôöö /module/default
+Ôö£ Ôùï /reports                             375 kB          509 kB
+Ôö£ Ôùï /settings                            4.92 kB         147 kB
+Ôö£ Ôùï /settings/company                    7.62 kB         155 kB
+Ôö£ Ôùï /settings/modules                    8.73 kB         155 kB
+Ôö£ Ôùï /settings/notifications              1.79 kB        98.3 kB
+Ôö£ Ôùï /settings/profile                    6.72 kB         154 kB
+Ôö£ Ôùï /settings/security                   1.76 kB        98.3 kB
+Ôö£ Ôùï /suppliers                           4.8 kB          147 kB
+Ôöö Ôùï /technicians                         7.93 kB         150 kB
++ First Load JS shared by all            87.8 kB
+  Ôö£ chunks/2117-dd3fb8ce0d5c73cf.js      31.9 kB
+  Ôö£ chunks/fd9d1056-e5c06d11e6d16341.js  53.6 kB
+  Ôöö other shared chunks (total)          2.27 kB
+
+
+ãÆ Middleware                             26.5 kB
+
+Ôùï  (Static)  prerendered as static content
+ÔùÅ  (SSG)     prerendered as static HTML (uses getStaticProps)
+

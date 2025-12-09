@@ -1,0 +1,167 @@
+{
+  "timestamp": "2025-10-02T21:42:51.883Z",
+  "summary": {
+    "total": 26,
+    "passed": 7,
+    "failed": 19,
+    "passRate": "26.9%"
+  },
+  "tests": [
+    {
+      "test": "Landing Page",
+      "status": "PASS",
+      "responseTime": 510.53340000000003,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Login Page",
+      "status": "PASS",
+      "responseTime": 81.25930000000005,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Register Page",
+      "status": "PASS",
+      "responseTime": 287.21129999999994,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Dashboard Redirect",
+      "status": "FAIL",
+      "responseTime": 1037.0937,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Clients Redirect",
+      "status": "FAIL",
+      "responseTime": 812.0378000000001,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Technicians Redirect",
+      "status": "FAIL",
+      "responseTime": 817.7669000000001,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Jobs Redirect",
+      "status": "FAIL",
+      "responseTime": 6960.3973000000005,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Estimates Redirect",
+      "status": "FAIL",
+      "responseTime": 932.9241000000002,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Invoices Redirect",
+      "status": "FAIL",
+      "responseTime": 4698.4311,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Insurance Redirect",
+      "status": "FAIL",
+      "responseTime": 1062.6759999999995,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Suppliers Redirect",
+      "status": "FAIL",
+      "responseTime": 961.9477000000006,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Materials Redirect",
+      "status": "FAIL",
+      "responseTime": 1011.821100000001,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Appointments Redirect",
+      "status": "FAIL",
+      "responseTime": 4863.157999999999,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Communications Redirect",
+      "status": "FAIL",
+      "responseTime": 1286.7498000000014,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Reports Redirect",
+      "status": "FAIL",
+      "responseTime": 11693.7883,
+      "details": "Expected: 302, Got: 500"
+    },
+    {
+      "test": "Settings Redirect",
+      "status": "FAIL",
+      "responseTime": 9628.637800000004,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Settings Profile Redirect",
+      "status": "FAIL",
+      "responseTime": 6497.5121,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Settings Company Redirect",
+      "status": "FAIL",
+      "responseTime": 2152.3161000000036,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Settings Modules Redirect",
+      "status": "FAIL",
+      "responseTime": 2340.2085000000006,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Settings Security Redirect",
+      "status": "FAIL",
+      "responseTime": 1748.7842999999993,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Settings Notifications Redirect",
+      "status": "FAIL",
+      "responseTime": 2518.903499999993,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "Logo Asset",
+      "status": "PASS",
+      "responseTime": 5.1238999999986845,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Favicon Asset",
+      "status": "PASS",
+      "responseTime": 9.771500000002561,
+      "details": "Status: 200"
+    },
+    {
+      "test": "Module Base Route (404 expected)",
+      "status": "PASS",
+      "responseTime": 4760.987499999996,
+      "details": "Status: 404"
+    },
+    {
+      "test": "Invalid Module Redirect",
+      "status": "FAIL",
+      "responseTime": 6508.2051000000065,
+      "details": "Expected: 302, Got: 200"
+    },
+    {
+      "test": "404 Not Found Page",
+      "status": "PASS",
+      "responseTime": 75.26549999999406,
+      "details": "Status: 404"
+    }
+  ]
+}
