@@ -225,12 +225,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (event === 'SIGNED_OUT') {
           setUser(null)
           setProfile(null)
+          profileRef.current = null
           setCompany(null)
           setLoading(false)
-          // Solo mostrar toast si no estamos redirigiendo (para evitar doble mensaje)
-          if (typeof window !== 'undefined' && !window.location.pathname.includes('/auth/login')) {
-            toast.success('Sesión cerrada')
-          }
+          // No mostrar toast aquí porque handleLogout ya lo muestra
+          // Evitar doble mensaje
         } else if (event === 'SIGNED_IN' && session?.user) {
           setUser(session.user)
           setLoading(false) // Asegurar que loading se establece en false cuando hay un usuario
@@ -292,8 +291,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const signOut = async () => {
-    await supabase.auth.signOut()
-    // El estado se actualizará automáticamente por onAuthStateChange
+    try {
+      // Limpiar estado inmediatamente para una respuesta más rápida
+      setUser(null)
+      setProfile(null)
+      profileRef.current = null
+      setCompany(null)
+      
+      // Cerrar sesión en Supabase
+      await supabase.auth.signOut()
+      // El estado ya se limpió arriba, pero onAuthStateChange también lo manejará
+    } catch (error) {
+      console.error('Error en signOut:', error)
+      // Asegurarse de limpiar el estado incluso si hay error
+      setUser(null)
+      setProfile(null)
+      profileRef.current = null
+      setCompany(null)
+      throw error
+    }
   }
 
   const updateProfile = async (updates: Partial<UserProfile>) => {

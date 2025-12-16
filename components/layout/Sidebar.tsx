@@ -80,12 +80,12 @@ export function Sidebar({ onClose }: SidebarProps) {
   const handleSignOut = async () => {
     try {
       await signOut()
-      // Redirigir a la página de bienvenida después de cerrar sesión
-      window.location.href = '/'
+      // Redirigir a la página de login después de cerrar sesión
+      window.location.href = '/auth/login'
     } catch (error) {
       console.error('Error signing out:', error)
-      // Redirigir a la página de bienvenida incluso si hay error
-      window.location.href = '/'
+      // Redirigir a la página de login incluso si hay error
+      window.location.href = '/auth/login'
     }
   }
 

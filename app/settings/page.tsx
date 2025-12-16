@@ -4,7 +4,6 @@ import Link from 'next/link'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
 import { useAuth } from '@/contexts/AuthContext'
-import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
 // Layout ya se aplica automáticamente en ProtectedLayout
 import { 
@@ -20,16 +19,18 @@ import {
 
 export default function SettingsPage() {
   const { signOut } = useAuth()
-  const router = useRouter()
 
   const handleLogout = async () => {
     try {
       await signOut()
       toast.success('Sesión cerrada correctamente')
-      router.push('/auth/login')
+      // Usar window.location.href para forzar una recarga completa
+      window.location.href = '/auth/login'
     } catch (error) {
       console.error('Error al cerrar sesión:', error)
       toast.error('Error al cerrar sesión')
+      // Redirigir incluso si hay error
+      window.location.href = '/auth/login'
     }
   }
   const settingsItems = [

@@ -1,7 +1,6 @@
 'use client'
 
 import React, { useState, useRef } from 'react'
-import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import { useSidebar } from '@/contexts/SidebarContext'
 import { Bell, Search, Menu, User, Settings, LogOut, Camera, X } from 'lucide-react'
@@ -16,7 +15,6 @@ interface HeaderProps {
 }
 
 export function Header({ onMenuClick }: HeaderProps) {
-  const router = useRouter()
   const { profile, company, signOut } = useAuth()
   const { sidebarOpen, isDesktop } = useSidebar()
   const [showProfileMenu, setShowProfileMenu] = useState(false)
@@ -246,13 +244,13 @@ export function Header({ onMenuClick }: HeaderProps) {
     try {
       await signOut()
       toast.success('Sesión cerrada exitosamente')
-      router.replace('/auth/login')
-      router.refresh()
+      // Usar window.location.href para forzar una recarga completa
+      window.location.href = '/auth/login'
     } catch (error) {
       console.error('Error logging out:', error)
       toast.error('Error al cerrar sesión')
-      router.replace('/auth/login')
-      router.refresh()
+      // Redirigir incluso si hay error
+      window.location.href = '/auth/login'
     }
   }
 
