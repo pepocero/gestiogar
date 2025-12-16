@@ -14,7 +14,7 @@ import { Plus, Search, Filter, Download, Eye, Edit, Trash2, X, Printer, FileText
 import toast from 'react-hot-toast'
 
 export default function InvoicesPage() {
-  const { company } = useAuth()
+  const { company, loading: authLoading } = useAuth()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [autoGenerateNumber, setAutoGenerateNumber] = useState(true)
   const [subtotal, setSubtotal] = useState<number>(0)
@@ -46,11 +46,12 @@ export default function InvoicesPage() {
 
   // Cargar clientes y facturas al montar el componente
   useEffect(() => {
-    if (company?.id) {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id) {
       loadClients()
       fetchInvoices()
     }
-  }, [company?.id])
+  }, [authLoading, company?.id])
 
   // Cargar clientes al abrir el modal
   useEffect(() => {

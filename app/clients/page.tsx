@@ -16,7 +16,7 @@ import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription
 import toast from 'react-hot-toast'
 
 export default function ClientsPage() {
-  const { company, user, loading } = useAuth()
+  const { company, user, loading: authLoading } = useAuth()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [insuranceCompanies, setInsuranceCompanies] = useState<any[]>([])
@@ -34,10 +34,11 @@ export default function ClientsPage() {
 
   // Cargar clientes al montar el componente
   React.useEffect(() => {
-    if (company?.id) {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id) {
       fetchClients()
     }
-  }, [company?.id])
+  }, [authLoading, company?.id])
 
   // Cargar aseguradoras al abrir el modal
   React.useEffect(() => {

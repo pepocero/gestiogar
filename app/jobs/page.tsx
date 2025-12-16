@@ -58,7 +58,7 @@ interface Job {
 }
 
 export default function JobsPage() {
-  const { company } = useAuth()
+  const { company, loading: authLoading } = useAuth()
   const [jobs, setJobs] = useState<Job[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -95,16 +95,16 @@ export default function JobsPage() {
   })
 
 useEffect(() => {
-  if (!company?.id) {
+  // Esperar a que la autenticación termine y company esté disponible
+  if (!authLoading && company?.id) {
+    loadJobs()
+    loadClients()
+    loadTechnicians()
+    loadInsuranceCompanies()
+  } else if (!authLoading && !company?.id) {
     setLoading(false)
-    return
   }
-
-  loadJobs()
-  loadClients()
-  loadTechnicians()
-  loadInsuranceCompanies()
-}, [company?.id])
+}, [authLoading, company?.id])
 
   const loadJobs = async () => {
     try {

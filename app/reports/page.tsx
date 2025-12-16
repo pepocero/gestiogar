@@ -71,7 +71,7 @@ interface ChartData {
 }
 
 export default function ReportsPage() {
-  const { company } = useAuth()
+  const { company, loading: authLoading } = useAuth()
   const [loading, setLoading] = useState(false)
   const [stats, setStats] = useState<ReportStats>({
     totalRevenue: 0,
@@ -99,13 +99,13 @@ export default function ReportsPage() {
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
 
 useEffect(() => {
-  if (!company?.id) {
+  // Esperar a que la autenticación termine y company esté disponible
+  if (!authLoading && company?.id) {
+    loadReportData()
+  } else if (!authLoading && !company?.id) {
     setLoading(false)
-    return
   }
-
-  loadReportData()
-}, [company?.id])
+}, [authLoading, company?.id])
 
   const loadReportData = async () => {
     if (!company) return
@@ -412,6 +412,18 @@ useEffect(() => {
     } else {
       exportToExcel()
     }
+  }
+
+  // Mostrar loading mientras se carga la autenticación o los datos
+  if (authLoading || (loading && !company?.id)) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando reportes...</p>
+        </div>
+      </div>
+    )
   }
 
   if (loading) {

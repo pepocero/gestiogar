@@ -11,7 +11,7 @@ import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription
 import toast from 'react-hot-toast'
 
 export default function SuppliersPage() {
-  const { company } = useAuth()
+  const { company, loading: authLoading } = useAuth()
   const [suppliers, setSuppliers] = useState<any[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -45,13 +45,13 @@ export default function SuppliersPage() {
   }
 
 useEffect(() => {
-  if (!company?.id) {
+  // Esperar a que la autenticación termine y company esté disponible
+  if (!authLoading && company?.id) {
+    loadSuppliers()
+  } else if (!authLoading && !company?.id) {
     setLoading(false)
-    return
   }
-
-  loadSuppliers()
-}, [company?.id])
+}, [authLoading, company?.id])
 
   const loadSuppliers = async () => {
     try {

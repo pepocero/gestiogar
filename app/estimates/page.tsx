@@ -54,7 +54,7 @@ interface EstimateItem {
 }
 
 export default function EstimatesPage() {
-  const { company } = useAuth()
+  const { company, loading: authLoading } = useAuth()
   const [estimates, setEstimates] = useState<Estimate[]>([])
   const [loading, setLoading] = useState(false)
   const [showModal, setShowModal] = useState(false)
@@ -92,16 +92,16 @@ export default function EstimatesPage() {
   })
 
 useEffect(() => {
-  if (!company?.id) {
+  // Esperar a que la autenticación termine y company esté disponible
+  if (!authLoading && company?.id) {
+    loadEstimates()
+    loadClients()
+    loadJobs()
+    loadMaterials()
+  } else if (!authLoading && !company?.id) {
     setLoading(false)
-    return
   }
-
-  loadEstimates()
-  loadClients()
-  loadJobs()
-  loadMaterials()
-}, [company?.id])
+}, [authLoading, company?.id])
 
   const loadEstimates = async () => {
     try {

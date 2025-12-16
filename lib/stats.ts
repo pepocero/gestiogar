@@ -11,6 +11,13 @@ export interface DashboardStats {
 
 export async function getDashboardStats(): Promise<DashboardStats | null> {
   try {
+    // Verificar que hay una sesión activa
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      console.warn('No active session for dashboard stats')
+      return null
+    }
+
     // Obtener el mes actual para calculos mensuales
     const now = new Date()
     const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1)
@@ -36,7 +43,7 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
         .from('clients')
         .select('id', { count: 'exact' }),
 
-      // Ingresu este mes (facturas pagadas)
+      // Ingresos este mes (facturas pagadas)
       supabase
         .from('invoices')
         .select('total_amount')
@@ -65,30 +72,24 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
         .lte('scheduled_date', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
     ])
 
-    // Manejar errores de cada consulta
+    // Manejar errores de cada consulta - continuar con valores por defecto si alguna falla
     if (jobsResult.error) {
-      console.error('Error fetching jobs:', jobsResult.error)
-      return null
+      console.warn('Error fetching jobs:', jobsResult.error.message)
     }
     if (clientsResult.error) {
-      console.error('Error fetching clients:', clientsResult.error)
-      return null
+      console.warn('Error fetching clients:', clientsResult.error.message)
     }
     if (revenueResult.error) {
-      console.error('Error fetching revenue:', revenueResult.error)
-      return null
+      console.warn('Error fetching revenue:', revenueResult.error.message)
     }
     if (estimatesResult.error) {
-      console.error('Error fetching estimates:', estimatesResult.error)
-      return null
+      console.warn('Error fetching estimates:', estimatesResult.error.message)
     }
     if (techniciansResult.error) {
-      console.error('Error fetching technicians:', techniciansResult.error)
-      return null
+      console.warn('Error fetching technicians:', techniciansResult.error.message)
     }
     if (appointmentsResult.error) {
-      console.error('Error fetching appointments:', appointmentsResult.error)
-      return null
+      console.warn('Error fetching appointments:', appointmentsResult.error.message)
     }
 
     // Calcular ingresos mensuales
@@ -113,6 +114,13 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
 
 export async function getRecentActivity(): Promise<any[]> {
   try {
+    // Verificar que hay una sesión activa
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session) {
+      console.warn('No active session for recent activity')
+      return []
+    }
+
     // Obtener actividad reciente: trabajos, facturas y estimaciones
     const [jobsResult, estimatesResult, invoicesResult] = await Promise.all([
       supabase
@@ -153,6 +161,17 @@ export async function getRecentActivity(): Promise<any[]> {
         .order('created_at', { ascending: false })
         .limit(3)
     ])
+
+    // Manejar errores silenciosamente - si alguna consulta falla, continuar con las demás
+    if (jobsResult.error) {
+      console.warn('Error fetching jobs for activity:', jobsResult.error.message)
+    }
+    if (estimatesResult.error) {
+      console.warn('Error fetching estimates for activity:', estimatesResult.error.message)
+    }
+    if (invoicesResult.error) {
+      console.warn('Error fetching invoices for activity:', invoicesResult.error.message)
+    }
 
     // Combinar resultados y ordenar por fecha
     const activities = [

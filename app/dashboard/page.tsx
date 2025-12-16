@@ -5,6 +5,7 @@ import { Card, Button } from '@/components/ui'
 import { BarChart3, Users, ClipboardList, DollarSign, Wrench, TrendingUp, AlertCircle } from 'lucide-react'
 import { getDashboardStats, getRecentActivity } from '@/lib/stats'
 import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
 
 interface DashboardStats {
@@ -18,6 +19,7 @@ interface DashboardStats {
 
 export default function DashboardPage() {
   const router = useRouter()
+  const { company, loading: authLoading } = useAuth()
   const [stats, setStats] = useState<DashboardStats>({
     activeJobs: 0,
     totalClients: 0,
@@ -30,10 +32,23 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    loadDashboardData()
-  }, [])
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id) {
+      loadDashboardData()
+    } else if (!authLoading && !company?.id) {
+      // Si no hay company después de cargar, mostrar error
+      setLoading(false)
+      toast.error('No se pudo cargar la información de la empresa')
+    }
+  }, [authLoading, company?.id])
 
   const loadDashboardData = async () => {
+    if (!company?.id) {
+      console.warn('No company ID available, skipping dashboard data load')
+      setLoading(false)
+      return
+    }
+
     try {
       setLoading(true)
       const [statsData, activityData] = await Promise.all([
@@ -44,9 +59,10 @@ export default function DashboardPage() {
       if (statsData) {
         setStats(statsData)
       }
-      setRecentActivity(activityData)
+      setRecentActivity(activityData || [])
     } catch (error) {
       console.error('Error loading dashboard data:', error)
+      toast.error('Error al cargar los datos del dashboard')
     } finally {
       setLoading(false)
     }
@@ -76,6 +92,18 @@ export default function DashboardPage() {
   const handleManageTechnicians = () => {
     router.push('/technicians')
     toast.success('Redirigiendo a Técnicos...')
+  }
+
+  // Mostrar loading mientras se carga la autenticación o los datos
+  if (authLoading || (loading && !company?.id)) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando dashboard...</p>
+        </div>
+      </div>
+    )
   }
 
   return (

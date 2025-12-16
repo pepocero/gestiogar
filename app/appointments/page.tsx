@@ -66,7 +66,7 @@ moment.locale('es')
 const localizer = momentLocalizer(moment)
 
 export default function AppointmentsPage() {
-  const { company } = useAuth()
+  const { company, loading: authLoading } = useAuth()
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [loading, setLoading] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -93,13 +93,13 @@ export default function AppointmentsPage() {
   })
 
   useEffect(() => {
-    if (!company?.id) {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id) {
+      loadAppointments()
+    } else if (!authLoading && !company?.id) {
       setLoading(false)
-      return
     }
-
-    loadAppointments()
-  }, [company?.id])
+  }, [authLoading, company?.id])
 
   // Cargar datos al abrir el modal
   useEffect(() => {

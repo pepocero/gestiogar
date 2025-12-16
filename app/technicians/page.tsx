@@ -15,7 +15,7 @@ import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription
 import toast from 'react-hot-toast'
 
 export default function TechniciansPage() {
-  const { company, user } = useAuth()
+  const { company, user, loading: authLoading } = useAuth()
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [technicians, setTechnicians] = useState<any[]>([])
@@ -180,10 +180,11 @@ export default function TechniciansPage() {
 
   // Cargar técnicos al montar el componente
   useEffect(() => {
-    if (company?.id) {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id) {
       fetchTechnicians()
     }
-  }, [company?.id])
+  }, [authLoading, company?.id])
 
   // Funciones para manejar las acciones
   const handleViewTechnician = (technician: any) => {

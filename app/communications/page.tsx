@@ -59,7 +59,7 @@ interface Communication {
 }
 
 export default function CommunicationsPage() {
-  const { company } = useAuth()
+  const { company, loading: authLoading } = useAuth()
   const [conversations, setConversations] = useState<Conversation[]>([])
   const [loading, setLoading] = useState(false)
   const [showCreateModal, setShowCreateModal] = useState(false)
@@ -91,12 +91,13 @@ export default function CommunicationsPage() {
   })
 
   useEffect(() => {
-    if (!company?.id) {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id) {
+      loadConversations()
+    } else if (!authLoading && !company?.id) {
       setLoading(false)
-      return
     }
-    loadConversations()
-  }, [company?.id])
+  }, [authLoading, company?.id])
 
   // Aplicar filtros cuando cambien las conversaciones o los filtros
   useEffect(() => {
