@@ -125,7 +125,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         }
         
         console.warn('⚠️ Could not load user profile:', error.message)
-        // Si no puede cargar el perfil, intentar usar datos básicos del usuario auth
+        // Si no puede cargar el perfil, intentar usar el usuario auth y luego obtener el perfil mínimo (incluye company_id)
         const { data: { user: authUser }, error: authError } = await supabase.auth.getUser()
         
         // Si también falla getUser, la sesión expiró
@@ -133,20 +133,112 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await handleSessionExpired()
           return
         }
-        
-        // Usar datos básicos del usuario auth como fallback
+
+        // Intentar obtener el perfil mínimo desde la tabla users para resolver company_id
+        try {
+          const { data: minimalProfile, error: minimalError } = await supabaseTable('users')
+            .select('id, email, first_name, last_name, phone, company_id, role, profile_photo_url')
+            .eq('id', userId)
+            .single()
+
+          if (!minimalError && minimalProfile) {
+            setProfile(minimalProfile)
+
+            if (minimalProfile.company_id) {
+              const { data: companyData, error: companyError } = await supabaseTable('companies')
+                .select(`
+                  id,
+                  name,
+                  slug,
+                  address,
+                  phone,
+                  email,
+                  logo_url,
+                  website,
+                  tax_id,
+                  subscription_plan,
+                  subscription_status,
+                  subscription_started_at,
+                  subscription_ends_at,
+                  paypal_subscription_id,
+                  paypal_customer_id
+                `)
+                .eq('id', minimalProfile.company_id)
+                .single()
+
+              if (!companyError && companyData) {
+                setCompany(companyData)
+              } else {
+                console.warn('⚠️ Could not load company for user:', companyError?.message)
+                setCompany(null)
+              }
+            } else {
+              setCompany(null)
+            }
+
+            return
+          }
+        } catch (e) {
+          console.warn('⚠️ Error loading minimal profile:', e)
+        }
+
+        // Fallback final: datos básicos del usuario auth (sin empresa)
         setProfile({
           id: authUser.id,
           email: authUser.email || undefined,
           first_name: authUser.user_metadata?.first_name,
           last_name: authUser.user_metadata?.last_name,
         })
+        setCompany(null)
         return
       }
 
       conditionalLog('debug', '✅ User profile loaded successfully')
       setProfile(userData)
-      setCompany(userData.company || null)
+
+      // Resolver company de forma robusta (join puede venir como objeto, array o null)
+      const companyFromJoin = Array.isArray((userData as any).company)
+        ? (userData as any).company?.[0]
+        : (userData as any).company
+
+      if (companyFromJoin?.id) {
+        setCompany(companyFromJoin)
+        return
+      }
+
+      // Fallback: si tenemos company_id, cargar la empresa directamente
+      const companyId = (userData as any).company_id
+      if (companyId) {
+        const { data: companyData, error: companyError } = await supabaseTable('companies')
+          .select(`
+            id,
+            name,
+            slug,
+            address,
+            phone,
+            email,
+            logo_url,
+            website,
+            tax_id,
+            subscription_plan,
+            subscription_status,
+            subscription_started_at,
+            subscription_ends_at,
+            paypal_subscription_id,
+            paypal_customer_id
+          `)
+          .eq('id', companyId)
+          .single()
+
+        if (!companyError && companyData) {
+          setCompany(companyData)
+        } else {
+          console.warn('⚠️ Could not load company for user:', companyError?.message)
+          setCompany(null)
+        }
+      } else {
+        setCompany(null)
+      }
       
     } catch (error: any) {
       console.warn('⚠️ Error loading user profile:', error)
@@ -231,11 +323,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // No mostrar toast aquí porque handleLogout ya lo muestra
           // Evitar doble mensaje
         } else if (event === 'SIGNED_IN' && session?.user) {
+          // Mantener loading=true hasta que el perfil/empresa estén listos
+          setLoading(true)
           setUser(session.user)
-          setLoading(false) // Asegurar que loading se establece en false cuando hay un usuario
-          // Solo cargar perfil si no está ya cargado (usar profileRef para evitar problemas de closures)
-          if (!profileRef.current || profileRef.current.id !== session.user.id) {
-            await loadUserProfile(session.user.id)
+          try {
+            // Solo cargar perfil si no está ya cargado (usar profileRef para evitar problemas de closures)
+            if (!profileRef.current || profileRef.current.id !== session.user.id) {
+              await loadUserProfile(session.user.id)
+            }
+          } finally {
+            setLoading(false)
           }
         } else if (event === 'TOKEN_REFRESHED') {
           // Token refrescado automáticamente

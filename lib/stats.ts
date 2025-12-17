@@ -9,12 +9,16 @@ export interface DashboardStats {
   upcomingAppointments: number
 }
 
-export async function getDashboardStats(): Promise<DashboardStats | null> {
+export async function getDashboardStats(companyId: string): Promise<DashboardStats | null> {
   try {
     // Verificar que hay una sesión activa
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       console.warn('No active session for dashboard stats')
+      return null
+    }
+    if (!companyId) {
+      console.warn('No companyId provided for dashboard stats')
       return null
     }
 
@@ -36,17 +40,20 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       supabase
         .from('jobs')
         .select('id', { count: 'exact' })
+        .eq('company_id', companyId)
         .in('status', ['pending', 'in_progress', 'scheduled']),
 
       // Total de clientes
       supabase
         .from('clients')
         .select('id', { count: 'exact' }),
+        .eq('company_id', companyId),
 
       // Ingresos este mes (facturas pagadas)
       supabase
         .from('invoices')
         .select('total_amount')
+        .eq('company_id', companyId)
         .eq('status', 'paid')
         .gte('paid_date', currentMonthStart.toISOString())
         .lt('paid_date', currentMonthEnd.toISOString()),
@@ -55,18 +62,21 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
       supabase
         .from('estimates')
         .select('id', { count: 'exact' })
+        .eq('company_id', companyId)
         .eq('status', 'pending'),
 
       // Total técnicos activos
       supabase
         .from('technicians')
         .select('id', { count: 'exact' })
+        .eq('company_id', companyId)
         .eq('is_active', true),
 
       // Citas próximas (próximos 7 días)
       supabase
         .from('appointments')
         .select('id', { count: 'exact' })
+        .eq('company_id', companyId)
         .eq('status', 'scheduled')
         .gte('scheduled_date', new Date().toISOString())
         .lte('scheduled_date', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
@@ -112,12 +122,16 @@ export async function getDashboardStats(): Promise<DashboardStats | null> {
   }
 }
 
-export async function getRecentActivity(): Promise<any[]> {
+export async function getRecentActivity(companyId: string): Promise<any[]> {
   try {
     // Verificar que hay una sesión activa
     const { data: { session } } = await supabase.auth.getSession()
     if (!session) {
       console.warn('No active session for recent activity')
+      return []
+    }
+    if (!companyId) {
+      console.warn('No companyId provided for recent activity')
       return []
     }
 
@@ -132,6 +146,7 @@ export async function getRecentActivity(): Promise<any[]> {
           created_at,
           client:clients(first_name, last_name)
         `)
+        .eq('company_id', companyId)
         .order('created_at', { ascending: false })
         .limit(3),
 
@@ -145,6 +160,7 @@ export async function getRecentActivity(): Promise<any[]> {
           created_at,
           client:clients(first_name, last_name)
         `)
+        .eq('company_id', companyId)
         .order('created_at', { ascending: false })
         .limit(3),
 
@@ -158,6 +174,7 @@ export async function getRecentActivity(): Promise<any[]> {
           created_at,
           client:clients(first_name, last_name)
         `)
+        .eq('company_id', companyId)
         .order('created_at', { ascending: false })
         .limit(3)
     ])

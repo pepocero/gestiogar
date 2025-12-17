@@ -52,8 +52,8 @@ export default function DashboardPage() {
     try {
       setLoading(true)
       const [statsData, activityData] = await Promise.all([
-        getDashboardStats(),
-        getRecentActivity()
+        getDashboardStats(company.id),
+        getRecentActivity(company.id)
       ])
       
       if (statsData) {
