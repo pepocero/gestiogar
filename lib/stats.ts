@@ -46,7 +46,7 @@ export async function getDashboardStats(companyId: string): Promise<DashboardSta
       // Total de clientes
       supabase
         .from('clients')
-        .select('id', { count: 'exact' }),
+        .select('id', { count: 'exact' })
         .eq('company_id', companyId),
 
       // Ingresos este mes (facturas pagadas)
