@@ -17,6 +17,7 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   // Rutas públicas que no deben mostrar el sidebar
   const publicRoutes = [
     '/',           // Página de presentación
+    '/plans',      // Página de planes
     '/auth/login', // Página de login
     '/auth/register', // Página de registro (corregido)
     '/auth/signup', // Página de registro (alternativa)

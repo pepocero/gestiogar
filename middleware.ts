@@ -7,6 +7,7 @@ export function middleware(request: NextRequest) {
   // Rutas públicas que no requieren autenticación
   const publicRoutes = [
     '/',
+    '/plans',
     '/auth/login',
     '/auth/register'
   ]

@@ -47,6 +47,12 @@ export default function HomePage() {
             </div>
             <div className="hidden md:flex items-center space-x-4">
               <Link 
+                href="/plans" 
+                className="text-white hover:text-blue-100 transition-colors font-medium"
+              >
+                Planes
+              </Link>
+              <Link 
                 href="/auth/login" 
                 className="text-white hover:text-blue-100 transition-colors font-medium"
               >

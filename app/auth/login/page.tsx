@@ -50,22 +50,13 @@ export default function SimpleLoginPage() {
 
       console.log('✅ Login successful:', data.user.id)
       
-      // Esperar a que Supabase guarde la sesión
-      await new Promise(resolve => setTimeout(resolve, 500))
-      
-      // Verificar que la sesión se guardó correctamente
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session) {
-        throw new Error('No se pudo establecer la sesión. Por favor, intenta nuevamente.')
-      }
-
       toast.success('¡Bienvenido! Redirigiendo al dashboard...')
       
-      // Usar router.push en lugar de window.location.href para mejor integración con Next.js
-      // El useEffect se encargará de redirigir cuando el usuario esté disponible
-      router.push('/dashboard')
-      router.refresh()
+      // Usar window.location.href para forzar una recarga completa y asegurar que el contexto se actualice
+      // Esto evita que el botón se quede en "iniciando..."
+      setTimeout(() => {
+        window.location.href = '/dashboard'
+      }, 500)
 
     } catch (error: any) {
       console.error('❌ Login error:', error)
