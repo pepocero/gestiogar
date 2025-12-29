@@ -195,7 +195,8 @@ export default function EstimatesPage() {
     })
   }
 
-  const loadClients = async () => {
+  const loadClients = useCallback(async () => {
+    if (!company?.id) return
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Estimates] loadClients start', company?.id)

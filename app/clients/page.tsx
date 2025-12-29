@@ -99,54 +99,6 @@ export default function ClientsPage() {
     }
   }, [showCreateModal, company?.id])
 
-  const fetchClients = async () => {
-    if (!company?.id) return
-    
-    setLoadingClients(true)
-    try {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Clients] fetchClients start', company.id)
-      }
-      // Obtener límites del plan
-      const limits = await getPlanLimits(company.id)
-      
-      let query = supabaseTable('clients')
-        .select(`
-          *,
-          insurance_companies (
-            id,
-            name
-          )
-        `)
-        .eq('company_id', company.id)
-      
-      // Aplicar límite según el plan
-      query = applyPlanLimit(query, limits.max_clients, 'created_at', true)
-
-      const { data, error } = await query
-
-      if (error) {
-        console.error('Error fetching clients:', error)
-        return
-      }
-
-      setClients(data || [])
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Clients] fetchClients success', {
-          companyId: company.id,
-          count: data?.length || 0
-        })
-      }
-    } catch (error) {
-      console.error('Error fetching clients:', error)
-    } finally {
-      setLoadingClients(false)
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Clients] fetchClients finished', company.id)
-      }
-    }
-  }
-
   const fetchInsuranceCompanies = async () => {
     if (!company?.id) return
     

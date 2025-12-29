@@ -98,11 +98,20 @@ export default function InsurancePage() {
       toast.error('Error cargando aseguradoras')
     } finally {
       setLoading(false)
+      loadingRef.current = false
       if (process.env.NODE_ENV !== 'production') {
-        console.log('[Insurance] loadCompanies finished', company?.id)
+        console.log('[Insurance] loadCompanies finished', company.id)
       }
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    if (!company?.id || loadingRef.current) {
+      setLoading(false)
+      return
+    }
+    loadCompanies()
+  }, [company?.id, loadCompanies])
 
   // Función para manejar la selección de logo
   const handleLogoSelect = (e: React.ChangeEvent<HTMLInputElement>) => {

@@ -148,69 +148,6 @@ export default function JobsPage() {
   }, [company?.id])
 
   const loadClients = useCallback(async () => {
-
-  // Filtrar trabajos
-  const applyFilters = () => {
-    let filtered = jobs
-
-    if (filters.search) {
-      const searchLower = filters.search.toLowerCase()
-      filtered = filtered.filter(job => 
-        job.title.toLowerCase().includes(searchLower) ||
-        job.job_number.toLowerCase().includes(searchLower) ||
-        job.description?.toLowerCase().includes(searchLower) ||
-        job.clients?.first_name?.toLowerCase().includes(searchLower) ||
-        job.clients?.last_name?.toLowerCase().includes(searchLower)
-      )
-    }
-
-    if (filters.status) {
-      filtered = filtered.filter(job => job.status === filters.status)
-    }
-
-    if (filters.job_type) {
-      filtered = filtered.filter(job => job.job_type === filters.job_type)
-    }
-
-    if (filters.priority) {
-      filtered = filtered.filter(job => job.priority === filters.priority)
-    }
-
-    if (filters.client_id) {
-      filtered = filtered.filter(job => job.client_id === filters.client_id)
-    }
-
-    if (filters.technician_id) {
-      filtered = filtered.filter(job => job.technician_id === filters.technician_id)
-    }
-
-    setFilteredJobs(filtered)
-  }
-
-  // Aplicar filtros cuando cambien
-  useEffect(() => {
-    applyFilters()
-  }, [jobs, filters])
-
-  const handleFilterChange = (key: string, value: string) => {
-    setFilters(prev => ({
-      ...prev,
-      [key]: value
-    }))
-  }
-
-  const clearFilters = () => {
-    setFilters({
-      search: '',
-      status: '',
-      job_type: '',
-      priority: '',
-      client_id: '',
-      technician_id: ''
-    })
-  }
-
-  const loadClients = useCallback(async () => {
     if (!company?.id) return
     try {
       if (process.env.NODE_ENV !== 'production') {
@@ -306,6 +243,67 @@ export default function JobsPage() {
       setLoading(false)
     }
   }, [authLoading, company?.id, loadJobs, loadClients, loadTechnicians, loadInsuranceCompanies])
+
+  // Filtrar trabajos
+  const applyFilters = () => {
+    let filtered = jobs
+
+    if (filters.search) {
+      const searchLower = filters.search.toLowerCase()
+      filtered = filtered.filter(job => 
+        job.title.toLowerCase().includes(searchLower) ||
+        job.job_number.toLowerCase().includes(searchLower) ||
+        job.description?.toLowerCase().includes(searchLower) ||
+        job.clients?.first_name?.toLowerCase().includes(searchLower) ||
+        job.clients?.last_name?.toLowerCase().includes(searchLower)
+      )
+    }
+
+    if (filters.status) {
+      filtered = filtered.filter(job => job.status === filters.status)
+    }
+
+    if (filters.job_type) {
+      filtered = filtered.filter(job => job.job_type === filters.job_type)
+    }
+
+    if (filters.priority) {
+      filtered = filtered.filter(job => job.priority === filters.priority)
+    }
+
+    if (filters.client_id) {
+      filtered = filtered.filter(job => job.client_id === filters.client_id)
+    }
+
+    if (filters.technician_id) {
+      filtered = filtered.filter(job => job.technician_id === filters.technician_id)
+    }
+
+    setFilteredJobs(filtered)
+  }
+
+  // Aplicar filtros cuando cambien
+  useEffect(() => {
+    applyFilters()
+  }, [jobs, filters])
+
+  const handleFilterChange = (key: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [key]: value
+    }))
+  }
+
+  const clearFilters = () => {
+    setFilters({
+      search: '',
+      status: '',
+      job_type: '',
+      priority: '',
+      client_id: '',
+      technician_id: ''
+    })
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
