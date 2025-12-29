@@ -90,27 +90,7 @@ export default function CommunicationsPage() {
     content: '',
     conversation_id: '',
   })
-
-  useEffect(() => {
-    // Esperar a que la autenticación termine y company esté disponible
-    if (!authLoading && company?.id) {
-      loadConversations()
-    } else if (!authLoading && !company?.id) {
-      setLoading(false)
-    }
-  }, [authLoading, company?.id])
-
-  // Aplicar filtros cuando cambien las conversaciones o los filtros
-  useEffect(() => {
-    applyFilters()
-  }, [conversations, filters])
-
-  // Cargar datos al abrir el modal
-  useEffect(() => {
-    if ((showCreateModal || showEditModal) && company?.id) {
-      fetchClientsAndTechnicians()
-    }
-  }, [showCreateModal, showEditModal, company?.id])
+  const loadingRef = useRef(false)
 
   const loadConversations = useCallback(async () => {
     if (!company?.id || loadingRef.current) {
