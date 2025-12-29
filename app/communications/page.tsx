@@ -112,13 +112,15 @@ export default function CommunicationsPage() {
     }
   }, [showCreateModal, showEditModal, company?.id])
 
-  const loadConversations = async () => {
-    if (!company?.id) {
-      console.error('No company ID available')
-      setLoading(false)
+  const loadConversations = useCallback(async () => {
+    if (!company?.id || loadingRef.current) {
+      if (!company?.id) {
+        setLoading(false)
+      }
       return
     }
 
+    loadingRef.current = true
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Communications] loadConversations start', company.id)

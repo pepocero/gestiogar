@@ -250,9 +250,10 @@ export default function EstimatesPage() {
     } catch (error) {
       console.error('Error loading jobs:', error)
     }
-  }
+  }, [company?.id])
 
-  const loadMaterials = async () => {
+  const loadMaterials = useCallback(async () => {
+    if (!company?.id) return
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Estimates] loadMaterials start', company?.id)
