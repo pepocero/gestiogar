@@ -44,6 +44,7 @@ export default function MaterialsPage() {
       sku: ''
     })
   }
+  const loadingRef = useRef(false)
 
   const loadMaterials = useCallback(async () => {
     if (!company?.id || loadingRef.current) return
