@@ -1,7 +1,11 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
+import toast from 'react-hot-toast'
 import { 
   Building2, 
   Users, 
@@ -20,10 +24,78 @@ import {
   Zap,
   TrendingUp,
   Award,
-  Sparkles
+  Sparkles,
+  Crown,
+  X,
+  Infinity
 } from 'lucide-react'
+import { PRO_PLAN_PRICE_FORMATTED, FREE_PLAN_ITEM_LIMIT } from '@/lib/constants'
 
 export default function HomePage() {
+  const router = useRouter()
+  const { user, profile, loading: authLoading, signOut } = useAuth()
+  const [isChecking, setIsChecking] = useState(false)
+
+  // Función para manejar el clic en "Comenzar Ahora" del plan Pro
+  const handleUpgradeClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    
+    // Si está cargando la autenticación, esperar
+    if (authLoading) {
+      toast.loading('Verificando...', { id: 'checking' })
+      return
+    }
+
+    setIsChecking(true)
+    toast.loading('Verificando cuenta...', { id: 'checking' })
+
+    // Si no está logueado, redirigir al registro
+    if (!user) {
+      toast.dismiss('checking')
+      setIsChecking(false)
+      toast('Por favor, regístrate para contratar el plan Pro')
+      router.push('/auth/register?plan=pro')
+      return
+    }
+
+    // Si está logueado con la cuenta demo, obligar a registrarse
+    if (user.email === 'demo@demo.com') {
+      toast.dismiss('checking')
+      setIsChecking(false)
+      toast.error('La cuenta demo no puede contratar planes. Por favor, regístrate con una cuenta real.', {
+        duration: 5000
+      })
+      
+      // Cerrar sesión de la cuenta demo
+      try {
+        await signOut()
+      } catch (error) {
+        console.error('Error cerrando sesión demo:', error)
+      }
+      
+      // Redirigir al registro con parámetro para indicar que viene del plan
+      setTimeout(() => {
+        window.location.href = '/auth/register?plan=pro&from=demo'
+      }, 1000)
+      return
+    }
+
+    // Si está logueado con una cuenta real, llevarlo al proceso de suscripción
+    toast.dismiss('checking')
+    setIsChecking(false)
+    
+    // Verificar si tiene company
+    if (!profile?.company_id) {
+      toast.error('No se encontró información de empresa. Por favor, completa tu registro.')
+      router.push('/auth/register?plan=pro')
+      return
+    }
+
+    // Redirigir a la página de suscripción donde se iniciará el proceso de PayPal
+    router.push('/settings/subscription?upgrade=true')
+  }
+
+  return (
   return (
     <div className="min-h-screen bg-white">
       {/* Header con gradiente sutil */}
@@ -47,7 +119,7 @@ export default function HomePage() {
             </div>
             <div className="hidden md:flex items-center space-x-4">
               <Link 
-                href="/plans" 
+                href="#planes" 
                 className="text-white hover:text-blue-100 transition-colors font-medium"
               >
                 Planes
@@ -106,7 +178,7 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link 
-                href="/plans" 
+                href="#planes" 
                 className="border-2 border-white text-white px-8 py-4 rounded-xl hover:bg-white/10 backdrop-blur-sm transition-all font-semibold text-lg inline-flex items-center justify-center"
               >
                 Ver Planes
@@ -135,6 +207,425 @@ export default function HomePage() {
                 <div className="text-sm text-blue-200">Usuarios</div>
               </div>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Plans Section */}
+      <section id="planes" className="py-20 bg-gray-50 scroll-mt-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center bg-blue-100 text-blue-700 px-4 py-2 rounded-full mb-4 font-medium">
+              <Star className="h-4 w-4 mr-2" />
+              Planes y Precios
+            </div>
+            <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-4">
+              Elige el plan perfecto para tu empresa
+            </h2>
+            <p className="text-xl text-gray-600 max-w-3xl mx-auto">
+              Desde una prueba gratuita hasta acceso completo a todas las funcionalidades
+            </p>
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Plan Gratis */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-green-200 overflow-hidden hover:shadow-2xl transition-all">
+              <div className="bg-gradient-to-r from-green-100 to-green-200 px-8 py-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-2xl font-bold text-gray-900">Plan Gratis</h3>
+                  <Shield className="h-8 w-8 text-green-600" />
+                </div>
+                <p className="text-gray-600">Ideal para empezar</p>
+              </div>
+              
+              <div className="p-8">
+                <div className="mb-8">
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-extrabold text-gray-900">Gratis</span>
+                    <span className="text-xl text-gray-500 ml-2">/siempre</span>
+                  </div>
+                  <p className="text-gray-600">Sin tarjeta de crédito requerida</p>
+                </div>
+
+                <Link
+                  href="/auth/register"
+                  className="w-full bg-green-600 text-white py-3 px-6 rounded-xl hover:bg-green-700 transition-all font-semibold text-center block mb-8"
+                >
+                  Registrarse Gratis
+                </Link>
+
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-900 text-lg mb-4">Incluye:</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} trabajos</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} clientes</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} presupuestos</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} facturas</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} técnicos</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} items en cada sección</span>
+                    </div>
+                    <div className="flex items-start">
+                      <X className="h-5 w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-400 line-through">Sin límites ilimitados</span>
+                    </div>
+                    <div className="flex items-start">
+                      <X className="h-5 w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-400 line-through">Sin soporte prioritario</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Plan Demo */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden hover:shadow-2xl transition-all">
+              <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-8 py-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-2xl font-bold text-gray-900">Plan Demo</h3>
+                  <Zap className="h-8 w-8 text-gray-600" />
+                </div>
+                <p className="text-gray-600">Perfecto para probar todas las funcionalidades</p>
+                <div className="mt-3 bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
+                  <p className="text-xs text-orange-800 font-medium">
+                    ⚠️ <strong>Importante:</strong> Esta cuenta está abierta a todo el mundo. 
+                    <strong className="block mt-1">No utilices datos reales.</strong>
+                  </p>
+                </div>
+              </div>
+              
+              <div className="p-8">
+                <div className="mb-8">
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-extrabold text-gray-900">Gratis</span>
+                    <span className="text-xl text-gray-500 ml-2">/siempre</span>
+                  </div>
+                  <p className="text-gray-600">Sin tarjeta de crédito requerida</p>
+                </div>
+
+                <Link
+                  href="/auth/login"
+                  className="w-full bg-gray-600 text-white py-3 px-6 rounded-xl hover:bg-gray-700 transition-all font-semibold text-center block mb-8"
+                >
+                  Probar Ahora
+                </Link>
+
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-900 text-lg mb-4">Incluye:</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Acceso completo a todas las funcionalidades</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Gestión de clientes ilimitada</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Gestión de técnicos y trabajos</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Presupuestos y facturas</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Integración con aseguradoras</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Reportes y analytics</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Sistema modular expandible</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Soporte por email</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Datos de demostración precargados</span>
+                    </div>
+                    <div className="flex items-start">
+                      <X className="h-5 w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-400 line-through">Sin guardar datos propios</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Plan Pro */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-blue-500 overflow-hidden hover:shadow-2xl transition-all relative">
+              {/* Badge Popular */}
+              <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-bl-xl font-bold text-sm flex items-center">
+                <Star className="h-4 w-4 mr-1" />
+                Más Popular
+              </div>
+
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-2xl font-bold text-white">Gestiogar Pro</h3>
+                  <Crown className="h-8 w-8 text-yellow-300" />
+                </div>
+                <p className="text-blue-100">Acceso completo para empresas profesionales</p>
+              </div>
+              
+              <div className="p-8">
+                <div className="mb-8">
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-extrabold text-gray-900">{PRO_PLAN_PRICE_FORMATTED}</span>
+                    <span className="text-xl text-gray-500 ml-2">/mes</span>
+                  </div>
+                  <p className="text-gray-600">Facturación mensual, cancela cuando quieras</p>
+                </div>
+
+                <button
+                  onClick={handleUpgradeClick}
+                  disabled={isChecking || authLoading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold text-center block mb-8 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isChecking || authLoading ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Verificando...
+                    </span>
+                  ) : (
+                    <>
+                      Comenzar Ahora
+                      <ArrowRight className="inline-block ml-2 h-5 w-5" />
+                    </>
+                  )}
+                </button>
+
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-900 text-lg mb-4">Todo del Plan Demo, más:</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Guardar tus propios datos</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Clientes ilimitados</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Técnicos ilimitados</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Trabajos y presupuestos ilimitados</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Facturación completa</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Reportes avanzados y exportación</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Módulos adicionales disponibles</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Soporte prioritario</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Backups automáticos diarios</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Actualizaciones automáticas</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">API de integración</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-blue-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700 font-medium">Personalización avanzada</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Features Comparison */}
+      <section className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              Comparación de Funcionalidades
+            </h2>
+            <p className="text-xl text-gray-600">
+              Todo lo que necesitas saber para elegir el plan correcto
+            </p>
+          </div>
+
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse">
+              <thead>
+                <tr className="bg-gray-100">
+                  <th className="border border-gray-300 px-6 py-4 text-left font-bold text-gray-900">Funcionalidad</th>
+                  <th className="border border-gray-300 px-6 py-4 text-center font-bold text-gray-900">Plan Gratis</th>
+                  <th className="border border-gray-300 px-6 py-4 text-center font-bold text-gray-900">Plan Demo</th>
+                  <th className="border border-gray-300 px-6 py-4 text-center font-bold text-blue-600 bg-blue-50">Gestiogar Pro</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Gestión de Clientes</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} clientes</span>
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Gestión de Técnicos</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} técnicos</span>
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Trabajos y Presupuestos</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} por tipo</span>
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Facturación</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} facturas</span>
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Integración con Aseguradoras</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} aseguradoras</span>
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Reportes y Analytics</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Guardar Datos Propios</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <X className="h-5 w-5 text-gray-400 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Límites de Uso</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50 text-gray-700">
+                    {FREE_PLAN_ITEM_LIMIT} items/sección
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center text-gray-500">Solo demo</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50 font-medium text-blue-600">Ilimitado</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Soporte</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50 text-gray-700">Básico</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center text-gray-500">Email</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50 font-medium text-blue-600">Prioritario</td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">Backups Automáticos</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <X className="h-5 w-5 text-gray-400 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <X className="h-5 w-5 text-gray-400 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+                <tr>
+                  <td className="border border-gray-300 px-6 py-4 font-medium">API de Integración</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <X className="h-5 w-5 text-gray-400 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center">
+                    <X className="h-5 w-5 text-gray-400 mx-auto" />
+                  </td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50">
+                    <CheckCircle className="h-5 w-5 text-blue-500 mx-auto" />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
           </div>
         </div>
       </section>
@@ -413,7 +904,7 @@ export default function HomePage() {
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
             </Link>
             <Link 
-              href="/plans" 
+              href="#planes" 
               className="border-2 border-white text-white px-10 py-4 rounded-xl hover:bg-white/10 backdrop-blur-sm transition-all font-bold text-lg inline-flex items-center justify-center"
             >
               Ver Planes
