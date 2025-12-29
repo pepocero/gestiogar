@@ -96,21 +96,14 @@ export default function ReportsPage() {
   const [technicianPerformanceData, setTechnicianPerformanceData] = useState<ChartData[]>([])
   const [isExporting, setIsExporting] = useState(false)
   const [showExportModal, setShowExportModal] = useState(false)
+  const loadingRef = useRef(false)
 
   const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#06B6D4']
 
-useEffect(() => {
-  // Esperar a que la autenticación termine y company esté disponible
-  if (!authLoading && company?.id) {
-    loadReportData()
-  } else if (!authLoading && !company?.id) {
-    setLoading(false)
-  }
-}, [authLoading, company?.id])
-
-  const loadReportData = async () => {
-    if (!company) return
-
+  const loadReportData = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
+    
+    loadingRef.current = true
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Reports] loadReportData start', company.id)
@@ -210,11 +203,21 @@ useEffect(() => {
       console.error('Error loading report data:', error)
     } finally {
       setLoading(false)
+      loadingRef.current = false
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Reports] loadReportData finished', company.id)
       }
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id && !loadingRef.current) {
+      loadReportData()
+    } else if (!authLoading && !company?.id) {
+      setLoading(false)
+    }
+  }, [authLoading, company?.id, loadReportData])
 
   const prepareChartData = (jobs: any[], clients: any[], technicians: any[], invoices: any[]) => {
     // Datos de estado de trabajos - solo incluir categorías con datos

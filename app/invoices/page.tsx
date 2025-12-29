@@ -40,6 +40,70 @@ export default function InvoicesPage() {
   const [isUpdating, setIsUpdating] = useState(false)
   const loadingRef = useRef(false)
 
+  const loadClients = useCallback(async () => {
+    if (!company?.id) return
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Invoices] loadClients start', company.id)
+      }
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, first_name, last_name')
+        .eq('company_id', company.id)
+        .order('first_name')
+
+      if (error) {
+        throw error
+      }
+
+      setClients(data || [])
+    } catch (error) {
+      console.error('Error loading clients:', error)
+    }
+  }, [company?.id])
+
+  const fetchInvoices = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
+    
+    loadingRef.current = true
+    setLoadingInvoices(true)
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Invoices] fetchInvoices start', company.id)
+      }
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company.id)
+      
+      let query = supabaseTable('invoices')
+        .select(`
+          *,
+          clients (
+            id,
+            first_name,
+            last_name
+          )
+        `)
+        .eq('company_id', company.id)
+      
+      // Aplicar límite según el plan
+      query = applyPlanLimit(query, limits.max_invoices, 'created_at', true)
+
+      const { data, error } = await query
+
+      if (error) {
+        throw error
+      }
+
+      setInvoices(data || [])
+    } catch (error) {
+      console.error('Error fetching invoices:', error)
+      toast.error('Error al cargar las facturas')
+    } finally {
+      setLoadingInvoices(false)
+      loadingRef.current = false
+    }
+  }, [company?.id])
+
   // Calcular el total automáticamente cuando cambian subtotal o IVA
   React.useEffect(() => {
     const ivaAmount = subtotal * (ivaPercentage / 100)
@@ -61,7 +125,6 @@ export default function InvoicesPage() {
       loadClients()
     }
   }, [showCreateModal, company?.id, loadClients])
-
 
   // Aplicar filtros
   const applyFilters = () => {
