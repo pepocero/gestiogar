@@ -1,7 +1,11 @@
 'use client'
 
+import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
+import { useAuth } from '@/contexts/AuthContext'
+import toast from 'react-hot-toast'
 import { 
   CheckCircle, 
   X, 
@@ -24,6 +28,68 @@ import {
 } from 'lucide-react'
 
 export default function PlansPage() {
+  const router = useRouter()
+  const { user, profile, loading: authLoading, signOut } = useAuth()
+  const [isChecking, setIsChecking] = useState(false)
+
+  // Función para manejar el clic en "Comenzar Ahora" del plan Pro
+  const handleUpgradeClick = async (e: React.MouseEvent) => {
+    e.preventDefault()
+    
+    // Si está cargando la autenticación, esperar
+    if (authLoading) {
+      toast.loading('Verificando...', { id: 'checking' })
+      return
+    }
+
+    setIsChecking(true)
+    toast.loading('Verificando cuenta...', { id: 'checking' })
+
+    // Si no está logueado, redirigir al registro
+    if (!user) {
+      toast.dismiss('checking')
+      setIsChecking(false)
+      toast.info('Por favor, regístrate para contratar el plan Pro')
+      router.push('/auth/register?plan=pro')
+      return
+    }
+
+    // Si está logueado con la cuenta demo, obligar a registrarse
+    if (user.email === 'demo@demo.com') {
+      toast.dismiss('checking')
+      setIsChecking(false)
+      toast.error('La cuenta demo no puede contratar planes. Por favor, regístrate con una cuenta real.', {
+        duration: 5000
+      })
+      
+      // Cerrar sesión de la cuenta demo
+      try {
+        await signOut()
+      } catch (error) {
+        console.error('Error cerrando sesión demo:', error)
+      }
+      
+      // Redirigir al registro con parámetro para indicar que viene del plan
+      setTimeout(() => {
+        window.location.href = '/auth/register?plan=pro&from=demo'
+      }, 1000)
+      return
+    }
+
+    // Si está logueado con una cuenta real, llevarlo al proceso de suscripción
+    toast.dismiss('checking')
+    setIsChecking(false)
+    
+    // Verificar si tiene company
+    if (!profile?.company_id) {
+      toast.error('No se encontró información de empresa. Por favor, completa tu registro.')
+      router.push('/auth/register?plan=pro')
+      return
+    }
+
+    // Redirigir a la página de suscripción donde se iniciará el proceso de PayPal
+    router.push('/settings/subscription?upgrade=true')
+  }
   return (
     <div className="min-h-screen bg-white">
       {/* Header */}
@@ -189,13 +255,23 @@ export default function PlansPage() {
                   <p className="text-gray-600">Facturación mensual, cancela cuando quieras</p>
                 </div>
 
-                <Link
-                  href="/auth/register"
-                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold text-center block mb-8 shadow-lg hover:shadow-xl"
+                <button
+                  onClick={handleUpgradeClick}
+                  disabled={isChecking || authLoading}
+                  className="w-full bg-gradient-to-r from-blue-600 to-blue-700 text-white py-3 px-6 rounded-xl hover:from-blue-700 hover:to-blue-800 transition-all font-semibold text-center block mb-8 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Comenzar Ahora
-                  <ArrowRight className="inline-block ml-2 h-5 w-5" />
-                </Link>
+                  {isChecking || authLoading ? (
+                    <span className="flex items-center justify-center">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                      Verificando...
+                    </span>
+                  ) : (
+                    <>
+                      Comenzar Ahora
+                      <ArrowRight className="inline-block ml-2 h-5 w-5" />
+                    </>
+                  )}
+                </button>
 
                 <div className="space-y-4">
                   <h4 className="font-bold text-gray-900 text-lg mb-4">Todo del Plan Demo, más:</h4>
@@ -392,13 +468,23 @@ export default function PlansPage() {
             >
               Probar Demo Gratis
             </Link>
-            <Link
-              href="/auth/register"
-              className="bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl hover:bg-yellow-300 transition-all font-semibold text-lg inline-flex items-center justify-center"
+            <button
+              onClick={handleUpgradeClick}
+              disabled={isChecking || authLoading}
+              className="bg-yellow-400 text-gray-900 px-8 py-4 rounded-xl hover:bg-yellow-300 transition-all font-semibold text-lg inline-flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              Comenzar con Pro
-              <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+              {isChecking || authLoading ? (
+                <span className="flex items-center">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-gray-900 mr-2"></div>
+                  Verificando...
+                </span>
+              ) : (
+                <>
+                  Comenzar con Pro
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </>
+              )}
+            </button>
           </div>
         </div>
       </section>

@@ -1,7 +1,7 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { createCompanyAndOwner, generateUniqueSlug } from '@/lib/auth'
 import { supabase } from '@/lib/supabase'
@@ -9,7 +9,10 @@ import toast from 'react-hot-toast'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [loading, setLoading] = useState(false)
+  const isFromPlans = searchParams.get('plan') === 'pro'
+  const isFromDemo = searchParams.get('from') === 'demo'
   const [formData, setFormData] = useState({
     // Datos de la empresa
     companyName: '',
@@ -74,9 +77,19 @@ export default function RegisterPage() {
         }
       )
 
-      // Cerrar sesión y redirigir a login con parámetro de éxito
-      await supabase.auth.signOut()
-      router.push('/auth/login?registered=true')
+      // Si viene desde planes, redirigir directamente a suscripción después del login
+      if (isFromPlans) {
+        // No cerrar sesión, redirigir directamente a suscripción
+        toast.success('¡Cuenta creada! Redirigiendo al proceso de suscripción...')
+        // Esperar un momento para que se guarde la sesión
+        setTimeout(() => {
+          window.location.href = '/settings/subscription?upgrade=true'
+        }, 1000)
+      } else {
+        // Cerrar sesión y redirigir a login con parámetro de éxito
+        await supabase.auth.signOut()
+        router.push('/auth/login?registered=true')
+      }
     } catch (error: any) {
       console.error('Error creating company:', error)
       toast.error(error.message || 'Error al crear la empresa')
@@ -94,6 +107,20 @@ export default function RegisterPage() {
         <p className="mt-2 text-center text-sm text-gray-600">
           Regístrate como propietario de una empresa de reparaciones
         </p>
+        {isFromDemo && (
+          <div className="mt-4 p-4 bg-orange-50 border border-orange-200 rounded-lg">
+            <p className="text-sm text-orange-800 text-center">
+              <strong>Nota:</strong> La cuenta demo no puede contratar planes. Por favor, crea una cuenta real para acceder a Gestiogar Pro.
+            </p>
+          </div>
+        )}
+        {isFromPlans && !isFromDemo && (
+          <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <p className="text-sm text-blue-800 text-center">
+              <strong>¡Excelente elección!</strong> Después de registrarte, serás redirigido al proceso de suscripción de PayPal para activar Gestiogar Pro.
+            </p>
+          </div>
+        )}
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-2xl">

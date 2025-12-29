@@ -33,31 +33,6 @@ function SubscriptionPageContent() {
     }
   }, [company?.id])
 
-  // Verificar si hay parámetros de retorno de PayPal
-  useEffect(() => {
-    const success = searchParams.get('success')
-    const canceled = searchParams.get('canceled')
-    const subscriptionId = searchParams.get('subscription_id')
-
-    if (success) {
-      toast.success('¡Suscripción activada correctamente!')
-      // Esperar un momento para que el webhook procese la actualización
-      // Luego recargar datos y perfil
-      setTimeout(async () => {
-        // Recargar datos de suscripción
-        await loadSubscriptionData()
-        // Forzar recarga del perfil para obtener los datos actualizados de la empresa
-        await refreshProfile()
-      }, 2000)
-    } else if (canceled) {
-      toast('Suscripción cancelada. No se realizó ningún cargo.', {
-        icon: 'ℹ️',
-        duration: 4000
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams])
-
   const loadSubscriptionData = async () => {
     if (!company?.id) return
 
@@ -111,6 +86,40 @@ function SubscriptionPageContent() {
 
     setUsage(usageData)
   }
+
+  // Verificar si hay parámetros de retorno de PayPal o si viene desde planes
+  useEffect(() => {
+    const success = searchParams.get('success')
+    const canceled = searchParams.get('canceled')
+    const subscriptionId = searchParams.get('subscription_id')
+    const upgrade = searchParams.get('upgrade')
+
+    // Si viene desde la página de planes con upgrade=true, iniciar proceso automáticamente
+    if (upgrade === 'true' && company?.id && !loading) {
+      // Esperar un momento para que los datos se carguen
+      setTimeout(() => {
+        handleUpgrade()
+      }, 500)
+    }
+
+    if (success) {
+      toast.success('¡Suscripción activada correctamente!')
+      // Esperar un momento para que el webhook procese la actualización
+      // Luego recargar datos y perfil
+      setTimeout(async () => {
+        // Recargar datos de suscripción
+        await loadSubscriptionData()
+        // Forzar recarga del perfil para obtener los datos actualizados de la empresa
+        await refreshProfile()
+      }, 2000)
+    } else if (canceled) {
+      toast('Suscripción cancelada. No se realizó ningún cargo.', {
+        icon: 'ℹ️',
+        duration: 4000
+      })
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchParams, company?.id, loading])
 
   const handleUpgrade = async () => {
     if (!company?.id) {
