@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { AlertCircle, Crown, Zap } from 'lucide-react'
 import { Button } from '@/components/ui/Button'
+import { PRO_PLAN_PRICE_FORMATTED } from '@/lib/constants'
 
 export function SubscriptionBanner() {
   const { company } = useAuth()
@@ -64,7 +65,7 @@ export function SubscriptionBanner() {
             Estás en Gestiogar Free
           </h3>
           <p className="mt-1 text-sm text-blue-700">
-            Actualiza a <strong>Gestiogar Pro</strong> por solo 9.99€/mes para desbloquear todas las funcionalidades sin límites.
+            Actualiza a <strong>Gestiogar Pro</strong> por solo {PRO_PLAN_PRICE_FORMATTED}/mes para desbloquear todas las funcionalidades sin límites.
           </p>
           <div className="mt-3 flex items-center gap-3">
             <Link href="/settings/subscription">

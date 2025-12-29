@@ -32,18 +32,7 @@ export default function DashboardPage() {
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => {
-    // Esperar a que la autenticación termine y company esté disponible
-    if (!authLoading && company?.id) {
-      loadDashboardData()
-    } else if (!authLoading && !company?.id) {
-      // Si no hay company después de cargar, mostrar error
-      setLoading(false)
-      toast.error('No se pudo cargar la información de la empresa')
-    }
-  }, [authLoading, company?.id])
-
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     if (!company?.id) {
       console.warn('No company ID available, skipping dashboard data load')
       setLoading(false)
