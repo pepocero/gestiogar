@@ -50,7 +50,7 @@ export default function PlansPage() {
     if (!user) {
       toast.dismiss('checking')
       setIsChecking(false)
-      toast.info('Por favor, regístrate para contratar el plan Pro')
+      toast('Por favor, regístrate para contratar el plan Pro')
       router.push('/auth/register?plan=pro')
       return
     }
