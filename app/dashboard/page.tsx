@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { Card, Button } from '@/components/ui'
 import { BarChart3, Users, ClipboardList, DollarSign, Wrench, TrendingUp, AlertCircle } from 'lucide-react'
 import { getDashboardStats, getRecentActivity } from '@/lib/stats'
