@@ -91,6 +91,7 @@ export default function EstimatesPage() {
     is_labor: false,
     material_id: '',
   })
+  const loadingRef = useRef(false)
 
   const loadEstimates = useCallback(async () => {
     if (!company?.id || loadingRef.current) return
@@ -111,7 +112,7 @@ export default function EstimatesPage() {
           clients!inner(first_name, last_name, email, phone),
           jobs(job_number, title)
         `)
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
       
       // Aplicar límite según el plan
       query = applyPlanLimit(query, limits.max_estimates, 'created_at', true)
@@ -143,6 +144,31 @@ export default function EstimatesPage() {
 
   const loadClients = useCallback(async () => {
     if (!company?.id) return
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Estimates] loadClients start', company?.id)
+      }
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, first_name, last_name, email')
+        .eq('company_id', company.id)
+        .order('first_name')
+
+      if (error) {
+        throw error
+      }
+
+      setClients(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Estimates] loadClients success', {
+          companyId: company?.id,
+          count: data?.length || 0
+        })
+      }
+    } catch (error) {
+      console.error('Error loading clients:', error)
+    }
+  }, [company?.id])
 
   // Filtrar presupuestos
   const applyFilters = () => {
@@ -194,34 +220,6 @@ export default function EstimatesPage() {
       job_id: ''
     })
   }
-
-  const loadClients = useCallback(async () => {
-    if (!company?.id) return
-    try {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Estimates] loadClients start', company?.id)
-      }
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, first_name, last_name, email')
-        .eq('company_id', company.id)
-        .order('first_name')
-
-      if (error) {
-        throw error
-      }
-
-      setClients(data || [])
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Estimates] loadClients success', {
-          companyId: company?.id,
-          count: data?.length || 0
-        })
-      }
-    } catch (error) {
-      console.error('Error loading clients:', error)
-    }
-  }, [company?.id])
 
   const loadJobs = useCallback(async () => {
     if (!company?.id) return
