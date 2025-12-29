@@ -17,6 +17,7 @@ import toast from 'react-hot-toast'
 import { LimitIndicator } from '@/components/subscription/LimitIndicator'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { PRO_PLAN_PRICE_FORMATTED } from '@/lib/constants'
 
 function SubscriptionPageContent() {
   const { company, refreshProfile } = useAuth()
