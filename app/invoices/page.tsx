@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 // Layout ya se aplica automáticamente en ProtectedLayout
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -38,6 +38,7 @@ export default function InvoicesPage() {
   const [showDeleteModal, setShowDeleteModal] = useState(false)
   const [selectedInvoice, setSelectedInvoice] = useState<any>(null)
   const [isUpdating, setIsUpdating] = useState(false)
+  const loadingRef = useRef(false)
 
   // Calcular el total automáticamente cuando cambian subtotal o IVA
   React.useEffect(() => {

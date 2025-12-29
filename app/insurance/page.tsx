@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui'
 import { Modal, Input, Badge } from '@/components/ui'

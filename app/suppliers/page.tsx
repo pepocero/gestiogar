@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui'
 import { Modal, Input } from '@/components/ui'
@@ -44,6 +44,7 @@ export default function SuppliersPage() {
       is_active: true
     })
   }
+  const loadingRef = useRef(false)
 
   const loadSuppliers = useCallback(async () => {
     if (!company?.id || loadingRef.current) return
