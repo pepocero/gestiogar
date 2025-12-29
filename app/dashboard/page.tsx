@@ -56,7 +56,18 @@ export default function DashboardPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id) {
+      loadDashboardData()
+    } else if (!authLoading && !company?.id) {
+      // Si no hay company después de cargar, mostrar error
+      setLoading(false)
+      toast.error('No se pudo cargar la información de la empresa')
+    }
+  }, [authLoading, company?.id, loadDashboardData])
 
   // Funciones de acciones rápidas
   const handleNewJob = () => {
