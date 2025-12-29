@@ -96,7 +96,6 @@ export default function HomePage() {
   }
 
   return (
-  return (
     <div className="min-h-screen bg-white">
       {/* Header con gradiente sutil */}
       <header className="bg-gradient-to-r from-blue-600 to-blue-700 shadow-lg">
