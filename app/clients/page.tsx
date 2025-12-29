@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState } from 'react'
+import React, { useState, useCallback, useRef } from 'react'
 // Layout ya se aplica automáticamente en ProtectedLayout
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -14,6 +14,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 export default function ClientsPage() {
   const { company, user, loading: authLoading } = useAuth()
@@ -31,14 +32,65 @@ export default function ClientsPage() {
     client_type: 'direct',
     insurance_company_id: ''
   })
+  const loadingRef = useRef(false)
+
+  const fetchClients = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
+    
+    loadingRef.current = true
+    setLoadingClients(true)
+    try {
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Clients] fetchClients start', company.id)
+      }
+      // Obtener límites del plan
+      const limits = await getPlanLimits(company.id)
+      
+      let query = supabaseTable('clients')
+        .select(`
+          *,
+          insurance_companies (
+            id,
+            name
+          )
+        `)
+        .eq('company_id', company.id)
+      
+      // Aplicar límite según el plan
+      query = applyPlanLimit(query, limits.max_clients, 'created_at', true)
+
+      const { data, error } = await query
+
+      if (error) {
+        console.error('Error fetching clients:', error)
+        return
+      }
+
+      setClients(data || [])
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Clients] fetchClients success', {
+          companyId: company.id,
+          count: data?.length || 0
+        })
+      }
+    } catch (error) {
+      console.error('Error fetching clients:', error)
+    } finally {
+      setLoadingClients(false)
+      loadingRef.current = false
+      if (process.env.NODE_ENV !== 'production') {
+        console.log('[Clients] fetchClients finished', company.id)
+      }
+    }
+  }, [company?.id])
 
   // Cargar clientes al montar el componente
   React.useEffect(() => {
     // Esperar a que la autenticación termine y company esté disponible
-    if (!authLoading && company?.id) {
+    if (!authLoading && company?.id && !loadingRef.current) {
       fetchClients()
     }
-  }, [authLoading, company?.id])
+  }, [authLoading, company?.id, fetchClients])
 
   // Cargar aseguradoras al abrir el modal
   React.useEffect(() => {
@@ -319,6 +371,7 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>

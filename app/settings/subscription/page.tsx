@@ -435,7 +435,7 @@ function SubscriptionPageContent() {
                           </li>
                         </ul>
                         <div className="text-2xl font-bold text-gray-900 mb-2">
-                          9.99€ <span className="text-sm font-normal text-gray-600">/mes</span>
+                          {PRO_PLAN_PRICE_FORMATTED} <span className="text-sm font-normal text-gray-600">/mes</span>
                         </div>
                         <p className="text-sm text-gray-500 mb-4">
                           Cancela en cualquier momento. Sin pérdida de datos.

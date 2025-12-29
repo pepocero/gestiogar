@@ -26,6 +26,7 @@ import {
   Award,
   Infinity
 } from 'lucide-react'
+import { PRO_PLAN_PRICE_FORMATTED, FREE_PLAN_ITEM_LIMIT } from '@/lib/constants'
 
 export default function PlansPage() {
   const router = useRouter()
@@ -154,7 +155,73 @@ export default function PlansPage() {
       {/* Plans Section */}
       <section className="py-20 bg-gray-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+          <div className="grid md:grid-cols-3 gap-8 max-w-7xl mx-auto">
+            {/* Plan Gratis */}
+            <div className="bg-white rounded-2xl shadow-xl border-2 border-green-200 overflow-hidden hover:shadow-2xl transition-all">
+              <div className="bg-gradient-to-r from-green-100 to-green-200 px-8 py-6">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-2xl font-bold text-gray-900">Plan Gratis</h3>
+                  <Shield className="h-8 w-8 text-green-600" />
+                </div>
+                <p className="text-gray-600">Ideal para empezar</p>
+              </div>
+              
+              <div className="p-8">
+                <div className="mb-8">
+                  <div className="flex items-baseline mb-4">
+                    <span className="text-5xl font-extrabold text-gray-900">Gratis</span>
+                    <span className="text-xl text-gray-500 ml-2">/siempre</span>
+                  </div>
+                  <p className="text-gray-600">Sin tarjeta de crédito requerida</p>
+                </div>
+
+                <Link
+                  href="/auth/register"
+                  className="w-full bg-green-600 text-white py-3 px-6 rounded-xl hover:bg-green-700 transition-all font-semibold text-center block mb-8"
+                >
+                  Registrarse Gratis
+                </Link>
+
+                <div className="space-y-4">
+                  <h4 className="font-bold text-gray-900 text-lg mb-4">Incluye:</h4>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} trabajos</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} clientes</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} presupuestos</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} facturas</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} técnicos</span>
+                    </div>
+                    <div className="flex items-start">
+                      <CheckCircle className="h-5 w-5 text-green-500 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-700">Hasta {FREE_PLAN_ITEM_LIMIT} items en cada sección</span>
+                    </div>
+                    <div className="flex items-start">
+                      <X className="h-5 w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-400 line-through">Sin límites ilimitados</span>
+                    </div>
+                    <div className="flex items-start">
+                      <X className="h-5 w-5 text-gray-400 mr-3 mt-0.5 flex-shrink-0" />
+                      <span className="text-gray-400 line-through">Sin soporte prioritario</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
             {/* Plan Demo */}
             <div className="bg-white rounded-2xl shadow-xl border-2 border-gray-200 overflow-hidden hover:shadow-2xl transition-all">
               <div className="bg-gradient-to-r from-gray-100 to-gray-200 px-8 py-6">
@@ -249,7 +316,7 @@ export default function PlansPage() {
               <div className="p-8">
                 <div className="mb-8">
                   <div className="flex items-baseline mb-4">
-                    <span className="text-5xl font-extrabold text-gray-900">14,99€</span>
+                    <span className="text-5xl font-extrabold text-gray-900">{PRO_PLAN_PRICE_FORMATTED}</span>
                     <span className="text-xl text-gray-500 ml-2">/mes</span>
                   </div>
                   <p className="text-gray-600">Facturación mensual, cancela cuando quieras</p>

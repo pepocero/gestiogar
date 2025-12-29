@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 export default function SuppliersPage() {
   const { company, loading: authLoading } = useAuth()
@@ -44,27 +45,15 @@ export default function SuppliersPage() {
     })
   }
 
-useEffect(() => {
-  // Esperar a que la autenticación termine y company esté disponible
-  if (!authLoading && company?.id) {
-    loadSuppliers()
-  } else if (!authLoading && !company?.id) {
-    setLoading(false)
-  }
-}, [authLoading, company?.id])
-
-  const loadSuppliers = async () => {
+  const loadSuppliers = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
+    
+    loadingRef.current = true
+    setLoading(true)
     try {
       if (process.env.NODE_ENV !== 'production') {
-        console.log('[Suppliers] loadSuppliers start', company?.id)
+        console.log('[Suppliers] loadSuppliers start', company.id)
       }
-      setLoading(true)
-      
-      if (!company) {
-        console.error('No company found')
-        return
-      }
-
       // Obtener límites del plan
       const limits = await getPlanLimits(company.id)
       
@@ -94,11 +83,21 @@ useEffect(() => {
       toast.error('Error cargando proveedores')
     } finally {
       setLoading(false)
+      loadingRef.current = false
       if (process.env.NODE_ENV !== 'production') {
-        console.log('[Suppliers] loadSuppliers finished', company?.id)
+        console.log('[Suppliers] loadSuppliers finished', company.id)
       }
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id && !loadingRef.current) {
+      loadSuppliers()
+    } else if (!authLoading && !company?.id) {
+      setLoading(false)
+    }
+  }, [authLoading, company?.id, loadSuppliers])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value, type } = e.target
@@ -195,6 +194,7 @@ useEffect(() => {
 
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 // Layout ya se aplica automáticamente en ProtectedLayout
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseTable } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 interface Conversation {
   id: string
@@ -193,11 +194,33 @@ export default function CommunicationsPage() {
       toast.error('Error al cargar las conversaciones')
     } finally {
       setLoading(false)
+      loadingRef.current = false
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Communications] loadConversations finished', company.id)
       }
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id && !loadingRef.current) {
+      loadConversations()
+    } else if (!authLoading && !company?.id) {
+      setLoading(false)
+    }
+  }, [authLoading, company?.id, loadConversations])
+
+  // Aplicar filtros cuando cambien las conversaciones o los filtros
+  useEffect(() => {
+    applyFilters()
+  }, [conversations, filters])
+
+  // Cargar datos al abrir el modal
+  useEffect(() => {
+    if ((showCreateModal || showEditModal) && company?.id) {
+      fetchClientsAndTechnicians()
+    }
+  }, [showCreateModal, showEditModal, company?.id])
 
   const fetchClientsAndTechnicians = async () => {
     if (!company?.id) return
@@ -553,6 +576,7 @@ export default function CommunicationsPage() {
   }
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>

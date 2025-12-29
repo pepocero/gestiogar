@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 // Layout ya se aplica automáticamente en ProtectedLayout
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
@@ -13,6 +13,7 @@ import { supabase, supabaseTable } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, FileText, Eye, Send, Check, X, User, Mail, Wrench, Calendar } from 'lucide-react'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -91,27 +92,17 @@ export default function EstimatesPage() {
     material_id: '',
   })
 
-useEffect(() => {
-  // Esperar a que la autenticación termine y company esté disponible
-  if (!authLoading && company?.id) {
-    loadEstimates()
-    loadClients()
-    loadJobs()
-    loadMaterials()
-  } else if (!authLoading && !company?.id) {
-    setLoading(false)
-  }
-}, [authLoading, company?.id])
-
-  const loadEstimates = async () => {
+  const loadEstimates = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
     try {
     if (process.env.NODE_ENV !== 'production') {
       console.log('[Estimates] loadEstimates start', company?.id)
     }
+      loadingRef.current = true
       setLoading(true)
       
       // Obtener límites del plan
-      const limits = await getPlanLimits(company!.id)
+      const limits = await getPlanLimits(company.id)
       
       let query = supabase
         .from('estimates')
@@ -143,11 +134,15 @@ useEffect(() => {
       toast.error('Error al cargar los presupuestos')
     } finally {
       setLoading(false)
+      loadingRef.current = false
     if (process.env.NODE_ENV !== 'production') {
       console.log('[Estimates] loadEstimates finished', company?.id)
     }
     }
-  }
+  }, [company?.id])
+
+  const loadClients = useCallback(async () => {
+    if (!company?.id) return
 
   // Filtrar presupuestos
   const applyFilters = () => {
@@ -208,7 +203,7 @@ useEffect(() => {
       const { data, error } = await supabase
         .from('clients')
         .select('id, first_name, last_name, email')
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
         .order('first_name')
 
       if (error) {
@@ -225,9 +220,10 @@ useEffect(() => {
     } catch (error) {
       console.error('Error loading clients:', error)
     }
-  }
+  }, [company?.id])
 
-  const loadJobs = async () => {
+  const loadJobs = useCallback(async () => {
+    if (!company?.id) return
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Estimates] loadJobs start', company?.id)
@@ -235,7 +231,7 @@ useEffect(() => {
       const { data, error } = await supabase
         .from('jobs')
         .select('id, job_number, title, status')
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
         .in('status', ['pending', 'scheduled'])
         .order('job_number')
 
@@ -263,7 +259,7 @@ useEffect(() => {
       const { data, error } = await supabase
         .from('materials')
         .select('id, name, selling_price, unit')
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
         .eq('is_active', true)
         .order('name')
 
@@ -281,7 +277,19 @@ useEffect(() => {
     } catch (error) {
       console.error('Error loading materials:', error)
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id && !loadingRef.current) {
+      loadEstimates()
+      loadClients()
+      loadJobs()
+      loadMaterials()
+    } else if (!authLoading && !company?.id) {
+      setLoading(false)
+    }
+  }, [authLoading, company?.id, loadEstimates, loadClients, loadJobs, loadMaterials])
 
   const loadEstimateItems = async (estimateId: string) => {
     try {
@@ -585,6 +593,7 @@ useEffect(() => {
 
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
       <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">

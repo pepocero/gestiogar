@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 export default function TechniciansPage() {
   const { company, user, loading: authLoading } = useAuth()
@@ -31,11 +32,13 @@ export default function TechniciansPage() {
   const [removingPhoto, setRemovingPhoto] = useState(false)
   const [showImageEditor, setShowImageEditor] = useState(false)
   const [selectedImageFile, setSelectedImageFile] = useState<File | null>(null)
+  const loadingRef = useRef(false)
 
   // Función para cargar técnicos
-  const fetchTechnicians = async () => {
-    if (!company?.id) return
+  const fetchTechnicians = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
     
+    loadingRef.current = true
     setLoadingTechnicians(true)
     try {
     if (process.env.NODE_ENV !== 'production') {
@@ -72,11 +75,18 @@ export default function TechniciansPage() {
       toast.error('Error inesperado al cargar los técnicos')
     } finally {
       setLoadingTechnicians(false)
+      loadingRef.current = false
     if (process.env.NODE_ENV !== 'production') {
       console.log('[Technicians] fetchTechnicians finished', company.id)
     }
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    if (!authLoading && company?.id && !loadingRef.current) {
+      fetchTechnicians()
+    }
+  }, [authLoading, company?.id, fetchTechnicians])
 
   const handleCreateTechnician = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -511,6 +521,7 @@ export default function TechniciansPage() {
   }
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>

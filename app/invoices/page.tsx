@@ -12,6 +12,7 @@ import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/li
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, X, Printer, FileText, Calendar, Clock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 export default function InvoicesPage() {
   const { company, loading: authLoading } = useAuth()
@@ -47,95 +48,19 @@ export default function InvoicesPage() {
   // Cargar clientes y facturas al montar el componente
   useEffect(() => {
     // Esperar a que la autenticación termine y company esté disponible
-    if (!authLoading && company?.id) {
+    if (!authLoading && company?.id && !loadingRef.current) {
       loadClients()
       fetchInvoices()
     }
-  }, [authLoading, company?.id])
+  }, [authLoading, company?.id, loadClients, fetchInvoices])
 
   // Cargar clientes al abrir el modal
   useEffect(() => {
     if (showCreateModal && company?.id) {
       loadClients()
     }
-  }, [showCreateModal, company?.id])
+  }, [showCreateModal, company?.id, loadClients])
 
-  const loadClients = async () => {
-    if (!company?.id) return
-    
-    try {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[Invoices] loadClients start', company.id)
-    }
-      const { data, error } = await supabase
-        .from('clients')
-        .select('id, first_name, last_name')
-        .eq('company_id', company.id)
-        .order('first_name')
-
-      if (error) {
-        console.error('Error loading clients:', error)
-        return
-      }
-
-      setClients(data || [])
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[Invoices] loadClients success', {
-        companyId: company.id,
-        count: data?.length || 0
-      })
-    }
-    } catch (error) {
-      console.error('Error loading clients:', error)
-    }
-  }
-
-  // Cargar facturas
-  const fetchInvoices = async () => {
-    if (!company?.id) return
-
-    setLoadingInvoices(true)
-    try {
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[Invoices] fetchInvoices start', company.id)
-    }
-      // Obtener límites del plan
-      const limits = await getPlanLimits(company.id)
-      
-      let query = supabase
-        .from('invoices')
-        .select(`
-          *,
-          client:clients(first_name, last_name)
-        `)
-        .eq('company_id', company.id)
-      
-      // Aplicar límite según el plan
-      query = applyPlanLimit(query, limits.max_invoices, 'created_at', true)
-
-      const { data, error } = await query
-
-      if (error) {
-        console.error('Error loading invoices:', error)
-        return
-      }
-
-      setInvoices(data || [])
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[Invoices] fetchInvoices success', {
-        companyId: company.id,
-        count: data?.length || 0
-      })
-    }
-    } catch (error) {
-      console.error('Error loading invoices:', error)
-    } finally {
-      setLoadingInvoices(false)
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('[Invoices] fetchInvoices finished', company.id)
-    }
-    }
-  }
 
   // Aplicar filtros
   const applyFilters = () => {
@@ -725,6 +650,7 @@ export default function InvoicesPage() {
   }
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>

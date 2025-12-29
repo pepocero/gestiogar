@@ -7,6 +7,7 @@ import { getDashboardStats, getRecentActivity } from '@/lib/stats'
 import { useRouter } from 'next/navigation'
 import { useAuth } from '@/contexts/AuthContext'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 interface DashboardStats {
   activeJobs: number
@@ -108,6 +109,9 @@ export default function DashboardPage() {
 
   return (
     <div className="space-y-6">
+      {/* Subscription Banner */}
+      <SubscriptionBanner />
+      
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

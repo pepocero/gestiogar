@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 // Layout ya se aplica automáticamente en ProtectedLayout
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
@@ -16,6 +16,7 @@ import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, Wrench, Eye, Calendar, User, MapPin, Mail } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 interface Job {
   id: string
@@ -79,6 +80,7 @@ export default function JobsPage() {
     technician_id: ''
   })
   const [filteredJobs, setFilteredJobs] = useState<Job[]>([])
+  const loadingRef = useRef(false)
 
   const [formData, setFormData] = useState({
     title: '',
@@ -94,23 +96,13 @@ export default function JobsPage() {
     notes: '',
   })
 
-useEffect(() => {
-  // Esperar a que la autenticación termine y company esté disponible
-  if (!authLoading && company?.id) {
-    loadJobs()
-    loadClients()
-    loadTechnicians()
-    loadInsuranceCompanies()
-  } else if (!authLoading && !company?.id) {
-    setLoading(false)
-  }
-}, [authLoading, company?.id])
-
-  const loadJobs = async () => {
+  const loadJobs = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Jobs] loadJobs start', company?.id)
       }
+      loadingRef.current = true
       setLoading(true)
       
       // Obtener límites del plan
@@ -148,11 +140,14 @@ useEffect(() => {
       toast.error('Error al cargar los trabajos')
     } finally {
       setLoading(false)
+      loadingRef.current = false
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Jobs] loadJobs finished', company?.id)
       }
     }
-  }
+  }, [company?.id])
+
+  const loadClients = useCallback(async () => {
 
   // Filtrar trabajos
   const applyFilters = () => {
@@ -215,7 +210,8 @@ useEffect(() => {
     })
   }
 
-  const loadClients = async () => {
+  const loadClients = useCallback(async () => {
+    if (!company?.id) return
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Jobs] loadClients start', company?.id)
@@ -223,7 +219,7 @@ useEffect(() => {
       const { data, error } = await supabase
         .from('clients')
         .select('id, first_name, last_name, email, phone')
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
         .order('first_name')
 
       if (error) {
@@ -240,9 +236,10 @@ useEffect(() => {
     } catch (error) {
       console.error('Error loading clients:', error)
     }
-  }
+  }, [company?.id])
 
-  const loadTechnicians = async () => {
+  const loadTechnicians = useCallback(async () => {
+    if (!company?.id) return
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Jobs] loadTechnicians start', company?.id)
@@ -250,7 +247,7 @@ useEffect(() => {
       const { data, error } = await supabase
         .from('technicians')
         .select('id, first_name, last_name, phone, specialties')
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
         .eq('is_active', true)
         .order('first_name')
 
@@ -268,9 +265,10 @@ useEffect(() => {
     } catch (error) {
       console.error('Error loading technicians:', error)
     }
-  }
+  }, [company?.id])
 
-  const loadInsuranceCompanies = async () => {
+  const loadInsuranceCompanies = useCallback(async () => {
+    if (!company?.id) return
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Jobs] loadInsuranceCompanies start', company?.id)
@@ -278,7 +276,7 @@ useEffect(() => {
       const { data, error } = await supabase
         .from('insurance_companies')
         .select('id, name')
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
         .eq('is_active', true)
         .order('name')
 
@@ -296,7 +294,18 @@ useEffect(() => {
     } catch (error) {
       console.error('Error loading insurance companies:', error)
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    if (!authLoading && company?.id && !loadingRef.current) {
+      loadJobs()
+      loadClients()
+      loadTechnicians()
+      loadInsuranceCompanies()
+    } else if (!authLoading && !company?.id) {
+      setLoading(false)
+    }
+  }, [authLoading, company?.id, loadJobs, loadClients, loadTechnicians, loadInsuranceCompanies])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
     const { name, value, type } = e.target
@@ -534,6 +543,7 @@ useEffect(() => {
 
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

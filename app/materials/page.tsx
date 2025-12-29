@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card } from '@/components/ui/Card'
 import { Button } from '@/components/ui'
 import { Modal, Input, Badge } from '@/components/ui'
@@ -9,6 +9,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 export default function MaterialsPage() {
   const { company, loading: authLoading } = useAuth()
@@ -44,27 +45,15 @@ export default function MaterialsPage() {
     })
   }
 
-useEffect(() => {
-  // Esperar a que la autenticación termine y company esté disponible
-  if (!authLoading && company?.id) {
-    loadMaterials()
-  } else if (!authLoading && !company?.id) {
-    setLoading(false)
-  }
-}, [authLoading, company?.id])
-
-  const loadMaterials = async () => {
+  const loadMaterials = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
+    
+    loadingRef.current = true
+    setLoading(true)
     try {
       if (process.env.NODE_ENV !== 'production') {
-        console.log('[Materials] loadMaterials start', company?.id)
+        console.log('[Materials] loadMaterials start', company.id)
       }
-      setLoading(true)
-      
-      if (!company) {
-        console.error('No company found')
-        return
-      }
-
       // Obtener límites del plan
       const limits = await getPlanLimits(company.id)
       
@@ -76,7 +65,7 @@ useEffect(() => {
         `)
         .eq('company_id', company.id)
       
-      // Aplicar límite según el plan (ordenar por created_at para plan free)
+      // Aplicar límite según el plan
       query = applyPlanLimit(query, limits.max_materials, 'created_at', true)
 
       const { data, error } = await query
@@ -86,22 +75,23 @@ useEffect(() => {
       }
 
       setMaterials(data || [])
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Materials] loadMaterials success', {
-          companyId: company.id,
-          count: data?.length || 0
-        })
-      }
     } catch (error) {
       console.error('Error loading materials:', error)
-      toast.error('Error cargando materiales')
+      toast.error('Error al cargar los materiales')
     } finally {
       setLoading(false)
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Materials] loadMaterials finished', company?.id)
-      }
+      loadingRef.current = false
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id && !loadingRef.current) {
+      loadMaterials()
+    } else if (!authLoading && !company?.id) {
+      setLoading(false)
+    }
+  }, [authLoading, company?.id, loadMaterials])
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -211,6 +201,7 @@ useEffect(() => {
 
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>

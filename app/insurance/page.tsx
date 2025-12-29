@@ -10,6 +10,7 @@ import { supabase, supabaseTable } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import { ImageEditor } from '@/components/ui/ImageEditor'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 export default function InsurancePage() {
   const { company } = useAuth()
@@ -55,28 +56,18 @@ export default function InsurancePage() {
     setLogoFile(null)
     setLogoPreview(null)
   }
+  const loadingRef = useRef(false)
 
-useEffect(() => {
-  if (!company?.id) {
-    setLoading(false)
-    return
-  }
-
-  loadCompanies()
-}, [company?.id])
-
-  const loadCompanies = async () => {
+  const loadCompanies = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
+    
+    loadingRef.current = true
     try {
       if (process.env.NODE_ENV !== 'production') {
-        console.log('[Insurance] loadCompanies start', company?.id)
+        console.log('[Insurance] loadCompanies start', company.id)
       }
       setLoading(true)
       
-      if (!company) {
-        console.error('No company found')
-        return
-      }
-
       // Obtener límites del plan
       const limits = await getPlanLimits(company.id)
       
@@ -400,6 +391,7 @@ useEffect(() => {
 
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>

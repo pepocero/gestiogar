@@ -12,6 +12,7 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseTable } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 import { Calendar as BigCalendar, momentLocalizer, View } from 'react-big-calendar'
 import moment from 'moment'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
@@ -92,23 +93,12 @@ export default function AppointmentsPage() {
     notes: '',
   })
 
-  useEffect(() => {
-    // Esperar a que la autenticación termine y company esté disponible
-    if (!authLoading && company?.id) {
-      loadAppointments()
-    } else if (!authLoading && !company?.id) {
-      setLoading(false)
-    }
-  }, [authLoading, company?.id])
+  const loadingRef = useRef(false)
 
-  // Cargar datos al abrir el modal
-  useEffect(() => {
-    if ((showCreateModal || showEditModal) && company?.id && (clients.length === 0 || technicians.length === 0)) {
-      fetchClientsAndTechnicians()
-    }
-  }, [showCreateModal, showEditModal, company?.id])
-
-  const loadAppointments = async () => {
+  const loadAppointments = useCallback(async () => {
+    if (!company?.id || loadingRef.current) return
+    
+    loadingRef.current = true
     try {
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Appointments] loadAppointments start', company?.id)
@@ -116,7 +106,7 @@ export default function AppointmentsPage() {
       setLoading(true)
       
       // Obtener límites del plan
-      const limits = await getPlanLimits(company!.id)
+      const limits = await getPlanLimits(company.id)
       
       let query = supabase
         .from('appointments')
@@ -133,7 +123,7 @@ export default function AppointmentsPage() {
             last_name
           )
         `)
-        .eq('company_id', company!.id)
+        .eq('company_id', company.id)
       
       // Aplicar límite según el plan (ordenar por created_at para plan free)
       query = applyPlanLimit(query, limits.max_appointments, 'created_at', true)
@@ -156,11 +146,28 @@ export default function AppointmentsPage() {
       toast.error('Error al cargar las citas')
     } finally {
       setLoading(false)
+      loadingRef.current = false
       if (process.env.NODE_ENV !== 'production') {
         console.log('[Appointments] loadAppointments finished', company?.id)
       }
     }
-  }
+  }, [company?.id])
+
+  useEffect(() => {
+    // Esperar a que la autenticación termine y company esté disponible
+    if (!authLoading && company?.id && !loadingRef.current) {
+      loadAppointments()
+    } else if (!authLoading && !company?.id) {
+      setLoading(false)
+    }
+  }, [authLoading, company?.id, loadAppointments])
+
+  // Cargar datos al abrir el modal
+  useEffect(() => {
+    if ((showCreateModal || showEditModal) && company?.id && (clients.length === 0 || technicians.length === 0)) {
+      fetchClientsAndTechnicians()
+    }
+  }, [showCreateModal, showEditModal, company?.id])
 
   const fetchClientsAndTechnicians = async () => {
     if (!company?.id) return
@@ -463,6 +470,7 @@ export default function AppointmentsPage() {
   }
   return (
     <div className="space-y-6">
+      <SubscriptionBanner />
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>

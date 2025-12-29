@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { processPayPalWebhook, verifyPayPalWebhook } from '@/lib/paypal'
 import { supabaseAdminTable } from '@/lib/supabase'
+import { PRO_PLAN_PRICE } from '@/lib/constants'
 
 export async function POST(req: NextRequest) {
   try {
@@ -64,7 +65,7 @@ export async function POST(req: NextRequest) {
             plan: 'pro',
             status: 'active',
             paypal_subscription_id: subscriptionId,
-            amount: 9.99,
+            amount: PRO_PLAN_PRICE,
             currency: 'EUR',
             started_at: new Date().toISOString(),
             expires_at: expiresAt.toISOString()

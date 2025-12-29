@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 // Layout ya se aplica automáticamente en ProtectedLayout
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -46,6 +46,7 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
+import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 interface ReportStats {
   totalRevenue: number

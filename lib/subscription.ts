@@ -1,4 +1,5 @@
 import { supabaseTable } from '@/lib/supabase'
+import { FREE_PLAN_ITEM_LIMIT } from '@/lib/constants'
 
 export type SubscriptionPlan = 'free' | 'pro'
 export type SubscriptionStatus = 'active' | 'cancelled' | 'expired'
@@ -41,19 +42,19 @@ export interface Subscription {
   updated_at: string
 }
 
-// Límites por defecto del plan gratuito
+// Límites por defecto del plan gratuito (3 items por sección)
 export function getDefaultFreeLimits(): PlanLimits {
   return {
-    max_jobs: 5,
-    max_clients: 2,
-    max_estimates: 2,
-    max_invoices: 2,
-    max_technicians: 2,
-    max_insurance_companies: 2,
-    max_suppliers: 2,
-    max_materials: 2,
-    max_appointments: 2,
-    max_conversations: 1
+    max_jobs: FREE_PLAN_ITEM_LIMIT,
+    max_clients: FREE_PLAN_ITEM_LIMIT,
+    max_estimates: FREE_PLAN_ITEM_LIMIT,
+    max_invoices: FREE_PLAN_ITEM_LIMIT,
+    max_technicians: FREE_PLAN_ITEM_LIMIT,
+    max_insurance_companies: FREE_PLAN_ITEM_LIMIT,
+    max_suppliers: FREE_PLAN_ITEM_LIMIT,
+    max_materials: FREE_PLAN_ITEM_LIMIT,
+    max_appointments: FREE_PLAN_ITEM_LIMIT,
+    max_conversations: FREE_PLAN_ITEM_LIMIT
   }
 }
 
@@ -62,7 +63,7 @@ export async function getPlanLimits(companyId: string): Promise<PlanLimits> {
   try {
     // Obtener información de la empresa
     const { data: company, error: companyError } = await supabaseTable('companies')
-      .select('subscription_plan, subscription_status, subscription_ends_at')
+      .select('subscription_plan, subscription_status, subscription_ends_at, paypal_subscription_id')
       .eq('id', companyId)
       .single()
 
@@ -71,17 +72,34 @@ export async function getPlanLimits(companyId: string): Promise<PlanLimits> {
       return getDefaultFreeLimits()
     }
 
+    // Verificar suscripción desde PayPal si existe subscription_id
+    let isPayPalActive = false
+    if (company.paypal_subscription_id) {
+      try {
+        const { getPayPalSubscription } = await import('@/lib/paypal')
+        const paypalSub = await getPayPalSubscription(company.paypal_subscription_id)
+        if (paypalSub && paypalSub.status === 'ACTIVE') {
+          isPayPalActive = true
+        }
+      } catch (error) {
+        console.warn('[Subscription] Error checking PayPal subscription:', error)
+        // Si falla la verificación de PayPal, usar datos locales
+      }
+    }
+
     // Determinar si el plan está activo
     // Una suscripción está activa si:
     // 1. Tiene status 'active' y no ha expirado, O
     // 2. Tiene status 'cancelled' pero aún no ha expirado (mantiene acceso hasta el final del período pagado)
+    // 3. PayPal confirma que la suscripción está activa
     const hasNotExpired = !company.subscription_ends_at || new Date(company.subscription_ends_at) > new Date()
     const isActive = 
-      (company.subscription_status === 'active' || company.subscription_status === 'cancelled') && 
+      ((company.subscription_status === 'active' || company.subscription_status === 'cancelled') && 
       hasNotExpired &&
-      company.subscription_plan === 'pro'
+      company.subscription_plan === 'pro') ||
+      isPayPalActive
     
-    const plan: SubscriptionPlan = isActive ? company.subscription_plan : 'free'
+    const plan: SubscriptionPlan = isActive ? 'pro' : 'free'
 
     // Obtener límites del plan
     const { data: limits, error: limitsError } = await supabaseTable('plan_limits')
