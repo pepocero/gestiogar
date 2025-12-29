@@ -13,7 +13,6 @@ import { supabase, supabaseTable } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, FileText, Eye, Send, Check, X, User, Mail, Wrench, Calendar } from 'lucide-react'
-import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 
@@ -593,7 +592,6 @@ export default function EstimatesPage() {
 
   return (
     <div className="space-y-6">
-      <SubscriptionBanner />
       <div className="flex justify-between items-center">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">

@@ -12,7 +12,6 @@ import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/li
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import { Plus, Search, Filter, Download, Eye, Edit, Trash2, X, Printer, FileText, Calendar, Clock, User } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 export default function InvoicesPage() {
   const { company, loading: authLoading } = useAuth()
@@ -714,7 +713,6 @@ export default function InvoicesPage() {
   }
   return (
     <div className="space-y-6">
-      <SubscriptionBanner />
           {/* Header */}
           <div className="flex justify-between items-center">
             <div>

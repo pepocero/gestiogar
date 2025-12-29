@@ -46,7 +46,6 @@ import jsPDF from 'jspdf'
 import html2canvas from 'html2canvas'
 import * as XLSX from 'xlsx'
 import toast from 'react-hot-toast'
-import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 interface ReportStats {
   totalRevenue: number

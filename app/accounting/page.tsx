@@ -10,7 +10,6 @@ import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
 import { Plus, RefreshCw, TrendingUp, TrendingDown, PieChart, AlertCircle } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 type TransactionFormState = {
   date: string
@@ -148,7 +147,6 @@ export default function AccountingPage() {
 
   return (
     <div className="space-y-6">
-      <SubscriptionBanner />
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Contabilidad</h1>

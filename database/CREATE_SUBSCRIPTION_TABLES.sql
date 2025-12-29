@@ -62,7 +62,7 @@ INSERT INTO plan_limits (
     max_appointments, 
     max_conversations
 )
-VALUES ('free', 5, 2, 2, 2, 2, 2, 2, 2, 2, 1)
+VALUES ('free', 3, 3, 3, 3, 3, 3, 3, 3, 3, 3)
 ON CONFLICT (plan) DO UPDATE SET
     max_jobs = EXCLUDED.max_jobs,
     max_clients = EXCLUDED.max_clients,

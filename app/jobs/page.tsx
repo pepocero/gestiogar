@@ -16,7 +16,6 @@ import toast from 'react-hot-toast'
 import { Plus, Edit, Trash2, Wrench, Eye, Calendar, User, MapPin, Mail } from 'lucide-react'
 import { format } from 'date-fns'
 import { es } from 'date-fns/locale'
-import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 interface Job {
   id: string
@@ -541,7 +540,6 @@ export default function JobsPage() {
 
   return (
     <div className="space-y-6">
-      <SubscriptionBanner />
         {/* Header */}
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
           <div>

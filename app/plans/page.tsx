@@ -230,6 +230,12 @@ export default function PlansPage() {
                   <Zap className="h-8 w-8 text-gray-600" />
                 </div>
                 <p className="text-gray-600">Perfecto para probar todas las funcionalidades</p>
+                <div className="mt-3 bg-orange-50 border-l-4 border-orange-400 p-3 rounded">
+                  <p className="text-xs text-orange-800 font-medium">
+                    ⚠️ <strong>Importante:</strong> Esta cuenta está abierta a todo el mundo. 
+                    <strong className="block mt-1">No utilices datos reales.</strong>
+                  </p>
+                </div>
               </div>
               
               <div className="p-8">
@@ -417,6 +423,7 @@ export default function PlansPage() {
               <thead>
                 <tr className="bg-gray-100">
                   <th className="border border-gray-300 px-6 py-4 text-left font-bold text-gray-900">Funcionalidad</th>
+                  <th className="border border-gray-300 px-6 py-4 text-center font-bold text-gray-900">Plan Gratis</th>
                   <th className="border border-gray-300 px-6 py-4 text-center font-bold text-gray-900">Plan Demo</th>
                   <th className="border border-gray-300 px-6 py-4 text-center font-bold text-blue-600 bg-blue-50">Gestiogar Pro</th>
                 </tr>
@@ -424,6 +431,9 @@ export default function PlansPage() {
               <tbody>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Gestión de Clientes</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} clientes</span>
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
                   </td>
@@ -433,6 +443,9 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Gestión de Técnicos</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} técnicos</span>
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
                   </td>
@@ -442,6 +455,9 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Trabajos y Presupuestos</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} por tipo</span>
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
                   </td>
@@ -451,6 +467,9 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Facturación</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} facturas</span>
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
                   </td>
@@ -460,6 +479,9 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Integración con Aseguradoras</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <span className="text-sm text-gray-700">{FREE_PLAN_ITEM_LIMIT} aseguradoras</span>
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
                   </td>
@@ -469,6 +491,9 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Reportes y Analytics</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
                   </td>
@@ -478,6 +503,9 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Guardar Datos Propios</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <X className="h-5 w-5 text-gray-400 mx-auto" />
                   </td>
@@ -487,16 +515,23 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Límites de Uso</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50 text-gray-700">
+                    {FREE_PLAN_ITEM_LIMIT} items/sección
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center text-gray-500">Solo demo</td>
                   <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50 font-medium text-blue-600">Ilimitado</td>
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Soporte</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50 text-gray-700">Básico</td>
                   <td className="border border-gray-300 px-6 py-4 text-center text-gray-500">Email</td>
                   <td className="border border-gray-300 px-6 py-4 text-center bg-blue-50 font-medium text-blue-600">Prioritario</td>
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">Backups Automáticos</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <X className="h-5 w-5 text-gray-400 mx-auto" />
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <X className="h-5 w-5 text-gray-400 mx-auto" />
                   </td>
@@ -506,6 +541,9 @@ export default function PlansPage() {
                 </tr>
                 <tr>
                   <td className="border border-gray-300 px-6 py-4 font-medium">API de Integración</td>
+                  <td className="border border-gray-300 px-6 py-4 text-center bg-green-50">
+                    <X className="h-5 w-5 text-gray-400 mx-auto" />
+                  </td>
                   <td className="border border-gray-300 px-6 py-4 text-center">
                     <X className="h-5 w-5 text-gray-400 mx-auto" />
                   </td>

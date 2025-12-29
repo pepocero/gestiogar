@@ -106,6 +106,13 @@ export default function HomePage() {
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
               </Link>
               <Link 
+                href="/plans" 
+                className="border-2 border-white text-white px-8 py-4 rounded-xl hover:bg-white/10 backdrop-blur-sm transition-all font-semibold text-lg inline-flex items-center justify-center"
+              >
+                Ver Planes
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </Link>
+              <Link 
                 href="/auth/login" 
                 className="border-2 border-white text-white px-8 py-4 rounded-xl hover:bg-white/10 backdrop-blur-sm transition-all font-semibold text-lg"
               >
@@ -404,6 +411,13 @@ export default function HomePage() {
             >
               Crear Cuenta Gratis
               <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+            <Link 
+              href="/plans" 
+              className="border-2 border-white text-white px-10 py-4 rounded-xl hover:bg-white/10 backdrop-blur-sm transition-all font-bold text-lg inline-flex items-center justify-center"
+            >
+              Ver Planes
+              <ArrowRight className="ml-2 h-5 w-5" />
             </Link>
             <Link 
               href="/auth/login" 

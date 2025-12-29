@@ -13,7 +13,6 @@ import { useAuth } from '@/contexts/AuthContext'
 import { supabase, supabaseAdmin, supabaseTable, supabaseAdminTable } from '@/lib/supabase'
 import { getPlanLimits, applyPlanLimit, canCreateItem } from '@/lib/subscription'
 import toast from 'react-hot-toast'
-import { SubscriptionBanner } from '@/components/subscription/SubscriptionBanner'
 
 export default function TechniciansPage() {
   const { company, user, loading: authLoading } = useAuth()
@@ -521,7 +520,6 @@ export default function TechniciansPage() {
   }
   return (
     <div className="space-y-6">
-      <SubscriptionBanner />
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>

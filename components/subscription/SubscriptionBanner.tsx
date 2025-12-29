@@ -68,7 +68,7 @@ export function SubscriptionBanner() {
             Actualiza a <strong>Gestiogar Pro</strong> por solo {PRO_PLAN_PRICE_FORMATTED}/mes para desbloquear todas las funcionalidades sin límites.
           </p>
           <div className="mt-3 flex items-center gap-3">
-            <Link href="/settings/subscription">
+            <Link href="/settings/subscription?upgrade=true">
               <Button className="flex items-center gap-2">
                 <Zap className="h-4 w-4" />
                 Actualizar a Pro

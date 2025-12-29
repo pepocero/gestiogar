@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/AuthContext'
 import { Card, CardHeader, CardBody } from '@/components/ui/Card'
 import { Button } from '@/components/ui/Button'
@@ -88,41 +88,7 @@ function SubscriptionPageContent() {
     setUsage(usageData)
   }
 
-  // Verificar si hay parámetros de retorno de PayPal o si viene desde planes
-  useEffect(() => {
-    const success = searchParams.get('success')
-    const canceled = searchParams.get('canceled')
-    const subscriptionId = searchParams.get('subscription_id')
-    const upgrade = searchParams.get('upgrade')
-
-    // Si viene desde la página de planes con upgrade=true, iniciar proceso automáticamente
-    if (upgrade === 'true' && company?.id && !loading) {
-      // Esperar un momento para que los datos se carguen
-      setTimeout(() => {
-        handleUpgrade()
-      }, 500)
-    }
-
-    if (success) {
-      toast.success('¡Suscripción activada correctamente!')
-      // Esperar un momento para que el webhook procese la actualización
-      // Luego recargar datos y perfil
-      setTimeout(async () => {
-        // Recargar datos de suscripción
-        await loadSubscriptionData()
-        // Forzar recarga del perfil para obtener los datos actualizados de la empresa
-        await refreshProfile()
-      }, 2000)
-    } else if (canceled) {
-      toast('Suscripción cancelada. No se realizó ningún cargo.', {
-        icon: 'ℹ️',
-        duration: 4000
-      })
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchParams, company?.id, loading])
-
-  const handleUpgrade = async () => {
+  const handleUpgrade = useCallback(async () => {
     if (!company?.id) {
       toast.error('No se pudo obtener la información de la empresa')
       return
@@ -167,7 +133,40 @@ function SubscriptionPageContent() {
         duration: 6000
       })
     }
-  }
+  }, [company?.id])
+
+  // Verificar si hay parámetros de retorno de PayPal o si viene desde planes
+  useEffect(() => {
+    const success = searchParams.get('success')
+    const canceled = searchParams.get('canceled')
+    const subscriptionId = searchParams.get('subscription_id')
+    const upgrade = searchParams.get('upgrade')
+
+    // Si viene desde la página de planes con upgrade=true, iniciar proceso automáticamente
+    if (upgrade === 'true' && company?.id && !loading) {
+      // Esperar un momento para que los datos se carguen
+      setTimeout(() => {
+        handleUpgrade()
+      }, 500)
+    }
+
+    if (success) {
+      toast.success('¡Suscripción activada correctamente!')
+      // Esperar un momento para que el webhook procese la actualización
+      // Luego recargar datos y perfil
+      setTimeout(async () => {
+        // Recargar datos de suscripción
+        await loadSubscriptionData()
+        // Forzar recarga del perfil para obtener los datos actualizados de la empresa
+        await refreshProfile()
+      }, 2000)
+    } else if (canceled) {
+      toast('Suscripción cancelada. No se realizó ningún cargo.', {
+        icon: 'ℹ️',
+        duration: 4000
+      })
+    }
+  }, [searchParams, company?.id, loading, handleUpgrade])
 
   const handleCancel = async () => {
     if (!confirm('¿Estás seguro de que quieres cancelar tu suscripción? Podrás seguir usando Pro hasta el final del período pagado.')) {
