@@ -251,26 +251,35 @@ export async function getPayPalSubscription(subscriptionId: string): Promise<Pay
     const subscription = response.result
     
     // Intentar obtener el status del objeto subscription
-    // El SDK de PayPal puede tener el campo 'status' directamente
-    // Si no está disponible, intentar acceder a través de 'as any' y verificar diferentes posibles campos
+    // El SDK de PayPal tiene el campo 'status' directamente en el objeto Subscription
+    // IMPORTANTE: NO asumir que es 'ACTIVE' solo porque hay billingInfo
+    // Solo considerar 'ACTIVE' si PayPal lo confirma explícitamente
     let status: string = 'UNKNOWN'
     
     // Intentar acceder al campo status directamente
     const subscriptionAny = subscription as any
+    
+    // PayPal SDK puede tener el status en diferentes lugares
     if (subscriptionAny.status) {
       status = subscriptionAny.status
-    } else if (subscription.billingInfo) {
-      // Si hay billingInfo, es probable que la suscripción esté activa
-      // Pero esto no es seguro, así que marcamos como UNKNOWN si no tenemos el status real
-      status = 'ACTIVE'
+    } else if (subscriptionAny.state) {
+      // Algunas versiones del SDK usan 'state' en lugar de 'status'
+      status = subscriptionAny.state
     } else {
+      // Si no podemos obtener el status, NO asumir que es activa
+      // Esto es crítico para la seguridad: si no sabemos el estado, NO es activa
+      console.error('[PayPal] Cannot determine subscription status. Subscription object:', JSON.stringify(subscription, null, 2))
       status = 'UNKNOWN'
     }
     
-    // Solo considerar ACTIVE si el status es explícitamente 'ACTIVE'
-    // PayPal puede devolver estados como: 'APPROVAL_PENDING', 'APPROVED', 'ACTIVE', 'SUSPENDED', 'CANCELLED', 'EXPIRED'
-    if (status !== 'ACTIVE' && status !== 'APPROVED') {
+    // CRÍTICO: Solo considerar ACTIVE si el status es explícitamente 'ACTIVE'
+    // PayPal puede devolver estados como: 
+    // 'APPROVAL_PENDING', 'APPROVED', 'ACTIVE', 'SUSPENDED', 'CANCELLED', 'EXPIRED'
+    // NO considerar 'APPROVED' como activo, solo 'ACTIVE'
+    if (status !== 'ACTIVE') {
       console.warn('[PayPal] Subscription status is not ACTIVE:', status, 'Subscription ID:', subscriptionId)
+    } else {
+      console.log('[PayPal] Subscription is ACTIVE:', subscriptionId)
     }
     
     return {

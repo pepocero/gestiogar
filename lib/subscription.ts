@@ -72,7 +72,7 @@ export async function getPlanLimits(companyId: string): Promise<PlanLimits> {
       return getDefaultFreeLimits()
     }
 
-    // IMPORTANTE: La verificación del plan SIEMPRE debe hacerse desde PayPal
+    // CRÍTICO: La verificación del plan SIEMPRE debe hacerse desde PayPal
     // Si no hay paypal_subscription_id, es Free (no confiar en datos locales)
     let isPro = false
     
@@ -80,16 +80,25 @@ export async function getPlanLimits(companyId: string): Promise<PlanLimits> {
       try {
         const { getPayPalSubscription } = await import('@/lib/paypal')
         const paypalSub = await getPayPalSubscription(company.paypal_subscription_id)
-        // Solo considerar Pro si PayPal confirma que la suscripción está activa
+        
+        // CRÍTICO: Solo considerar Pro si PayPal confirma EXPLÍCITAMENTE que el status es 'ACTIVE'
         if (paypalSub && paypalSub.status === 'ACTIVE') {
           isPro = true
+          console.log('[Subscription] PayPal subscription is ACTIVE. Using Pro plan limits.')
         } else {
-          console.warn('[Subscription] PayPal subscription not active or not found. Subscription ID:', company.paypal_subscription_id, 'Status:', paypalSub?.status)
+          // Si el status no es 'ACTIVE' o si paypalSub es null, usar Free
+          console.warn('[Subscription] PayPal subscription is NOT ACTIVE. Subscription ID:', company.paypal_subscription_id, 'Status:', paypalSub?.status || 'null/error')
+          isPro = false
         }
-      } catch (error) {
-        // Si falla la verificación de PayPal, NO confiar en datos locales, usar Free
-        console.warn('[Subscription] Error checking PayPal subscription:', error)
-        isPro = false
+      } catch (error: any) {
+        // Si falla la verificación de PayPal (401, 404, etc.), NO confiar en datos locales, usar Free
+        console.error('[Subscription] Error checking PayPal subscription:', error)
+        console.error('[Subscription] Error details:', {
+          message: error?.message,
+          statusCode: error?.statusCode,
+          subscriptionId: company.paypal_subscription_id
+        })
+        isPro = false // Fail-safe: si hay error, usar Free
       }
     } else {
       // Si no hay paypal_subscription_id, es Free
@@ -171,6 +180,7 @@ export async function canCreateItem(
 }
 
 // Verificar si una empresa tiene una suscripción Pro activa verificando con PayPal
+// CRÍTICO: Esta función SIEMPRE debe verificar con PayPal, nunca confiar en datos locales
 export async function isProSubscriptionActive(companyId: string): Promise<boolean> {
   try {
     // Obtener información de la empresa
@@ -180,23 +190,43 @@ export async function isProSubscriptionActive(companyId: string): Promise<boolea
       .single()
 
     if (companyError || !company || !company.paypal_subscription_id) {
+      console.log('[Subscription] No PayPal subscription ID found for company:', companyId)
       return false
     }
 
-    // Verificar con PayPal
+    // Verificar con PayPal (fuente de verdad)
     try {
       const { getPayPalSubscription } = await import('@/lib/paypal')
       const paypalSub = await getPayPalSubscription(company.paypal_subscription_id)
       
-      // Solo considerar activa si PayPal confirma que el status es 'ACTIVE'
-      return paypalSub !== null && paypalSub.status === 'ACTIVE'
-    } catch (error) {
-      console.warn('[Subscription] Error checking PayPal subscription:', error)
-      return false
+      // CRÍTICO: Solo considerar activa si:
+      // 1. PayPal devuelve un objeto válido (no null)
+      // 2. El status es EXACTAMENTE 'ACTIVE' (no 'APPROVED', 'SUSPENDED', etc.)
+      if (!paypalSub) {
+        console.warn('[Subscription] PayPal subscription not found or error:', company.paypal_subscription_id)
+        return false
+      }
+      
+      const isActive = paypalSub.status === 'ACTIVE'
+      
+      if (!isActive) {
+        console.log('[Subscription] PayPal subscription is not ACTIVE. Status:', paypalSub.status, 'Subscription ID:', company.paypal_subscription_id)
+      }
+      
+      return isActive
+    } catch (error: any) {
+      // Si hay un error al verificar con PayPal (401, 404, etc.), NO considerar activa
+      console.error('[Subscription] Error checking PayPal subscription:', error)
+      console.error('[Subscription] Error details:', {
+        message: error?.message,
+        statusCode: error?.statusCode,
+        subscriptionId: company.paypal_subscription_id
+      })
+      return false // Fail-safe: si hay error, asumir que NO está activa
     }
   } catch (error) {
     console.error('[Subscription] Error checking if subscription is active:', error)
-    return false
+    return false // Fail-safe: si hay error, asumir que NO está activa
   }
 }
 
