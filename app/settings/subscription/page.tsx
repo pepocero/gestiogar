@@ -26,6 +26,7 @@ function SubscriptionPageContent() {
   const [limits, setLimits] = useState<PlanLimitsType | null>(null)
   const [history, setHistory] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const [isProActive, setIsProActive] = useState<boolean>(false)
   const [usage, setUsage] = useState<Record<string, { current: number; limit: number | null }>>({})
 
   useEffect(() => {
@@ -39,6 +40,18 @@ function SubscriptionPageContent() {
 
     try {
       setLoading(true)
+      
+      // Verificar con PayPal si la suscripción está activa (esto es la fuente de verdad)
+      // Usar API route porque isProSubscriptionActive es una función del servidor
+      const statusResponse = await fetch(`/api/subscriptions/status?companyId=${company.id}`)
+      if (statusResponse.ok) {
+        const statusData = await statusResponse.json()
+        setIsProActive(statusData.isActive || false)
+      } else {
+        console.error('[Subscription] Error checking subscription status')
+        setIsProActive(false)
+      }
+      
       const [subData, limitsData, historyData] = await Promise.all([
         getCompanySubscription(company.id),
         getPlanLimits(company.id),
@@ -54,6 +67,7 @@ function SubscriptionPageContent() {
     } catch (error) {
       console.error('Error loading subscription data:', error)
       toast.error('Error al cargar información de suscripción')
+      setIsProActive(false)
     } finally {
       setLoading(false)
     }
@@ -219,19 +233,14 @@ function SubscriptionPageContent() {
     )
   }
 
-  // Usar datos del contexto (company) como fuente principal, con fallback a subscription
-  // Una suscripción Pro está activa si:
-  // 1. Tiene plan 'pro' y status 'active' y no ha expirado, O
-  // 2. Tiene plan 'pro' y status 'cancelled' pero aún no ha expirado (mantiene acceso hasta el final del período pagado)
-  const hasNotExpired = !company?.subscription_ends_at || new Date(company.subscription_ends_at) > new Date()
-  const isPro = ((company?.subscription_plan === 'pro' && (company?.subscription_status === 'active' || company?.subscription_status === 'cancelled')) ||
-                (subscription?.subscription_plan === 'pro' && (subscription?.subscription_status === 'active' || subscription?.subscription_status === 'cancelled'))) &&
-                hasNotExpired
+  // IMPORTANTE: Usar isProActive que se obtiene verificando con PayPal (fuente de verdad)
+  // NO confiar en datos locales de la base de datos ya que pueden estar desactualizados
+  const subscriptionActive = isProActive
+  
+  // Obtener información adicional de la suscripción para mostrar fechas (si está disponible)
+  // Pero NO usar esto para determinar si está activa
   const isCancelled = company?.subscription_status === 'cancelled' || subscription?.subscription_status === 'cancelled'
   const isExpired = company?.subscription_status === 'expired' || subscription?.subscription_status === 'expired'
-  
-  // Verificar que la suscripción no haya expirado
-  const subscriptionActive = isPro
 
   return (
     <div className="space-y-6">
@@ -247,13 +256,13 @@ function SubscriptionPageContent() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <h2 className="text-xl font-semibold">Plan Actual</h2>
-            {isPro && (
+            {subscriptionActive && (
               <Badge variant="success" className="flex items-center gap-1">
                 <Crown className="h-4 w-4" />
                 Gestiogar Pro
               </Badge>
             )}
-            {!isPro && (
+            {!subscriptionActive && (
               <Badge variant="info" className="flex items-center gap-1">
                 Gestiogar Free
               </Badge>

@@ -13,28 +13,42 @@ import type {
 } from '@paypal/paypal-server-sdk'
 
 // Configuración de PayPal
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID || 'ASei9f5wQmpyvwtFk9vVUJCGnz-h2L69xsOd15_VCCesLkEApOSaQfHF7wBIOeLuCA46mvCr0aKP634S'
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET || 'EE31yltsg3RP4r3mvg33ktakemHSn6-F6_UbAMrUK3LCk2QbvKz7426wk2cZgl-jNOdo7DgBXt6QXSWa'
-const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID || '7MG01737B00838134'
+// IMPORTANTE: En Vercel, estas variables deben estar configuradas en las variables de entorno del proyecto
+const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
+const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET
+const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID
+const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID
 
 // Determinar si estamos en producción o sandbox
 // Si PAYPAL_ENVIRONMENT=production, usar Environment.Production (producción real)
 // Si PAYPAL_ENVIRONMENT=sandbox o no está definido, usar Environment.Sandbox (pruebas)
 const isProduction = process.env.PAYPAL_ENVIRONMENT === 'production'
 
-// Log solo en desarrollo para no exponer información sensible
-if (process.env.NODE_ENV !== 'production') {
-  console.log('[PayPal] Initializing with:', {
-    isProduction,
-    hasClientId: !!PAYPAL_CLIENT_ID,
-    hasClientSecret: !!PAYPAL_CLIENT_SECRET,
-    planId: process.env.PAYPAL_PLAN_ID || 'P-00N493055U1248131NEKRZSA',
-    environment: isProduction ? 'PRODUCTION (LIVE)' : 'SANDBOX (TEST)',
-    paypalEnv: process.env.PAYPAL_ENVIRONMENT || 'not set (defaults to SANDBOX)'
-  })
+// Validar que las variables de entorno estén configuradas
+if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+  console.error('[PayPal] ❌ ERROR: PayPal credentials not configured!')
+  console.error('[PayPal] PAYPAL_CLIENT_ID:', PAYPAL_CLIENT_ID ? '✅ Set' : '❌ Missing')
+  console.error('[PayPal] PAYPAL_CLIENT_SECRET:', PAYPAL_CLIENT_SECRET ? '✅ Set' : '❌ Missing')
+  console.error('[PayPal] Please configure PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in your environment variables')
 }
 
+// Log de configuración (sin exponer valores sensibles)
+console.log('[PayPal] Initializing with:', {
+  isProduction,
+  hasClientId: !!PAYPAL_CLIENT_ID,
+  hasClientSecret: !!PAYPAL_CLIENT_SECRET,
+  hasWebhookId: !!PAYPAL_WEBHOOK_ID,
+  hasPlanId: !!PAYPAL_PLAN_ID,
+  environment: isProduction ? 'PRODUCTION (LIVE)' : 'SANDBOX (TEST)',
+  paypalEnv: process.env.PAYPAL_ENVIRONMENT || 'not set (defaults to SANDBOX)'
+})
+
 // Inicializar cliente de PayPal
+// Validar credenciales antes de crear el cliente
+if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+  throw new Error('PayPal credentials are not configured. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET environment variables.')
+}
+
 const paypalClient = new Client({
   clientCredentialsAuthCredentials: {
     oAuthClientId: PAYPAL_CLIENT_ID,
@@ -69,8 +83,12 @@ export interface PayPalSubscription {
 }
 
 // Plan ID de suscripción (creado en PayPal Dashboard)
-// Plan: Gestiogar Pro - 9.99 EUR/mes
-const SUBSCRIPTION_PLAN_ID = process.env.PAYPAL_PLAN_ID || 'P-00N493055U1248131NEKRZSA'
+// Plan: Gestiogar Pro - 14.99 EUR/mes
+const SUBSCRIPTION_PLAN_ID = PAYPAL_PLAN_ID
+
+if (!SUBSCRIPTION_PLAN_ID) {
+  console.error('[PayPal] ❌ ERROR: PAYPAL_PLAN_ID not configured!')
+}
 
 // Crear suscripción en PayPal
 export async function createPayPalSubscription(
@@ -80,6 +98,12 @@ export async function createPayPalSubscription(
 ): Promise<{ approvalUrl: string; subscriptionId: string } | null> {
   try {
     console.log('[PayPal] Creating subscription for company:', companyId)
+    
+    // Validar que el Plan ID esté configurado
+    if (!SUBSCRIPTION_PLAN_ID) {
+      console.error('[PayPal] SUBSCRIPTION_PLAN_ID is not configured')
+      throw new Error('PayPal Plan ID is not configured')
+    }
     
     // Usar el Plan ID directamente (ya creado en PayPal Dashboard)
     const planId = SUBSCRIPTION_PLAN_ID
@@ -208,15 +232,46 @@ export async function getPayPalSubscription(subscriptionId: string): Promise<Pay
       id: subscriptionId
     })
     
+    // Manejar errores de autenticación (401) o no encontrado (404)
+    if (response.statusCode === 401) {
+      console.error('[PayPal] Authentication error (401) when getting subscription. Check PayPal credentials.')
+      return null
+    }
+    
+    if (response.statusCode === 404) {
+      console.warn('[PayPal] Subscription not found (404):', subscriptionId)
+      return null
+    }
+    
     if (response.statusCode !== 200 || !response.result) {
+      console.error('[PayPal] Unexpected status code or no result:', response.statusCode)
       return null
     }
     
     const subscription = response.result
     
-    // El modelo Subscription del nuevo SDK no tiene campo status directamente
-    // Usamos 'ACTIVE' como valor por defecto si hay billingInfo
-    const status = subscription.billingInfo ? 'ACTIVE' : 'UNKNOWN'
+    // Intentar obtener el status del objeto subscription
+    // El SDK de PayPal puede tener el campo 'status' directamente
+    // Si no está disponible, intentar acceder a través de 'as any' y verificar diferentes posibles campos
+    let status: string = 'UNKNOWN'
+    
+    // Intentar acceder al campo status directamente
+    const subscriptionAny = subscription as any
+    if (subscriptionAny.status) {
+      status = subscriptionAny.status
+    } else if (subscription.billingInfo) {
+      // Si hay billingInfo, es probable que la suscripción esté activa
+      // Pero esto no es seguro, así que marcamos como UNKNOWN si no tenemos el status real
+      status = 'ACTIVE'
+    } else {
+      status = 'UNKNOWN'
+    }
+    
+    // Solo considerar ACTIVE si el status es explícitamente 'ACTIVE'
+    // PayPal puede devolver estados como: 'APPROVAL_PENDING', 'APPROVED', 'ACTIVE', 'SUSPENDED', 'CANCELLED', 'EXPIRED'
+    if (status !== 'ACTIVE' && status !== 'APPROVED') {
+      console.warn('[PayPal] Subscription status is not ACTIVE:', status, 'Subscription ID:', subscriptionId)
+    }
     
     return {
       id: subscription.id || '',
@@ -238,8 +293,14 @@ export async function getPayPalSubscription(subscriptionId: string): Promise<Pay
         next_billing_time: subscription.billingInfo.nextBillingTime
       } : undefined
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('[PayPal] Error getting subscription:', error)
+    
+    // Si es un error 401, loguear específicamente
+    if (error.statusCode === 401 || error.response?.statusCode === 401) {
+      console.error('[PayPal] Authentication error (401). Check PayPal API credentials in environment variables.')
+    }
+    
     return null
   }
 }

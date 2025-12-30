@@ -170,6 +170,36 @@ export async function canCreateItem(
   return { allowed, limit, current }
 }
 
+// Verificar si una empresa tiene una suscripción Pro activa verificando con PayPal
+export async function isProSubscriptionActive(companyId: string): Promise<boolean> {
+  try {
+    // Obtener información de la empresa
+    const { data: company, error: companyError } = await supabaseTable('companies')
+      .select('paypal_subscription_id')
+      .eq('id', companyId)
+      .single()
+
+    if (companyError || !company || !company.paypal_subscription_id) {
+      return false
+    }
+
+    // Verificar con PayPal
+    try {
+      const { getPayPalSubscription } = await import('@/lib/paypal')
+      const paypalSub = await getPayPalSubscription(company.paypal_subscription_id)
+      
+      // Solo considerar activa si PayPal confirma que el status es 'ACTIVE'
+      return paypalSub !== null && paypalSub.status === 'ACTIVE'
+    } catch (error) {
+      console.warn('[Subscription] Error checking PayPal subscription:', error)
+      return false
+    }
+  } catch (error) {
+    console.error('[Subscription] Error checking if subscription is active:', error)
+    return false
+  }
+}
+
 // Obtener información de suscripción de una empresa
 export async function getCompanySubscription(companyId: string): Promise<CompanySubscription | null> {
   try {

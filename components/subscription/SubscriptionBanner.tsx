@@ -1,6 +1,6 @@
 'use client'
 
-import React from 'react'
+import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { useAuth } from '@/contexts/AuthContext'
 import { AlertCircle, Crown, Zap } from 'lucide-react'
@@ -9,22 +9,44 @@ import { PRO_PLAN_PRICE_FORMATTED } from '@/lib/constants'
 
 export function SubscriptionBanner() {
   const { company } = useAuth()
+  const [isProActive, setIsProActive] = useState<boolean | null>(null)
+  const [loading, setLoading] = useState(true)
   
-  if (!company) return null
+  useEffect(() => {
+    if (!company?.id) {
+      setLoading(false)
+      return
+    }
 
-  // IMPORTANTE: La verificación del plan SIEMPRE debe hacerse desde PayPal
-  // Si no hay paypal_subscription_id, es Free y debe mostrarse el banner
-  // Si hay paypal_subscription_id, asumimos que es Pro (la verificación real se hace en getPlanLimits del servidor)
-  const hasPayPalSubscription = !!company.paypal_subscription_id
+    // Verificar con PayPal si la suscripción está activa
+    const checkStatus = async () => {
+      try {
+        const response = await fetch(`/api/subscriptions/status?companyId=${company.id}`)
+        if (response.ok) {
+          const data = await response.json()
+          setIsProActive(data.isActive || false)
+        } else {
+          setIsProActive(false)
+        }
+      } catch (error) {
+        console.error('[SubscriptionBanner] Error checking subscription status:', error)
+        setIsProActive(false)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    checkStatus()
+  }, [company?.id])
   
-  // Si tiene paypal_subscription_id, no mostrar el banner (asumimos que es Pro)
-  // La verificación real del status de PayPal se hace en el servidor (getPlanLimits)
-  if (hasPayPalSubscription) {
+  if (!company || loading) return null
+
+  // Si la suscripción Pro está activa (verificada con PayPal), no mostrar el banner
+  if (isProActive === true) {
     return null
   }
   
-  // Si no hay paypal_subscription_id, es Free y mostrar el banner
-  const isFree = true
+  // Si no está activa o si hubo un error en la verificación, mostrar el banner
   const isCancelled = company.subscription_status === 'cancelled'
   const isExpired = company.subscription_status === 'expired'
 
