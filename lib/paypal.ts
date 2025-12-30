@@ -12,54 +12,65 @@ import type {
   CancelSubscriptionRequest 
 } from '@paypal/paypal-server-sdk'
 
-// Configuración de PayPal
-// IMPORTANTE: En Vercel, estas variables deben estar configuradas en las variables de entorno del proyecto
-const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
-const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET
-const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID
-const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID
+// Variables de entorno - se cargan en tiempo de ejecución (lazy loading)
+function getPayPalConfig() {
+  const PAYPAL_CLIENT_ID = process.env.PAYPAL_CLIENT_ID
+  const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET
+  const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID
+  const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID
+  const isProduction = process.env.PAYPAL_ENVIRONMENT === 'production'
 
-// Determinar si estamos en producción o sandbox
-// Si PAYPAL_ENVIRONMENT=production, usar Environment.Production (producción real)
-// Si PAYPAL_ENVIRONMENT=sandbox o no está definido, usar Environment.Sandbox (pruebas)
-const isProduction = process.env.PAYPAL_ENVIRONMENT === 'production'
+  if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
+    throw new Error('PayPal credentials are not configured. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET environment variables.')
+  }
 
-// Validar que las variables de entorno estén configuradas
-if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-  console.error('[PayPal] ❌ ERROR: PayPal credentials not configured!')
-  console.error('[PayPal] PAYPAL_CLIENT_ID:', PAYPAL_CLIENT_ID ? '✅ Set' : '❌ Missing')
-  console.error('[PayPal] PAYPAL_CLIENT_SECRET:', PAYPAL_CLIENT_SECRET ? '✅ Set' : '❌ Missing')
-  console.error('[PayPal] Please configure PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET in your environment variables')
+  // Log de configuración (sin exponer valores sensibles)
+  console.log('[PayPal] Loading configuration:', {
+    isProduction,
+    hasClientId: !!PAYPAL_CLIENT_ID,
+    hasClientSecret: !!PAYPAL_CLIENT_SECRET,
+    hasWebhookId: !!PAYPAL_WEBHOOK_ID,
+    hasPlanId: !!PAYPAL_PLAN_ID,
+    environment: isProduction ? 'PRODUCTION (LIVE)' : 'SANDBOX (TEST)',
+    paypalEnv: process.env.PAYPAL_ENVIRONMENT || 'not set (defaults to SANDBOX)'
+  })
+
+  return {
+    PAYPAL_CLIENT_ID,
+    PAYPAL_CLIENT_SECRET,
+    PAYPAL_WEBHOOK_ID,
+    PAYPAL_PLAN_ID,
+    isProduction
+  }
 }
 
-// Log de configuración (sin exponer valores sensibles)
-console.log('[PayPal] Initializing with:', {
-  isProduction,
-  hasClientId: !!PAYPAL_CLIENT_ID,
-  hasClientSecret: !!PAYPAL_CLIENT_SECRET,
-  hasWebhookId: !!PAYPAL_WEBHOOK_ID,
-  hasPlanId: !!PAYPAL_PLAN_ID,
-  environment: isProduction ? 'PRODUCTION (LIVE)' : 'SANDBOX (TEST)',
-  paypalEnv: process.env.PAYPAL_ENVIRONMENT || 'not set (defaults to SANDBOX)'
-})
+// Cliente de PayPal - inicializado bajo demanda (lazy initialization)
+let paypalClient: Client | null = null
+let subscriptionsController: SubscriptionsController | null = null
 
-// Inicializar cliente de PayPal
-// Validar credenciales antes de crear el cliente
-if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
-  throw new Error('PayPal credentials are not configured. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET environment variables.')
+function getPayPalClient(): Client {
+  if (!paypalClient) {
+    const config = getPayPalConfig()
+    paypalClient = new Client({
+      clientCredentialsAuthCredentials: {
+        oAuthClientId: config.PAYPAL_CLIENT_ID,
+        oAuthClientSecret: config.PAYPAL_CLIENT_SECRET
+      },
+      environment: config.isProduction ? Environment.Production : Environment.Sandbox,
+      timeout: 30000
+    })
+    console.log('[PayPal] Client initialized')
+  }
+  return paypalClient
 }
 
-const paypalClient = new Client({
-  clientCredentialsAuthCredentials: {
-    oAuthClientId: PAYPAL_CLIENT_ID,
-    oAuthClientSecret: PAYPAL_CLIENT_SECRET
-  },
-  environment: isProduction ? Environment.Production : Environment.Sandbox,
-  timeout: 30000
-})
-
-// Controlador de suscripciones
-const subscriptionsController = new SubscriptionsController(paypalClient)
+function getSubscriptionsController(): SubscriptionsController {
+  if (!subscriptionsController) {
+    subscriptionsController = new SubscriptionsController(getPayPalClient())
+    console.log('[PayPal] SubscriptionsController initialized')
+  }
+  return subscriptionsController
+}
 
 export interface PayPalSubscription {
   id: string
@@ -82,14 +93,6 @@ export interface PayPalSubscription {
   }
 }
 
-// Plan ID de suscripción (creado en PayPal Dashboard)
-// Plan: Gestiogar Pro - 14.99 EUR/mes
-const SUBSCRIPTION_PLAN_ID = PAYPAL_PLAN_ID
-
-if (!SUBSCRIPTION_PLAN_ID) {
-  console.error('[PayPal] ❌ ERROR: PAYPAL_PLAN_ID not configured!')
-}
-
 // Crear suscripción en PayPal
 export async function createPayPalSubscription(
   companyId: string,
@@ -97,16 +100,17 @@ export async function createPayPalSubscription(
   cancelUrl: string
 ): Promise<{ approvalUrl: string; subscriptionId: string } | null> {
   try {
-    console.log('[PayPal] Creating subscription for company:', companyId)
+    const config = getPayPalConfig()
     
-    // Validar que el Plan ID esté configurado
-    if (!SUBSCRIPTION_PLAN_ID) {
-      console.error('[PayPal] SUBSCRIPTION_PLAN_ID is not configured')
+    if (!config.PAYPAL_PLAN_ID) {
+      console.error('[PayPal] PAYPAL_PLAN_ID is not configured')
       throw new Error('PayPal Plan ID is not configured')
     }
     
-    // Usar el Plan ID directamente (ya creado en PayPal Dashboard)
-    const planId = SUBSCRIPTION_PLAN_ID
+    console.log('[PayPal] Creating subscription for company:', companyId)
+    
+    const subscriptionsController = getSubscriptionsController()
+    const planId = config.PAYPAL_PLAN_ID
     
     // Crear request de suscripción
     const request: CreateSubscriptionRequest = {
@@ -129,7 +133,6 @@ export async function createPayPalSubscription(
     
     if (response.statusCode !== 201) {
       console.error('[PayPal] Failed to create subscription. Status:', response.statusCode)
-      console.error('[PayPal] Full response:', JSON.stringify(response, null, 2))
       
       // Intentar obtener más detalles del error
       if (response.result) {
@@ -150,7 +153,7 @@ export async function createPayPalSubscription(
       return null
     }
     
-    console.log('[PayPal] Subscription response:', JSON.stringify(subscription, null, 2))
+    console.log('[PayPal] Subscription created successfully:', subscription.id)
     
     // Buscar URL de aprobación en los links
     const approvalUrl = subscription.links?.find((link: any) => link.rel === 'approve')?.href
@@ -162,7 +165,6 @@ export async function createPayPalSubscription(
       return null
     }
     
-    console.log('[PayPal] Subscription created successfully:', subscription.id)
     console.log('[PayPal] Approval URL:', approvalUrl)
     
     return {
@@ -171,8 +173,6 @@ export async function createPayPalSubscription(
     }
   } catch (error: any) {
     console.error('[PayPal] Error creating subscription:', error)
-    console.error('[PayPal] Error type:', error?.constructor?.name)
-    console.error('[PayPal] Error keys:', Object.keys(error || {}))
     
     if (error.message) {
       console.error('[PayPal] Error message:', error.message)
@@ -207,6 +207,7 @@ export async function cancelPayPalSubscription(subscriptionId: string, reason?: 
   try {
     console.log('[PayPal] Cancelling subscription:', subscriptionId)
     
+    const subscriptionsController = getSubscriptionsController()
     const request: CancelSubscriptionRequest = {
       reason: reason || 'Usuario canceló la suscripción'
     }
@@ -228,6 +229,7 @@ export async function getPayPalSubscription(subscriptionId: string): Promise<Pay
   try {
     console.log('[PayPal] Getting subscription:', subscriptionId)
     
+    const subscriptionsController = getSubscriptionsController()
     const response = await subscriptionsController.getSubscription({
       id: subscriptionId
     })
@@ -320,13 +322,15 @@ export async function verifyPayPalWebhook(
   body: string
 ): Promise<boolean> {
   try {
+    const config = getPayPalConfig()
+    const webhookId = config.PAYPAL_WEBHOOK_ID
+    
     // PayPal envía headers específicos para verificación
     const authAlgo = headers['paypal-auth-algo']
     const certUrl = headers['paypal-cert-url']
     const transmissionId = headers['paypal-transmission-id']
     const transmissionSig = headers['paypal-transmission-sig']
     const transmissionTime = headers['paypal-transmission-time']
-    const webhookId = PAYPAL_WEBHOOK_ID
     
     if (!authAlgo || !certUrl || !transmissionId || !transmissionSig || !transmissionTime) {
       console.warn('[PayPal Webhook] Missing verification headers')
