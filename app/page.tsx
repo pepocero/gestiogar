@@ -378,12 +378,12 @@ export default function HomePage() {
             {/* Plan Pro */}
             <div className="bg-white rounded-2xl shadow-xl border-2 border-blue-500 overflow-hidden hover:shadow-2xl transition-all relative">
               {/* Badge Popular */}
-              <div className="absolute top-0 right-0 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-bl-xl font-bold text-sm flex items-center">
+              <div className="absolute top-0 right-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white px-6 py-2 rounded-b-xl font-bold text-sm flex items-center z-10 shadow-lg">
                 <Star className="h-4 w-4 mr-1" />
                 Más Popular
               </div>
 
-              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6">
+              <div className="bg-gradient-to-r from-blue-600 to-blue-700 px-8 py-6 relative pt-12">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-2xl font-bold text-white">Gestiogar Pro</h3>
                   <Crown className="h-8 w-8 text-yellow-300" />
