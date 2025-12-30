@@ -12,14 +12,21 @@ export function SubscriptionBanner() {
   
   if (!company) return null
 
-  const isFree = company.subscription_plan === 'free' || !company.subscription_plan
-  const isCancelled = company.subscription_status === 'cancelled'
-  const isExpired = company.subscription_status === 'expired'
+  // IMPORTANTE: La verificación del plan SIEMPRE debe hacerse desde PayPal
+  // Si no hay paypal_subscription_id, es Free y debe mostrarse el banner
+  // Si hay paypal_subscription_id, asumimos que es Pro (la verificación real se hace en getPlanLimits del servidor)
+  const hasPayPalSubscription = !!company.paypal_subscription_id
   
-  // Si es Pro y está activo, no mostrar banner
-  if (!isFree && !isCancelled && !isExpired) {
+  // Si tiene paypal_subscription_id, no mostrar el banner (asumimos que es Pro)
+  // La verificación real del status de PayPal se hace en el servidor (getPlanLimits)
+  if (hasPayPalSubscription) {
     return null
   }
+  
+  // Si no hay paypal_subscription_id, es Free y mostrar el banner
+  const isFree = true
+  const isCancelled = company.subscription_status === 'cancelled'
+  const isExpired = company.subscription_status === 'expired'
 
   // Si está cancelado pero aún no expiró
   if (isCancelled && company.subscription_ends_at) {
