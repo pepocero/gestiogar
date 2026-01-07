@@ -33,13 +33,40 @@ export default function PlansPage() {
   const { user, profile, loading: authLoading, signOut } = useAuth()
   const [isChecking, setIsChecking] = useState(false)
 
+  // Timeout de seguridad para resetear isChecking si se queda atascado
+  useEffect(() => {
+    if (isChecking) {
+      const timeout = setTimeout(() => {
+        console.warn('[Plans] Timeout de seguridad: reseteando isChecking')
+        setIsChecking(false)
+        toast.dismiss('checking')
+      }, 10000) // 10 segundos máximo
+
+      return () => clearTimeout(timeout)
+    }
+  }, [isChecking])
+
+  // Resetear isChecking cuando authLoading cambie a false
+  useEffect(() => {
+    if (!authLoading && isChecking) {
+      // Si authLoading terminó pero isChecking sigue en true, resetearlo
+      // Esto evita que se quede atascado si el usuario hizo clic mientras cargaba
+      setIsChecking(false)
+      toast.dismiss('checking')
+    }
+  }, [authLoading, isChecking])
+
   // Función para manejar el clic en "Comenzar Ahora" del plan Pro
   const handleUpgradeClick = async (e: React.MouseEvent) => {
     e.preventDefault()
     
-    // Si está cargando la autenticación, esperar
+    // Si está cargando la autenticación, no hacer nada (esperar a que termine)
     if (authLoading) {
-      toast.loading('Verificando...', { id: 'checking' })
+      return
+    }
+
+    // Si ya está verificando, no hacer nada (evitar doble clic)
+    if (isChecking) {
       return
     }
 

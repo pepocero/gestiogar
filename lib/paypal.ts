@@ -18,7 +18,7 @@ function getPayPalConfig() {
   const PAYPAL_CLIENT_SECRET = process.env.PAYPAL_CLIENT_SECRET
   const PAYPAL_WEBHOOK_ID = process.env.PAYPAL_WEBHOOK_ID
   const PAYPAL_PLAN_ID = process.env.PAYPAL_PLAN_ID
-  const isProduction = process.env.PAYPAL_ENVIRONMENT === 'production'
+const isProduction = process.env.PAYPAL_ENVIRONMENT === 'production'
 
   if (!PAYPAL_CLIENT_ID || !PAYPAL_CLIENT_SECRET) {
     throw new Error('PayPal credentials are not configured. Please set PAYPAL_CLIENT_ID and PAYPAL_CLIENT_SECRET environment variables.')
@@ -52,13 +52,13 @@ function getPayPalClient(): Client {
   if (!paypalClient) {
     const config = getPayPalConfig()
     paypalClient = new Client({
-      clientCredentialsAuthCredentials: {
+  clientCredentialsAuthCredentials: {
         oAuthClientId: config.PAYPAL_CLIENT_ID,
         oAuthClientSecret: config.PAYPAL_CLIENT_SECRET
-      },
+  },
       environment: config.isProduction ? Environment.Production : Environment.Sandbox,
-      timeout: 30000
-    })
+  timeout: 30000
+})
     console.log('[PayPal] Client initialized')
   }
   return paypalClient
