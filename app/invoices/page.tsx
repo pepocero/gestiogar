@@ -42,9 +42,9 @@ export default function InvoicesPage() {
   const loadClients = useCallback(async () => {
     if (!company?.id) return
     try {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Invoices] loadClients start', company.id)
-      }
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Invoices] loadClients start', company.id)
+    }
       const { data, error } = await supabase
         .from('clients')
         .select('id, first_name, last_name')
@@ -63,13 +63,13 @@ export default function InvoicesPage() {
 
   const fetchInvoices = useCallback(async () => {
     if (!company?.id || loadingRef.current) return
-    
+
     loadingRef.current = true
     setLoadingInvoices(true)
     try {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log('[Invoices] fetchInvoices start', company.id)
-      }
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('[Invoices] fetchInvoices start', company.id)
+    }
       // Obtener límites del plan
       const limits = await getPlanLimits(company.id)
       

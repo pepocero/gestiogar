@@ -101,7 +101,7 @@ export default function ReportsPage() {
 
   const loadReportData = useCallback(async () => {
     if (!company?.id || loadingRef.current) return
-    
+
     loadingRef.current = true
     try {
       if (process.env.NODE_ENV !== 'production') {

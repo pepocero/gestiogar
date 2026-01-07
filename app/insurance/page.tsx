@@ -66,7 +66,7 @@ export default function InsurancePage() {
         console.log('[Insurance] loadCompanies start', company.id)
       }
       setLoading(true)
-      
+
       // Obtener límites del plan
       const limits = await getPlanLimits(company.id)
       

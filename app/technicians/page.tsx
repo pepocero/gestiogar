@@ -84,7 +84,7 @@ export default function TechniciansPage() {
   useEffect(() => {
     if (!authLoading && company?.id && !loadingRef.current) {
       fetchTechnicians()
-    }
+  }
   }, [authLoading, company?.id, fetchTechnicians])
 
   const handleCreateTechnician = async (e: React.FormEvent<HTMLFormElement>) => {

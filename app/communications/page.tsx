@@ -93,8 +93,8 @@ export default function CommunicationsPage() {
 
   const loadConversations = useCallback(async () => {
     if (!company?.id || loadingRef.current) {
-      if (!company?.id) {
-        setLoading(false)
+    if (!company?.id) {
+      setLoading(false)
       }
       return
     }

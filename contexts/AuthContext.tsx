@@ -133,7 +133,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           await handleSessionExpired()
           return
         }
-
+        
         // Intentar obtener el perfil mínimo desde la tabla users para resolver company_id
         try {
           const { data: minimalProfile, error: minimalError } = await supabaseTable('users')
@@ -327,9 +327,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(true)
           setUser(session.user)
           try {
-            // Solo cargar perfil si no está ya cargado (usar profileRef para evitar problemas de closures)
-            if (!profileRef.current || profileRef.current.id !== session.user.id) {
-              await loadUserProfile(session.user.id)
+          // Solo cargar perfil si no está ya cargado (usar profileRef para evitar problemas de closures)
+          if (!profileRef.current || profileRef.current.id !== session.user.id) {
+            await loadUserProfile(session.user.id)
             }
           } finally {
             setLoading(false)
@@ -396,7 +396,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setCompany(null)
       
       // Cerrar sesión en Supabase
-      await supabase.auth.signOut()
+    await supabase.auth.signOut()
       // El estado ya se limpió arriba, pero onAuthStateChange también lo manejará
     } catch (error) {
       console.error('Error en signOut:', error)
