@@ -92,7 +92,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       conditionalLog('debug', '🔄 Loading user profile for:', userId)
       
-      // Query optimizada con timeout - incluir información de suscripción
+      // Query optimizada - incluir información de suscripción
       const { data: userData, error } = await supabaseTable('users')
         .select(`
           *,
@@ -249,6 +249,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return
       }
       
+      // Fallback: establecer perfil mínimo con datos del usuario auth para evitar loop infinito
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (authUser) {
+          setProfile({
+            id: authUser.id,
+            email: authUser.email || undefined,
+            first_name: authUser.user_metadata?.first_name,
+            last_name: authUser.user_metadata?.last_name,
+          })
+          setCompany(null)
+          console.log('✅ Fallback profile set for user:', authUser.id)
+        }
+      } catch (fallbackError) {
+        console.error('⚠️ Error in fallback profile setup:', fallbackError)
+        // Si incluso el fallback falla, no hacer nada más
+        // El finally en onAuthStateChange establecerá loading=false
+      }
+      
       // No mostrar error toast para evitar spam
     }
   }, [handleSessionExpired])
@@ -394,10 +413,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null)
       profileRef.current = null
       setCompany(null)
+      setLoading(true) // Establecer loading en true para evitar estados intermedios
       
       // Cerrar sesión en Supabase
-    await supabase.auth.signOut()
+      await supabase.auth.signOut()
+      
+      // Pequeño delay para asegurar que el estado se limpie completamente
+      await new Promise(resolve => setTimeout(resolve, 100))
+      
       // El estado ya se limpió arriba, pero onAuthStateChange también lo manejará
+      setLoading(false)
     } catch (error) {
       console.error('Error en signOut:', error)
       // Asegurarse de limpiar el estado incluso si hay error
@@ -405,6 +430,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setProfile(null)
       profileRef.current = null
       setCompany(null)
+      setLoading(false)
       throw error
     }
   }
