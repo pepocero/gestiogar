@@ -44,7 +44,7 @@ export default function SimpleLoginPage() {
     try {
       console.log('🔄 Attempting login with:', formData.email)
       
-      // Autenticar con Supabase
+      // Autenticar con Supabase directamente
       const { data, error } = await supabase.auth.signInWithPassword({
         email: formData.email,
         password: formData.password,
@@ -55,15 +55,12 @@ export default function SimpleLoginPage() {
       }
 
       console.log('✅ Login successful:', data.user.id)
+      toast.success('¡Bienvenido!')
       
-      toast.success('¡Bienvenido! Redirigiendo al dashboard...')
-      
-      // Esperar un momento para que el AuthContext procese el evento SIGNED_IN
-      // y luego usar router.push para una navegación más suave (sin recarga completa)
-      // Esto evita loops infinitos que pueden ocurrir con window.location.href
-      setTimeout(() => {
-        router.push('/dashboard')
-      }, 1000)
+      // El onAuthStateChange se disparará automáticamente
+      // La redirección se maneja en el useEffect que detecta cuando user está disponible
+      // Solo resetear el loading local
+      setLoading(false)
 
     } catch (error: any) {
       console.error('❌ Login error:', error)

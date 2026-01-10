@@ -91,30 +91,35 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           return
         }
         console.warn('Error loading profile:', error)
+        // NO bloquear si hay error al cargar el perfil - permitir que el usuario acceda
+        // El perfil se puede cargar más tarde o el usuario puede no tener perfil todavía
         return
       }
 
-      setProfile(userData)
+      if (userData) {
+        setProfile(userData)
 
-      // Resolver company
-      const companyFromJoin = Array.isArray((userData as any).company)
-        ? (userData as any).company?.[0]
-        : (userData as any).company
+        // Resolver company
+        const companyFromJoin = Array.isArray((userData as any).company)
+          ? (userData as any).company?.[0]
+          : (userData as any).company
 
-      if (companyFromJoin?.id) {
-        setCompany(companyFromJoin)
-      } else if (userData.company_id) {
-        const { data: companyData } = await supabaseTable('companies')
-          .select('*')
-          .eq('id', userData.company_id)
-          .single()
+        if (companyFromJoin?.id) {
+          setCompany(companyFromJoin)
+        } else if (userData.company_id) {
+          const { data: companyData } = await supabaseTable('companies')
+            .select('*')
+            .eq('id', userData.company_id)
+            .single()
 
-        if (companyData) {
-          setCompany(companyData)
+          if (companyData) {
+            setCompany(companyData)
+          }
         }
       }
     } catch (error) {
       console.error('Error loading user profile:', error)
+      // NO bloquear si hay error - permitir que el usuario acceda de todos modos
     }
   }
 
@@ -139,6 +144,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('🔄 Auth state change:', event, session?.user?.id)
+        
         if (event === 'SIGNED_OUT' || !session) {
           setUser(null)
           setProfile(null)
@@ -149,14 +156,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (session.user) {
           setUser(session.user)
-          setLoading(true)
-          try {
-            await loadUserProfile(session.user.id)
-          } catch (error) {
+          
+          // NO bloquear el acceso esperando el perfil
+          // Permitir que el usuario acceda inmediatamente
+          setLoading(false)
+          
+          // Cargar perfil en background sin bloquear
+          loadUserProfile(session.user.id).catch((error) => {
             console.error('Error loading profile:', error)
-          } finally {
-            setLoading(false)
-          }
+          })
         }
       }
     )
