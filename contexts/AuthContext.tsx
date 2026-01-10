@@ -81,15 +81,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  // Ref para evitar múltiples cargas simultáneas del mismo perfil
+  const loadingProfileRef = useRef<string | null>(null)
+  
   // Versión optimizada de loadUserProfile con caché y mejor manejo de errores
   const loadUserProfile = useCallback(async (userId: string, forceRefresh: boolean = false) => {
     try {
+      // Evitar múltiples cargas simultáneas del mismo usuario
+      if (loadingProfileRef.current === userId && !forceRefresh) {
+        conditionalLog('debug', '🔄 Profile already loading for user:', userId)
+        return
+      }
+      
       // Solo cargar si no está ya cargado o si es un usuario diferente, a menos que se fuerce la recarga
       if (!forceRefresh && profileRef.current && profileRef.current.id === userId) {
         conditionalLog('debug', '🔄 User profile already loaded, skipping...')
         return
       }
 
+      // Marcar que estamos cargando este perfil
+      loadingProfileRef.current = userId
       conditionalLog('debug', '🔄 Loading user profile for:', userId)
       
       // Query optimizada - incluir información de suscripción
@@ -269,14 +280,28 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
       
       // No mostrar error toast para evitar spam
+    } finally {
+      // Limpiar la marca de carga cuando termine (exitoso o con error)
+      if (loadingProfileRef.current === userId) {
+        loadingProfileRef.current = null
+      }
     }
   }, [handleSessionExpired])
+
+  // Ref para evitar múltiples inicializaciones
+  const initializedRef = useRef(false)
 
   useEffect(() => {
     let mounted = true
 
+    // Evitar múltiples inicializaciones simultáneas
+    if (initializedRef.current) {
+      return
+    }
+
     const initializeAuth = async () => {
       try {
+        initializedRef.current = true
         // Obtener sesión inicial
         const { data: { session }, error } = await supabase.auth.getSession()
         
@@ -288,23 +313,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             setProfile(null)
             setCompany(null)
             setLoading(false)
+            initializedRef.current = false
           }
           return
         }
         
         if (session?.user && mounted) {
           setUser(session.user)
-          // Cargar perfil con timeout para evitar que se quede colgado
-          try {
-            await Promise.race([
-              loadUserProfile(session.user.id),
-              new Promise((_, reject) => 
-                setTimeout(() => reject(new Error('Timeout loading profile')), 10000)
-              )
-            ])
-          } catch (profileError) {
-            console.warn('⚠️ Error or timeout loading profile:', profileError)
-            // Continuar aunque falle la carga del perfil
+          // Solo cargar perfil si no está ya cargado
+          if (!profileRef.current || profileRef.current.id !== session.user.id) {
+            // Cargar perfil con timeout para evitar que se quede colgado
+            try {
+              await Promise.race([
+                loadUserProfile(session.user.id),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Timeout loading profile')), 10000)
+                )
+              ])
+            } catch (profileError) {
+              console.warn('⚠️ Error or timeout loading profile:', profileError)
+              // Continuar aunque falle la carga del perfil
+            }
+          } else {
+            conditionalLog('debug', '✅ Profile already loaded during init, skipping...')
           }
         } else if (mounted) {
           // No hay sesión, limpiar estado
@@ -318,6 +349,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null)
           setProfile(null)
           setCompany(null)
+          initializedRef.current = false
         }
       } finally {
         if (mounted) {
@@ -342,26 +374,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           // No mostrar toast aquí porque handleLogout ya lo muestra
           // Evitar doble mensaje
         } else if (event === 'SIGNED_IN' && session?.user) {
+          // Evitar cargar perfil si ya está cargando o ya está cargado
+          if (loadingProfileRef.current === session.user.id) {
+            conditionalLog('debug', '🔄 Profile already loading for SIGNED_IN event, skipping...')
+            return
+          }
+          
+          if (profileRef.current && profileRef.current.id === session.user.id) {
+            conditionalLog('debug', '🔄 Profile already loaded for SIGNED_IN event, skipping...')
+            // Asegurar que el usuario esté establecido aunque el perfil ya esté cargado
+            if (!user || user.id !== session.user.id) {
+              setUser(session.user)
+            }
+            setLoading(false)
+            return
+          }
+          
           // Mantener loading=true hasta que el perfil/empresa estén listos
           setLoading(true)
           setUser(session.user)
           try {
-          // Solo cargar perfil si no está ya cargado (usar profileRef para evitar problemas de closures)
-          if (!profileRef.current || profileRef.current.id !== session.user.id) {
-            await loadUserProfile(session.user.id)
+            // Solo cargar perfil si no está ya cargado (usar profileRef para evitar problemas de closures)
+            if (!profileRef.current || profileRef.current.id !== session.user.id) {
+              await loadUserProfile(session.user.id)
             }
+          } catch (error) {
+            console.warn('⚠️ Error loading profile on SIGNED_IN:', error)
+            // Continuar aunque falle para evitar loops
           } finally {
             setLoading(false)
           }
         } else if (event === 'TOKEN_REFRESHED') {
           // Token refrescado automáticamente
           conditionalLog('debug', '🔄 Token refreshed successfully')
-          // Verificar que la sesión sigue válida después del refresh
-          const { data: { session: currentSession }, error } = await supabase.auth.getSession()
-          if (error || !currentSession) {
-            // Si después del refresh no hay sesión, limpiar estado
-            console.warn('⚠️ Session invalid after token refresh')
-            await handleSessionExpired()
+          // NO verificar sesión aquí porque puede causar loops infinitos
+          // Supabase maneja automáticamente los tokens y onAuthStateChange
+          // Si hay un problema real, Supabase disparará SIGNED_OUT automáticamente
+          // Solo actualizar el usuario si la sesión tiene uno nuevo
+          if (session?.user && (!user || user.id !== session.user.id)) {
+            setUser(session.user)
           }
         }
       }
@@ -373,6 +424,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     return () => {
       mounted = false
+      initializedRef.current = false
       subscription.unsubscribe()
     }
   }, [loadUserProfile, handleSessionExpired])

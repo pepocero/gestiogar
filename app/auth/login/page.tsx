@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect } from 'react'
+import React, { useState, useEffect, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import toast from 'react-hot-toast'
@@ -16,10 +16,16 @@ export default function SimpleLoginPage() {
     password: ''
   })
 
-  // Redirigir si el usuario ya está autenticado
+  // Redirigir si el usuario ya está autenticado (solo una vez)
+  const redirectedRef = useRef(false)
+  
   useEffect(() => {
-    if (!authLoading && user) {
+    if (!authLoading && user && !redirectedRef.current) {
+      redirectedRef.current = true
       router.push('/dashboard')
+    } else if (!user) {
+      // Resetear el flag si el usuario se desautentica
+      redirectedRef.current = false
     }
   }, [user, authLoading, router])
 
@@ -52,11 +58,12 @@ export default function SimpleLoginPage() {
       
       toast.success('¡Bienvenido! Redirigiendo al dashboard...')
       
-      // Usar window.location.href para forzar una recarga completa y asegurar que el contexto se actualice
-      // Esto evita que el botón se quede en "iniciando..."
+      // Esperar un momento para que el AuthContext procese el evento SIGNED_IN
+      // y luego usar router.push para una navegación más suave (sin recarga completa)
+      // Esto evita loops infinitos que pueden ocurrir con window.location.href
       setTimeout(() => {
-        window.location.href = '/dashboard'
-      }, 500)
+        router.push('/dashboard')
+      }, 1000)
 
     } catch (error: any) {
       console.error('❌ Login error:', error)

@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { Card, Button } from '@/components/ui'
 import { BarChart3, Users, ClipboardList, DollarSign, Wrench, TrendingUp, AlertCircle } from 'lucide-react'
 import { getDashboardStats, getRecentActivity } from '@/lib/stats'
@@ -30,6 +30,8 @@ export default function DashboardPage() {
   })
   const [recentActivity, setRecentActivity] = useState<any[]>([])
   const [loading, setLoading] = useState(true)
+  const loadedCompanyIdRef = useRef<string | null>(null)
+  const isLoadingRef = useRef(false)
 
   const loadDashboardData = useCallback(async () => {
     if (!company?.id) {
@@ -38,8 +40,23 @@ export default function DashboardPage() {
       return
     }
 
+    // Evitar múltiples cargas simultáneas
+    if (isLoadingRef.current) {
+      console.log('Dashboard data already loading, skipping...')
+      return
+    }
+
+    // Si ya cargamos los datos para esta company, no recargar
+    if (loadedCompanyIdRef.current === company.id && !loading) {
+      console.log('Dashboard data already loaded for company:', company.id)
+      return
+    }
+
     try {
+      isLoadingRef.current = true
       setLoading(true)
+      loadedCompanyIdRef.current = company.id
+      
       const [statsData, activityData] = await Promise.all([
         getDashboardStats(company.id),
         getRecentActivity(company.id)
@@ -51,22 +68,44 @@ export default function DashboardPage() {
       setRecentActivity(activityData || [])
     } catch (error) {
       console.error('Error loading dashboard data:', error)
-      toast.error('Error al cargar los datos del dashboard')
+      // Solo mostrar error si no es un error de autenticación
+      if (error && typeof error === 'object' && 'message' in error) {
+        const errorMessage = (error as any).message
+        if (!errorMessage?.includes('session') && !errorMessage?.includes('auth')) {
+          toast.error('Error al cargar los datos del dashboard')
+        }
+      }
+      // Resetear el ref para permitir reintento
+      loadedCompanyIdRef.current = null
     } finally {
       setLoading(false)
+      isLoadingRef.current = false
     }
   }, [company?.id])
 
   useEffect(() => {
     // Esperar a que la autenticación termine y company esté disponible
-    if (!authLoading && company?.id) {
+    // Solo ejecutar una vez cuando company esté disponible, no en cada cambio
+    if (!authLoading && company?.id && loadedCompanyIdRef.current !== company.id && !isLoadingRef.current) {
       loadDashboardData()
-    } else if (!authLoading && !company?.id) {
-      // Si no hay company después de cargar, mostrar error
+    } else if (!authLoading && !company?.id && loadedCompanyIdRef.current !== null) {
+      // Si se perdió la company (por ejemplo, logout), resetear todo
+      loadedCompanyIdRef.current = null
+      isLoadingRef.current = false
       setLoading(false)
-      toast.error('No se pudo cargar la información de la empresa')
+      setStats({
+        activeJobs: 0,
+        totalClients: 0,
+        monthlyRevenue: 0,
+        pendingEstimates: 0,
+        totalTechnicians: 0,
+        upcomingAppointments: 0
+      })
+      setRecentActivity([])
     }
-  }, [authLoading, company?.id, loadDashboardData])
+    // Solo depender de authLoading y company?.id, NO de loadDashboardData para evitar loops
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, company?.id])
 
   // Funciones de acciones rápidas
   const handleNewJob = () => {

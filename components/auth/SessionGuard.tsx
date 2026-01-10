@@ -14,14 +14,27 @@ export function SessionGuard({ children }: SessionGuardProps) {
   const router = useRouter()
   const [sessionChecked, setSessionChecked] = useState(false)
   const loadingTimeoutRef = useRef<NodeJS.Timeout | null>(null)
+  const redirectingRef = useRef(false)
+  const mountedRef = useRef(true)
+
+  // Marcar componente como montado
+  useEffect(() => {
+    mountedRef.current = true
+    return () => {
+      mountedRef.current = false
+    }
+  }, [])
 
   // Timeout de seguridad: si loading está en true por más de 15 segundos, forzar redirección
   useEffect(() => {
-    if (loading) {
+    if (loading && !redirectingRef.current) {
       loadingTimeoutRef.current = setTimeout(() => {
-        console.warn('[SessionGuard] Timeout de seguridad: loading está en true por más de 15 segundos')
-        // Forzar recarga de la página para resetear el estado
-        window.location.href = '/auth/login'
+        if (mountedRef.current && !redirectingRef.current) {
+          console.warn('[SessionGuard] Timeout de seguridad: loading está en true por más de 15 segundos')
+          redirectingRef.current = true
+          // Forzar recarga de la página para resetear el estado
+          window.location.href = '/auth/login'
+        }
       }, 15000) // 15 segundos máximo
     } else {
       if (loadingTimeoutRef.current) {
@@ -33,15 +46,23 @@ export function SessionGuard({ children }: SessionGuardProps) {
     return () => {
       if (loadingTimeoutRef.current) {
         clearTimeout(loadingTimeoutRef.current)
+        loadingTimeoutRef.current = null
       }
     }
   }, [loading])
 
   useEffect(() => {
-    if (!loading && !user && !sessionChecked) {
+    // Solo redirigir una vez, cuando loading termina y no hay usuario
+    // Y solo si no estamos ya redirigiendo
+    if (!loading && !user && !sessionChecked && !redirectingRef.current && mountedRef.current) {
       setSessionChecked(true)
-      // Redirigir sin mostrar toast confuso
+      redirectingRef.current = true
+      // Usar router.push en lugar de window.location para evitar recargas completas
       router.push('/auth/login')
+    } else if (user && redirectingRef.current) {
+      // Si el usuario aparece después de marcar como redirigiendo, resetear
+      redirectingRef.current = false
+      setSessionChecked(false)
     }
   }, [user, loading, sessionChecked, router])
 

@@ -10,19 +10,18 @@ interface ProtectedLayoutProps {
   children: React.ReactNode
 }
 
+const publicRoutes = [
+  '/',           // Página de presentación
+  '/plans',      // Página de planes
+  '/auth/login', // Página de login
+  '/auth/register', // Página de registro (corregido)
+  '/auth/signup', // Página de registro (alternativa)
+  '/auth/forgot-password', // Página de recuperar contraseña
+]
+
 export function ProtectedLayout({ children }: ProtectedLayoutProps) {
   const pathname = usePathname()
-  const { user, loading } = useAuth()
-  
-  // Rutas públicas que no deben mostrar el sidebar
-  const publicRoutes = [
-    '/',           // Página de presentación
-    '/plans',      // Página de planes
-    '/auth/login', // Página de login
-    '/auth/register', // Página de registro (corregido)
-    '/auth/signup', // Página de registro (alternativa)
-    '/auth/forgot-password', // Página de recuperar contraseña
-  ]
+  const { loading } = useAuth()
   
   // Normalizar pathname para comparar (eliminar trailing slash si existe)
   const normalizedPath = pathname.endsWith('/') && pathname !== '/' 
@@ -36,23 +35,25 @@ export function ProtectedLayout({ children }: ProtectedLayoutProps) {
     return <>{children}</>
   }
   
-  // Si está cargando la autenticación, mostrar loading
+  // Si está cargando la autenticación, mostrar loading (pero solo por un tiempo razonable)
+  // El SessionGuard manejará las redirecciones si es necesario
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600"></div>
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Cargando...</p>
+        </div>
       </div>
     )
   }
   
   // Para rutas protegidas, mostrar el layout con sidebar y verificación de sesión
-  // Se fuerza el remount del contenido por ruta para evitar estados de carga atrapados
+  // NO forzar remount con key={pathname} ya que puede causar loops infinitos
   return (
     <SessionGuard>
       <Layout>
-        <div key={pathname}>
-          {children}
-        </div>
+        {children}
       </Layout>
     </SessionGuard>
   )
