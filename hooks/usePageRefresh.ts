@@ -54,15 +54,22 @@ export function usePageRefresh(options: UsePageRefreshOptions = {}) {
     // Verificar cuando la página se vuelve visible
     const handleVisibilityChange = () => {
       if (document.visibilityState === 'visible') {
-        const timeSinceActivity = Date.now() - lastActivityRef.current
+        // Solo actualizar actividad cuando la página se vuelve visible
+        // NO recargar automáticamente porque puede causar loops infinitos
+        // especialmente en móvil cuando se bloquea/desbloquea la pantalla
+        updateActivity()
         
-        // Si la página estuvo inactiva más del tiempo límite, refrescar
-        if (timeSinceActivity > inactivityTimeout) {
-          console.log('🔄 Página inactiva por mucho tiempo, refrescando...')
-          window.location.reload()
-        } else {
-          updateActivity()
-        }
+        // Solo recargar si ha pasado mucho tiempo Y es una recarga manual del usuario
+        // NO recargar automáticamente en visibilitychange para evitar loops
+        // const timeSinceActivity = Date.now() - lastActivityRef.current
+        // if (timeSinceActivity > inactivityTimeout) {
+        //   console.log('🔄 Página inactiva por mucho tiempo, refrescando...')
+        //   window.location.reload()
+        // }
+      } else if (document.visibilityState === 'hidden') {
+        // Cuando la página se oculta, actualizar la última actividad para que el cálculo
+        // sea más preciso cuando vuelva a ser visible
+        updateActivity()
       }
     }
 

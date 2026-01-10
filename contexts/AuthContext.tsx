@@ -288,79 +288,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [handleSessionExpired])
 
-  // Ref para evitar múltiples inicializaciones
+  // Ref para evitar múltiples inicializaciones y rastrear si ya se manejó la sesión inicial
   const initializedRef = useRef(false)
+  const initialSessionHandledRef = useRef(false)
+  const fallbackTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     let mounted = true
 
-    // Evitar múltiples inicializaciones simultáneas
+    // Evitar múltiples inicializaciones simultáneas DURANTE EL MISMO MOUNT
+    // Este ref se resetea cuando el componente se desmonta completamente
     if (initializedRef.current) {
+      conditionalLog('debug', '🔄 Already initialized in this mount, skipping...')
       return
     }
-
-    const initializeAuth = async () => {
-      try {
-        initializedRef.current = true
-        // Obtener sesión inicial
-        const { data: { session }, error } = await supabase.auth.getSession()
-        
-        // Si hay error al obtener la sesión, limpiar estado
-        if (error) {
-          console.warn('⚠️ Error getting session:', error)
-          if (mounted) {
-            setUser(null)
-            setProfile(null)
-            setCompany(null)
-            setLoading(false)
-            initializedRef.current = false
-          }
-          return
-        }
-        
-        if (session?.user && mounted) {
-          setUser(session.user)
-          // Solo cargar perfil si no está ya cargado
-          if (!profileRef.current || profileRef.current.id !== session.user.id) {
-            // Cargar perfil con timeout para evitar que se quede colgado
-            try {
-              await Promise.race([
-                loadUserProfile(session.user.id),
-                new Promise((_, reject) => 
-                  setTimeout(() => reject(new Error('Timeout loading profile')), 10000)
-                )
-              ])
-            } catch (profileError) {
-              console.warn('⚠️ Error or timeout loading profile:', profileError)
-              // Continuar aunque falle la carga del perfil
-            }
-          } else {
-            conditionalLog('debug', '✅ Profile already loaded during init, skipping...')
-          }
-        } else if (mounted) {
-          // No hay sesión, limpiar estado
-          setUser(null)
-          setProfile(null)
-          setCompany(null)
-        }
-      } catch (error) {
-        console.error('Error initializing auth:', error)
-        if (mounted) {
-          setUser(null)
-          setProfile(null)
-          setCompany(null)
-          initializedRef.current = false
-        }
-      } finally {
-        if (mounted) {
-          setLoading(false)
-        }
-      }
+    
+    // Resetear el flag de sesión inicial manejada para este mount
+    initialSessionHandledRef.current = false
+    
+    // Limpiar cualquier timeout anterior
+    if (fallbackTimeoutRef.current) {
+      clearTimeout(fallbackTimeoutRef.current)
+      fallbackTimeoutRef.current = null
     }
 
-    initializeAuth()
-
-    // Escuchar cambios de auth con verificación de sesión expirada
+    // Configurar el listener de auth state ANTES de hacer getSession
+    // Esto asegura que capturamos el evento INITIAL_SESSION correctamente
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event: any, session: any) => {
         conditionalLog('debug', '🔄 Auth state change:', event, session?.user?.id)
@@ -371,9 +324,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           profileRef.current = null
           setCompany(null)
           setLoading(false)
+          initialSessionHandledRef.current = false
           // No mostrar toast aquí porque handleLogout ya lo muestra
           // Evitar doble mensaje
+        } else if (event === 'INITIAL_SESSION') {
+          // Este evento se dispara cuando Supabase inicializa con una sesión existente
+          // Solo manejarlo si no lo hemos manejado ya
+          if (initialSessionHandledRef.current) {
+            conditionalLog('debug', '🔄 INITIAL_SESSION already handled, skipping...')
+            return
+          }
+
+          if (session?.user && mounted) {
+            initialSessionHandledRef.current = true
+            setUser(session.user)
+            
+            // Evitar cargar perfil si ya está cargando o ya está cargado
+            if (loadingProfileRef.current === session.user.id) {
+              conditionalLog('debug', '🔄 Profile already loading for INITIAL_SESSION, skipping...')
+              setLoading(false)
+              return
+            }
+            
+            if (profileRef.current && profileRef.current.id === session.user.id) {
+              conditionalLog('debug', '🔄 Profile already loaded for INITIAL_SESSION, skipping...')
+              setLoading(false)
+              return
+            }
+            
+            // Cargar perfil con timeout
+            setLoading(true)
+            try {
+              await Promise.race([
+                loadUserProfile(session.user.id),
+                new Promise((_, reject) => 
+                  setTimeout(() => reject(new Error('Timeout loading profile')), 10000)
+                )
+              ])
+            } catch (profileError) {
+              console.warn('⚠️ Error or timeout loading profile on INITIAL_SESSION:', profileError)
+              // Continuar aunque falle para evitar loops
+            } finally {
+              if (mounted) {
+                setLoading(false)
+              }
+            }
+            
+            // Limpiar el timeout de fallback ya que INITIAL_SESSION se manejó correctamente
+            if (fallbackTimeoutRef.current) {
+              clearTimeout(fallbackTimeoutRef.current)
+              fallbackTimeoutRef.current = null
+            }
+          } else if (mounted) {
+            // No hay sesión en INITIAL_SESSION
+            initialSessionHandledRef.current = true
+            setUser(null)
+            setProfile(null)
+            setCompany(null)
+            setLoading(false)
+            
+            // Limpiar el timeout de fallback
+            if (fallbackTimeoutRef.current) {
+              clearTimeout(fallbackTimeoutRef.current)
+              fallbackTimeoutRef.current = null
+            }
+          }
         } else if (event === 'SIGNED_IN' && session?.user) {
+          // Solo manejar SIGNED_IN si no es la sesión inicial (ya manejada por INITIAL_SESSION)
+          if (initialSessionHandledRef.current) {
+            conditionalLog('debug', '🔄 SIGNED_IN ignored (initial session already handled)')
+            return
+          }
+          
           // Evitar cargar perfil si ya está cargando o ya está cargado
           if (loadingProfileRef.current === session.user.id) {
             conditionalLog('debug', '🔄 Profile already loading for SIGNED_IN event, skipping...')
@@ -407,16 +429,99 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else if (event === 'TOKEN_REFRESHED') {
           // Token refrescado automáticamente
           conditionalLog('debug', '🔄 Token refreshed successfully')
-          // NO verificar sesión aquí porque puede causar loops infinitos
-          // Supabase maneja automáticamente los tokens y onAuthStateChange
+          // NO hacer nada aquí - solo actualizar el usuario si cambia
+          // Supabase maneja automáticamente los tokens
           // Si hay un problema real, Supabase disparará SIGNED_OUT automáticamente
-          // Solo actualizar el usuario si la sesión tiene uno nuevo
           if (session?.user && (!user || user.id !== session.user.id)) {
             setUser(session.user)
           }
+          // NO cambiar loading aquí para evitar loops
         }
       }
     )
+
+    // Configurar un timeout de seguridad: si INITIAL_SESSION no se dispara en 2 segundos,
+    // hacer getSession() manualmente como fallback
+    fallbackTimeoutRef.current = setTimeout(() => {
+      if (mounted && !initialSessionHandledRef.current) {
+        conditionalLog('debug', '⚠️ INITIAL_SESSION not fired after 2s, using getSession() fallback')
+        
+        const initializeAuth = async () => {
+          try {
+            const { data: { session }, error } = await supabase.auth.getSession()
+            
+            if (error) {
+              console.warn('⚠️ Error getting session in fallback:', error)
+              if (mounted) {
+                setUser(null)
+                setProfile(null)
+                setCompany(null)
+                setLoading(false)
+                initialSessionHandledRef.current = true
+              }
+              return
+            }
+            
+            // Solo proceder si aún no se manejó la sesión inicial
+            if (!initialSessionHandledRef.current && mounted) {
+              initialSessionHandledRef.current = true
+              
+              if (session?.user) {
+                setUser(session.user)
+                
+                // Solo cargar perfil si no está ya cargado
+                if (!profileRef.current || profileRef.current.id !== session.user.id) {
+                  if (loadingProfileRef.current !== session.user.id) {
+                    setLoading(true)
+                    try {
+                      await Promise.race([
+                        loadUserProfile(session.user.id),
+                        new Promise((_, reject) => 
+                          setTimeout(() => reject(new Error('Timeout loading profile')), 10000)
+                        )
+                      ])
+                    } catch (profileError) {
+                      console.warn('⚠️ Error or timeout loading profile in fallback:', profileError)
+                    } finally {
+                      if (mounted) {
+                        setLoading(false)
+                      }
+                    }
+                  }
+                } else {
+                  setLoading(false)
+                }
+              } else {
+                setUser(null)
+                setProfile(null)
+                setCompany(null)
+                setLoading(false)
+              }
+            }
+          } catch (error) {
+            console.error('Error in fallback initializeAuth:', error)
+            if (mounted) {
+              setUser(null)
+              setProfile(null)
+              setCompany(null)
+              setLoading(false)
+              initialSessionHandledRef.current = true
+            }
+          } finally {
+            // Limpiar el timeout ref después de ejecutar el fallback
+            fallbackTimeoutRef.current = null
+          }
+        }
+        
+        initializeAuth()
+      }
+      
+      // Limpiar el timeout ref después de que el callback se ejecuta
+      fallbackTimeoutRef.current = null
+    }, 2000) // 2 segundos de espera
+
+    // Marcar como inicializado para prevenir múltiples ejecuciones del useEffect
+    initializedRef.current = true
 
     // DESACTIVADO: Verificación periódica innecesaria con Supabase
     // Supabase maneja automáticamente el refresh de tokens y detecta sesiones expiradas
@@ -424,8 +529,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     
     return () => {
       mounted = false
-      initializedRef.current = false
+      if (fallbackTimeoutRef.current) {
+        clearTimeout(fallbackTimeoutRef.current)
+        fallbackTimeoutRef.current = null
+      }
       subscription.unsubscribe()
+      // Resetear refs para el próximo mount (aunque en una recarga completa se resetean automáticamente)
+      // Esto ayuda en React Strict Mode y hot reload
+      initializedRef.current = false
+      initialSessionHandledRef.current = false
     }
   }, [loadUserProfile, handleSessionExpired])
 
@@ -542,3 +654,4 @@ export function useAuth() {
   }
   return context
 }
+
