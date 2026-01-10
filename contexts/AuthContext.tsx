@@ -3,7 +3,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react'
 import { supabase, supabaseTable, isAuthError } from '@/lib/supabase'
 import type { AuthUser } from '@/types/auth'
-import toast from 'react-hot-toast'
 
 interface UserProfile {
   id: string
@@ -88,6 +87,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setUser(null)
           setProfile(null)
           setCompany(null)
+          setLoading(false)
           return
         }
         console.warn('Error loading profile:', error)
@@ -96,7 +96,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setProfile(userData)
 
-      // Resolver company (puede venir como objeto, array o null)
+      // Resolver company
       const companyFromJoin = Array.isArray((userData as any).company)
         ? (userData as any).company?.[0]
         : (userData as any).company
@@ -104,7 +104,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (companyFromJoin?.id) {
         setCompany(companyFromJoin)
       } else if (userData.company_id) {
-        // Fallback: cargar empresa directamente
         const { data: companyData } = await supabaseTable('companies')
           .select('*')
           .eq('id', userData.company_id)
@@ -121,6 +120,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Escuchar cambios de autenticación - SUPABASE MANEJA TODO
   useEffect(() => {
+    // Establecer loading inicial
+    setLoading(true)
+
+    // Obtener sesión inicial
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setUser(session.user)
+        loadUserProfile(session.user.id).finally(() => setLoading(false))
+      } else {
+        setUser(null)
+        setProfile(null)
+        setCompany(null)
+        setLoading(false)
+      }
+    })
+
+    // Escuchar cambios de auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
         if (event === 'SIGNED_OUT' || !session) {
@@ -134,7 +150,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (session.user) {
           setUser(session.user)
           setLoading(true)
-          
           try {
             await loadUserProfile(session.user.id)
           } catch (error) {
