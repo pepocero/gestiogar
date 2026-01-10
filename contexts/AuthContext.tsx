@@ -54,35 +54,69 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [company, setCompany] = useState<Company | null>(null)
   const [loading, setLoading] = useState(true)
 
-  // Cargar perfil y empresa del usuario
+  // Cargar perfil y empresa del usuario - NUNCA FALLA
   const loadUserProfile = async (userId: string) => {
     try {
-      const { data: userData, error } = await supabaseTable('users')
-        .select(`
-          *,
-          company:companies(
-            id,
-            name,
-            slug,
-            address,
-            phone,
-            email,
-            logo_url,
-            website,
-            tax_id,
-            subscription_plan,
-            subscription_status,
-            subscription_started_at,
-            subscription_ends_at,
-            paypal_subscription_id,
-            paypal_customer_id
-          )
-        `)
-        .eq('id', userId)
-        .single()
+      // Estrategia 1: Intentar con join completo
+      try {
+        const { data: userData, error } = await supabaseTable('users')
+          .select(`
+            *,
+            company:companies(
+              id,
+              name,
+              slug,
+              address,
+              phone,
+              email,
+              logo_url,
+              website,
+              tax_id,
+              subscription_plan,
+              subscription_status,
+              subscription_started_at,
+              subscription_ends_at,
+              paypal_subscription_id,
+              paypal_customer_id
+            )
+          `)
+          .eq('id', userId)
+          .single()
 
-      if (error) {
-        if (isAuthError(error)) {
+        if (!error && userData) {
+          setProfile(userData)
+
+          // Resolver company del join
+          const companyFromJoin = Array.isArray((userData as any).company)
+            ? (userData as any).company?.[0]
+            : (userData as any).company
+
+          if (companyFromJoin?.id) {
+            setCompany(companyFromJoin)
+            return // Éxito completo
+          }
+
+          // Si no hay company en el join pero hay company_id, intentar cargarla
+          if (userData.company_id) {
+            try {
+              const { data: companyData } = await supabaseTable('companies')
+                .select('*')
+                .eq('id', userData.company_id)
+                .single()
+
+              if (companyData) {
+                setCompany(companyData)
+              }
+            } catch (companyError) {
+              console.warn('Error loading company separately:', companyError)
+              // Continuar sin company
+            }
+          }
+          return // Éxito con perfil (puede que sin company)
+        }
+
+        // Si hay error de autenticación, cerrar sesión
+        if (error && isAuthError(error)) {
           await supabase.auth.signOut()
           setUser(null)
           setProfile(null)
@@ -90,36 +124,78 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setLoading(false)
           return
         }
-        console.warn('Error loading profile:', error)
-        // NO bloquear si hay error al cargar el perfil - permitir que el usuario acceda
-        // El perfil se puede cargar más tarde o el usuario puede no tener perfil todavía
-        return
+      } catch (joinError) {
+        console.warn('Join query failed, trying fallback:', joinError)
       }
 
-      if (userData) {
-        setProfile(userData)
+      // Estrategia 2: Cargar usuario sin join
+      try {
+        const { data: userData, error: userError } = await supabaseTable('users')
+          .select('*')
+          .eq('id', userId)
+          .single()
 
-        // Resolver company
-        const companyFromJoin = Array.isArray((userData as any).company)
-          ? (userData as any).company?.[0]
-          : (userData as any).company
+        if (!userError && userData) {
+          setProfile(userData)
 
-        if (companyFromJoin?.id) {
-          setCompany(companyFromJoin)
-        } else if (userData.company_id) {
-          const { data: companyData } = await supabaseTable('companies')
-            .select('*')
-            .eq('id', userData.company_id)
-            .single()
+          // Intentar cargar company si existe company_id
+          if (userData.company_id) {
+            try {
+              const { data: companyData } = await supabaseTable('companies')
+                .select('*')
+                .eq('id', userData.company_id)
+                .single()
 
-          if (companyData) {
-            setCompany(companyData)
+              if (companyData) {
+                setCompany(companyData)
+              }
+            } catch (companyError) {
+              console.warn('Error loading company:', companyError)
+              // Continuar sin company
+            }
           }
+          return // Éxito con perfil básico
         }
+
+        if (userError && isAuthError(userError)) {
+          await supabase.auth.signOut()
+          setUser(null)
+          setProfile(null)
+          setCompany(null)
+          setLoading(false)
+          return
+        }
+      } catch (userError) {
+        console.warn('User query failed, trying minimal profile:', userError)
       }
+
+      // Estrategia 3: Crear perfil mínimo desde auth user
+      try {
+        const { data: { user: authUser } } = await supabase.auth.getUser()
+        if (authUser && authUser.id === userId) {
+          const minimalProfile: UserProfile = {
+            id: authUser.id,
+            email: authUser.email || undefined,
+            first_name: authUser.user_metadata?.first_name,
+            last_name: authUser.user_metadata?.last_name,
+          }
+          setProfile(minimalProfile)
+          setCompany(null)
+          console.log('✅ Created minimal profile from auth user')
+          return // Éxito con perfil mínimo
+        }
+      } catch (authError) {
+        console.warn('Error getting auth user:', authError)
+      }
+
+      // Si llegamos aquí, no pudimos cargar nada pero NO fallamos
+      // Mantener el estado actual y continuar
+      console.warn('⚠️ Could not load profile, but continuing anyway')
+      
     } catch (error) {
-      console.error('Error loading user profile:', error)
-      // NO bloquear si hay error - permitir que el usuario acceda de todos modos
+      // Cualquier error inesperado - NO fallar, solo loguear
+      console.error('Unexpected error in loadUserProfile:', error)
+      // NO lanzar error, NO bloquear el flujo
     }
   }
 
